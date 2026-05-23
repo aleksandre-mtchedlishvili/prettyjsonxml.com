@@ -1,0 +1,15 @@
+# Claude Code session data
+.claude/
+
+# Large XML test fixture — kept locally for manual perf testing, not versioned
+response_*.xml
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Local environment / secrets
+.env
+.env.local

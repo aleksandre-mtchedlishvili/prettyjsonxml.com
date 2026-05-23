@@ -1,0 +1,23 @@
+# robots.txt for Data Viewer
+# Allow all crawlers to index everything (it's a public web app)
+
+User-agent: *
+Allow: /
+
+# Block AI scraper bots from training on the page (optional — remove if you don't care)
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+Sitemap: https://prettyjsonxml.com/sitemap.xml
