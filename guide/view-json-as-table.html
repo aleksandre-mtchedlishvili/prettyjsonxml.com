@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to View JSON as a Table (Free, Online, No Signup) — Pretty JSON &amp; XML</title>
+<meta name="description" content="Step-by-step guide to viewing JSON as a sortable, searchable table in your browser. No signup, no upload — works for arrays of objects, single objects, deeply nested data, and 9 MB+ files.">
+<meta name="keywords" content="view json as table, json to table, json viewer table, convert json to table, json array viewer, online json viewer, view json file online">
+<link rel="canonical" href="https://prettyjsonxml.com/guide/view-json-as-table.html">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#7c9cff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c9cff'/%3E%3Ctext x='50' y='68' font-size='52' font-weight='700' fill='white' text-anchor='middle' font-family='-apple-system,BlinkMacSystemFont,sans-serif'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="How to View JSON as a Table (Free, Online, No Signup)">
+<meta property="og:description" content="Step-by-step guide to viewing any JSON file as a sortable, searchable table — in your browser, no upload required.">
+<meta property="og:url" content="https://prettyjsonxml.com/guide/view-json-as-table.html">
+<meta property="og:image" content="https://prettyjsonxml.com/og.jpg">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to View JSON as a Table (Free, Online, No Signup)">
+<meta name="twitter:description" content="Step-by-step guide to viewing any JSON file as a sortable, searchable table in your browser.">
+<meta name="twitter:image" content="https://prettyjsonxml.com/og.jpg">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "How to View JSON as a Table (Free, Online, No Signup)",
+  "description": "Step-by-step guide to viewing any JSON file as a sortable, searchable table in your browser.",
+  "image": "https://prettyjsonxml.com/og.jpg",
+  "datePublished": "2026-05-24",
+  "dateModified": "2026-05-24",
+  "author": { "@type": "Person", "name": "Aleksandre Mtchedlishvili" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Pretty JSON & XML",
+    "logo": { "@type": "ImageObject", "url": "https://prettyjsonxml.com/og.jpg" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://prettyjsonxml.com/guide/view-json-as-table.html" }
+}
+</script>
+
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --bg-elev: #ffffff;
+    --bg-card: #ffffff;
+    --bg-elev-2: #eef1f7;
+    --border: #d8dde8;
+    --border-soft: #e8ecf3;
+    --text: #1a1f2e;
+    --text-dim: #5a6478;
+    --text-muted: #94a0b5;
+    --accent: #3559e0;
+    --accent-2: #0e9f6e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text);
+    font-weight: 600; font-size: 16px;
+  }
+  .brand-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #7c9cff, #c084fc);
+    border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 13px;
+  }
+  .brand-sub { color: var(--text-muted); font-weight: 400; }
+  .cta-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .cta-btn:hover { background: #2a47b8; }
+  .cta-btn:active { transform: translateY(1px); }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 24px 60px; }
+  h1 {
+    margin: 0 0 12px 0;
+    font-size: 36px;
+    letter-spacing: -0.6px;
+    line-height: 1.2;
+  }
+  .lede {
+    font-size: 17px;
+    color: var(--text-dim);
+    margin: 0 0 16px 0;
+  }
+  .updated { color: var(--text-muted); font-size: 13px; margin: 0 0 36px 0; }
+  h2 {
+    margin: 44px 0 14px 0;
+    font-size: 24px;
+    letter-spacing: -0.3px;
+  }
+  h3 {
+    margin: 28px 0 10px 0;
+    font-size: 18px;
+    color: var(--text);
+  }
+  p, ul, li, ol { font-size: 16px; color: var(--text-dim); }
+  p { margin: 0 0 14px 0; }
+  ul, ol { padding-left: 24px; margin: 0 0 14px 0; }
+  li { margin-bottom: 8px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  code {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13.5px;
+    background: var(--bg-elev-2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--text);
+  }
+  pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 14px 0;
+  }
+  pre code { background: transparent; padding: 0; }
+  a { color: var(--accent); }
+  a:hover { text-decoration: underline; }
+  .callout {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    font-size: 15px;
+    color: var(--text-dim);
+  }
+  .callout.tip { border-left-color: var(--accent-2); }
+  .callout strong { display: block; margin-bottom: 4px; color: var(--text); }
+  .inline-cta {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin: 16px 0;
+    transition: background 0.15s;
+  }
+  .inline-cta:hover { background: #2a47b8; text-decoration: none; }
+  .step {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 16px 0;
+  }
+  .step h3 {
+    margin: 0 0 8px 0;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .step-num {
+    width: 26px; height: 26px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 24px 0 32px;
+    font-size: 14px;
+  }
+  .toc strong { display: block; margin-bottom: 8px; }
+  .toc a {
+    display: block;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 3px 0;
+  }
+  .toc a:hover { color: var(--accent); }
+  footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 24px;
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  footer nav a { color: var(--text-dim); text-decoration: none; margin: 0 8px; }
+  footer nav a:hover { color: var(--accent); text-decoration: underline; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">
+    <span class="brand-icon">{ }</span>
+    <span>Pretty <span class="brand-sub">JSON &amp; XML</span></span>
+  </a>
+  <a class="cta-btn" href="/">Try the viewer →</a>
+</header>
+<main>
+  <article>
+    <h1>How to View JSON as a Table (Online, Free, No Signup)</h1>
+    <p class="lede">
+      JSON is everywhere — APIs, configs, database exports — but reading it raw is painful. A 50-row response with nested objects becomes a 500-line indented blob you can't actually scan. The fix: view it as a table. This guide shows you how, in under a minute, in your browser.
+    </p>
+    <p class="updated">A practical guide · Updated 24 May 2026</p>
+
+    <nav class="toc" aria-label="On this page">
+      <strong>On this page</strong>
+      <a href="#why-table">Why table view beats pretty-printing</a>
+      <a href="#three-steps">The three-step workflow</a>
+      <a href="#column-picker">How the column picker works</a>
+      <a href="#nested-data">What happens to nested data</a>
+      <a href="#large-files">Tips for large files (9 MB+)</a>
+      <a href="#sort-search">Sort, search, expand — power tips</a>
+      <a href="#single-object">What if your JSON isn't an array?</a>
+      <a href="#privacy">Is my data uploaded anywhere?</a>
+      <a href="#faq">Quick FAQ</a>
+    </nav>
+
+    <h2 id="why-table">Why table view beats pretty-printing</h2>
+    <p>
+      When your JSON looks like this:
+    </p>
+    <pre><code>[
+  { "id": 1, "name": "Alice", "role": "admin", "active": true  },
+  { "id": 2, "name": "Bob",   "role": "user",  "active": true  },
+  { "id": 3, "name": "Carol", "role": "user",  "active": false },
+  { "id": 4, "name": "Dave",  "role": "admin", "active": true  }
+]</code></pre>
+    <p>
+      Pretty-printing (re-indenting it nicely) helps a bit. But you still scan it top-to-bottom, line by line. You can't say <em>"show me only admins"</em> without re-reading every record.
+    </p>
+    <p>
+      Table view gives you the same data, but each object becomes a row and the shared fields become sortable columns:
+    </p>
+    <pre><code>┌────┬───────┬───────┬────────┐
+│ ID │ NAME  │ ROLE  │ ACTIVE │
+├────┼───────┼───────┼────────┤
+│ 1  │ Alice │ admin │ ● Yes  │
+│ 2  │ Bob   │ user  │ ● Yes  │
+│ 3  │ Carol │ user  │ ● No   │
+│ 4  │ Dave  │ admin │ ● Yes  │
+└────┴───────┴───────┴────────┘</code></pre>
+    <p>
+      Now you can sort by role to group admins, click a row to see the full nested detail, type "admin" in the search box to filter. The same data — but you can <em>scan</em> it instead of <em>read</em> it.
+    </p>
+
+    <h2 id="three-steps">The three-step workflow</h2>
+
+    <div class="step">
+      <h3><span class="step-num">1</span> Paste or upload your JSON</h3>
+      <p>
+        Go to <a href="https://prettyjsonxml.com/">prettyjsonxml.com</a>. The editor in the middle of the page is where your JSON goes. You have two options:
+      </p>
+      <ul>
+        <li><strong>Paste</strong> — click into the editor and press <code>Ctrl+V</code> (or <code>Cmd+V</code> on Mac). The editor handles up to ~5 MB inline with live syntax highlighting; bigger pastes work but the editor goes read-only for performance.</li>
+        <li><strong>Upload</strong> — click the big "Upload a file" button. Pick any <code>.json</code> file from your computer. The viewer parses it client-side; nothing is sent to a server.</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">2</span> Click "View as Table"</h3>
+      <p>
+        Once your JSON is loaded, the two blue buttons at the top of the editor are <strong>View as Table</strong> and <strong>View as Tree</strong>. Click <em>View as Table</em>. The viewer:
+      </p>
+      <ul>
+        <li>Walks your JSON looking for arrays of objects (the most common "tabular" shape)</li>
+        <li>Picks the most useful fields as columns based on how often they appear and a built-in priority list (<code>name</code>, <code>id</code>, <code>code</code>, <code>status</code>, dates, money fields)</li>
+        <li>Renders the table with a sticky header and an expand button on each row</li>
+      </ul>
+      <p>
+        For arrays under 100 rows, the whole table renders at once. For arrays over that, a virtual scroller kicks in — only the visible rows live in the DOM, even if there are 50,000 records.
+      </p>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">3</span> Sort, search, expand</h3>
+      <p>
+        Now the table is yours to drive:
+      </p>
+      <ul>
+        <li><strong>Click any column header</strong> to sort ascending; click again to sort descending. Numeric columns sort numerically; text columns alphabetically.</li>
+        <li><strong>Type in the search box</strong> (top of the page) to filter. The match is full-text — it covers cell values AND the nested data hidden inside row details. Search runs as you type, no Enter needed.</li>
+        <li><strong>Click any row</strong> to expand its full detail. You'll see every field of that object including nested arrays, base64 images decoded as thumbnails, and long text in a collapsible block.</li>
+      </ul>
+    </div>
+
+    <p style="text-align:center;">
+      <a class="inline-cta" href="/">Open the viewer →</a>
+    </p>
+
+    <h2 id="column-picker">How the column picker works</h2>
+    <p>
+      The viewer doesn't show every field as a column — that would be unreadable for objects with 20+ fields. It picks up to 6 of the most useful ones based on three signals:
+    </p>
+    <ol>
+      <li><strong>Frequency.</strong> A field that appears in at least 50% of rows is column-worthy. A field that appears in 1 of 20 rows is not — it's a sparse outlier, available on expand.</li>
+      <li><strong>Semantic priority.</strong> Fields named <code>name</code>, <code>title</code>, <code>id</code>, <code>code</code>, <code>status</code>, <code>amount</code>, dates, etc. get bumped to the front of the column order. These are usually what humans want to scan first.</li>
+      <li><strong>Pattern detection.</strong> If your data looks like a rule expression (<code>field</code>, <code>operator</code>, <code>value</code>), the viewer lays those out in natural reading order even if frequency would put them elsewhere.</li>
+    </ol>
+    <p>
+      Hidden fields aren't lost — they show up when you click the row to expand it. The detail view is always the complete object.
+    </p>
+
+    <h2 id="nested-data">What happens to nested data</h2>
+    <p>
+      Real-world JSON rarely has flat objects. You might have:
+    </p>
+    <pre><code>{
+  "id": 1,
+  "name": "Alice",
+  "address": { "city": "Tbilisi", "zip": "0102" },
+  "tags": ["admin", "active"]
+}</code></pre>
+    <p>
+      The viewer handles this two ways:
+    </p>
+    <ul>
+      <li><strong>Singleton wrapper lift.</strong> If <code>address</code> appears as an object inside <em>every</em> row, its fields (<code>city</code>, <code>zip</code>) get "lifted" to first-class columns. So you might see <code>NAME · CITY · ZIP</code> at the table level even though they came from nested paths.</li>
+      <li><strong>Array-of-scalars collapse.</strong> A field like <code>tags: ["admin", "active"]</code> becomes a single cell showing <code>admin, active</code> rather than a sub-array. If you click to expand the row, you'll see the array structure clearly.</li>
+    </ul>
+    <p>
+      For deeply nested structures (a subarray inside each row), the viewer renders that subarray as its own collapsible mini-table inside the expanded detail view.
+    </p>
+
+    <h2 id="large-files">Tips for large files (9 MB+)</h2>
+    <p>
+      The viewer is built to handle big files without freezing your browser:
+    </p>
+    <ul>
+      <li><strong>Editor goes read-only above 5 MB.</strong> Assigning a 9 MB string to a <code>&lt;textarea&gt;</code> blocks the main thread for 300–500 ms — we skip it and show a placeholder. The data still loads into the viewer; you just can't hand-edit a 9 MB blob (and you wouldn't want to anyway).</li>
+      <li><strong>JSON.parse runs in a Web Worker</strong> for files over a few hundred KB, so the UI stays responsive while parsing happens off the main thread.</li>
+      <li><strong>Virtual scrolling</strong> kicks in for tables with 100+ rows — the table can have 30,000 rows but only ~50 live in the DOM at any moment. Memory stays low; scroll stays smooth.</li>
+      <li><strong>Lazy tree expansion</strong> beyond depth 2 for large documents — the Tree view only builds nodes as you expand them.</li>
+    </ul>
+    <div class="callout tip">
+      <strong>Tip:</strong>
+      For files over 50 MB, expect ~1 second of busy cursor while DOMParser / JSON.parse does its initial work. Native parsing is the floor — even Chrome can't make 50 MB of structured data appear instantly.
+    </div>
+
+    <h2 id="sort-search">Sort, search, expand — power tips</h2>
+    <h3>Search across nested content</h3>
+    <p>
+      The search box filters on more than what's visible in columns. It scans each row's full text — including fields hidden in the detail view. So if a row's <code>nestedNotes</code> field contains "urgent", typing "urgent" finds that row even though <code>nestedNotes</code> isn't a column.
+    </p>
+    <h3>Multiple sort levels</h3>
+    <p>
+      Right now the table sorts by one column at a time. Click another column to switch. Click the same column twice to flip direction. (Multi-column sort is on the roadmap.)
+    </p>
+    <h3>Switch to Tree view for ground truth</h3>
+    <p>
+      The table is a curated projection of your data. If you want to see <em>everything</em>, switch to <strong>Tree view</strong> — that renders your JSON as raw foldable structure (<code>{ }</code>, <code>[ ]</code>, key-value pairs) preserving every field, every nesting level, every null.
+    </p>
+
+    <h2 id="single-object">What if your JSON isn't an array?</h2>
+    <p>
+      A lot of JSON is a single object at the root, like a config file or an API response wrapping data:
+    </p>
+    <pre><code>{
+  "user": { "id": 1, "name": "Alice" },
+  "permissions": ["read", "write"],
+  "lastLogin": "2026-05-22T10:00:00Z"
+}</code></pre>
+    <p>
+      The viewer handles this too. Scalar fields at the root become a single "Details" card showing all of them. Nested objects (like <code>user</code>) become their own card sections with a heading and field list. Arrays-of-objects nested inside become their own mini-tables.
+    </p>
+    <p>
+      You get all the same powers (search, expand, switch to tree) but on a single-record layout instead of a multi-row table.
+    </p>
+
+    <h2 id="privacy">Is my data uploaded anywhere?</h2>
+    <p>
+      No. The viewer is a single HTML file. There is no backend, no API, no upload endpoint. Your JSON is parsed and rendered by your browser's built-in JavaScript engine — we (the people running the site) cannot see what you paste even if we wanted to.
+    </p>
+    <p>
+      The site does load three analytics scripts (Google Analytics, Microsoft Clarity, Cloudflare Web Analytics) but those record aggregate behavior (clicks, page views), never the content of your data. The editor and viewer are explicitly masked from session recording. Full details in the <a href="/privacy.html">privacy policy</a>.
+    </p>
+
+    <h2 id="faq">Quick FAQ</h2>
+    <h3>Does it work offline?</h3>
+    <p>
+      Once the page is loaded, yes — parsing and rendering happen entirely client-side. If you bookmark the page and have a reasonably fresh browser cache, refreshing without a network is fine. There's no Service Worker / PWA support yet.
+    </p>
+    <h3>What if my JSON has comments (JSONC)?</h3>
+    <p>
+      Standard <code>JSON.parse</code> doesn't accept comments, so files with <code>// like this</code> currently fail. JSONC / JSON5 support is on the roadmap.
+    </p>
+    <h3>Can I export the table to CSV?</h3>
+    <p>
+      Not yet — it's a frequent ask. For now you can copy the visible cells, or use <code>Format</code> + select-all + copy to get the original JSON back.
+    </p>
+    <h3>Does it work on mobile?</h3>
+    <p>
+      Yes, but tables of 10+ columns get horizontal-scrolly on phones. Tree view is more mobile-friendly for wide records.
+    </p>
+
+    <p style="text-align:center; margin-top: 48px;">
+      <a class="inline-cta" href="/">Open the viewer and try it →</a>
+    </p>
+  </article>
+</main>
+<footer>
+  <nav>
+    <a href="/">Home</a>·
+    <a href="/privacy.html">Privacy</a>·
+    <a href="/terms.html">Terms</a>·
+    <a href="/guide/view-json-as-table.html">Guide</a>·
+    <a href="/example/rss-feed.html">RSS example</a>·
+    <a href="mailto:aleksandre.mtchedlishvili@gmail.com">Contact</a>
+  </nav>
+  <p>&copy; 2026 Pretty JSON &amp; XML — runs in your browser, free forever.</p>
+</footer>
+</body>
+</html>

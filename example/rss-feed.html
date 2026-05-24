@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSS Feed Example — View &amp; Parse RSS / XML Online | Pretty JSON &amp; XML</title>
+<meta name="description" content="Sample RSS feed XML to view as a sortable table. See how items, titles, dates, and descriptions render. Paste your own feed to inspect any RSS or Atom data in the browser.">
+<meta name="keywords" content="rss feed viewer, rss xml example, parse rss online, view rss feed, rss feed parser, atom feed viewer">
+<link rel="canonical" href="https://prettyjsonxml.com/example/rss-feed.html">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#7c9cff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c9cff'/%3E%3Ctext x='50' y='68' font-size='52' font-weight='700' fill='white' text-anchor='middle' font-family='-apple-system,BlinkMacSystemFont,sans-serif'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="RSS Feed Example — View &amp; Parse RSS / XML Online">
+<meta property="og:description" content="A working RSS feed sample you can view as a table or tree, plus an explanation of the format.">
+<meta property="og:url" content="https://prettyjsonxml.com/example/rss-feed.html">
+<meta property="og:image" content="https://prettyjsonxml.com/og.jpg">
+<meta property="og:type" content="article">
+
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --bg-elev: #ffffff;
+    --bg-card: #ffffff;
+    --bg-elev-2: #eef1f7;
+    --border: #d8dde8;
+    --border-soft: #e8ecf3;
+    --text: #1a1f2e;
+    --text-dim: #5a6478;
+    --text-muted: #94a0b5;
+    --accent: #3559e0;
+    --tag: #c2185b;
+    --attr: #b45309;
+    --attr-val: #047857;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text);
+    font-weight: 600; font-size: 16px;
+  }
+  .brand-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #7c9cff, #c084fc);
+    border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 13px;
+  }
+  .brand-sub { color: var(--text-muted); font-weight: 400; }
+  .cta-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+  }
+  .cta-btn:hover { background: #2a47b8; }
+  main { max-width: 820px; margin: 0 auto; padding: 40px 24px 60px; }
+  h1 {
+    margin: 0 0 10px 0;
+    font-size: 32px;
+    letter-spacing: -0.5px;
+  }
+  .lede { font-size: 16px; color: var(--text-dim); margin: 0 0 32px 0; }
+  h2 {
+    margin: 36px 0 12px 0;
+    font-size: 22px;
+    letter-spacing: -0.3px;
+  }
+  h3 { margin: 22px 0 8px 0; font-size: 16px; }
+  p, ul, li { font-size: 15px; color: var(--text-dim); }
+  p { margin: 0 0 12px 0; }
+  ul { padding-left: 22px; margin: 0 0 12px 0; }
+  li { margin-bottom: 6px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  a { color: var(--accent); }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    background: var(--bg-elev-2);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+  pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 14px 0;
+    max-height: 420px;
+  }
+  pre code { background: transparent; padding: 0; }
+  /* Lightweight XML syntax coloring on the sample */
+  .hl-tag { color: var(--tag); }
+  .hl-attr { color: var(--attr); }
+  .hl-attr-val { color: var(--attr-val); }
+  .hl-punct { color: var(--text-dim); }
+  .hl-comment { color: var(--text-muted); font-style: italic; }
+
+  .actions {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin: 16px 0 32px;
+  }
+  .btn-primary, .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: #2a47b8; text-decoration: none; }
+  .btn-secondary {
+    background: var(--bg-card);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .btn-secondary:hover { background: var(--bg-elev-2); text-decoration: none; }
+
+  .callout {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    font-size: 14px;
+  }
+  .callout strong { display: block; margin-bottom: 4px; }
+
+  .related-examples {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-top: 36px;
+  }
+  .related-examples h3 { margin: 0 0 10px 0; }
+  .related-examples ul { padding-left: 0; list-style: none; }
+  .related-examples li { margin-bottom: 4px; }
+
+  footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 24px;
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  footer nav a { color: var(--text-dim); text-decoration: none; margin: 0 8px; }
+  footer nav a:hover { color: var(--accent); text-decoration: underline; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">
+    <span class="brand-icon">{ }</span>
+    <span>Pretty <span class="brand-sub">JSON &amp; XML</span></span>
+  </a>
+  <a class="cta-btn" href="/">Open the viewer →</a>
+</header>
+<main>
+  <article>
+    <h1>RSS Feed Example</h1>
+    <p class="lede">
+      A sample RSS 2.0 feed you can view as a sortable table or a foldable tree. Below the sample, the format is explained — plus how to use Pretty JSON &amp; XML to inspect any RSS, Atom, or podcast feed in seconds.
+    </p>
+
+    <div class="actions">
+      <button class="btn-primary" id="loadInViewer" type="button">▦ View this sample as a table</button>
+      <button class="btn-secondary" id="copySample" type="button">📋 Copy sample to clipboard</button>
+    </div>
+
+    <h2>The sample</h2>
+    <p>A minimal RSS 2.0 feed with three items — title, link, publication date, description:</p>
+    <pre id="sampleBlock"><code id="sampleCode"><span class="hl-comment">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="hl-punct">&lt;</span><span class="hl-tag">rss</span> <span class="hl-attr">version</span>=<span class="hl-attr-val">"2.0"</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;</span><span class="hl-tag">channel</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;</span><span class="hl-tag">title</span><span class="hl-punct">&gt;</span>Pretty JSON &amp;amp; XML Blog<span class="hl-punct">&lt;/</span><span class="hl-tag">title</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;</span><span class="hl-tag">link</span><span class="hl-punct">&gt;</span>https://prettyjsonxml.com/<span class="hl-punct">&lt;/</span><span class="hl-tag">link</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;</span><span class="hl-tag">description</span><span class="hl-punct">&gt;</span>Updates from the JSON &amp;amp; XML viewer<span class="hl-punct">&lt;/</span><span class="hl-tag">description</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;</span><span class="hl-tag">language</span><span class="hl-punct">&gt;</span>en-us<span class="hl-punct">&lt;/</span><span class="hl-tag">language</span><span class="hl-punct">&gt;</span>
+
+    <span class="hl-punct">&lt;</span><span class="hl-tag">item</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">title</span><span class="hl-punct">&gt;</span>Virtual scrolling lands for huge JSON arrays<span class="hl-punct">&lt;/</span><span class="hl-tag">title</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">link</span><span class="hl-punct">&gt;</span>https://prettyjsonxml.com/guide/view-json-as-table.html<span class="hl-punct">&lt;/</span><span class="hl-tag">link</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">pubDate</span><span class="hl-punct">&gt;</span>Sat, 24 May 2026 12:00:00 GMT<span class="hl-punct">&lt;/</span><span class="hl-tag">pubDate</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">description</span><span class="hl-punct">&gt;</span>Tables with 30,000+ rows now render only the visible window — no more frozen tabs.<span class="hl-punct">&lt;/</span><span class="hl-tag">description</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;/</span><span class="hl-tag">item</span><span class="hl-punct">&gt;</span>
+
+    <span class="hl-punct">&lt;</span><span class="hl-tag">item</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">title</span><span class="hl-punct">&gt;</span>Feedback popover added to the header<span class="hl-punct">&lt;/</span><span class="hl-tag">title</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">link</span><span class="hl-punct">&gt;</span>https://prettyjsonxml.com/<span class="hl-punct">&lt;/</span><span class="hl-tag">link</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">pubDate</span><span class="hl-punct">&gt;</span>Fri, 23 May 2026 18:30:00 GMT<span class="hl-punct">&lt;/</span><span class="hl-tag">pubDate</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">description</span><span class="hl-punct">&gt;</span>Three pre-categorized mailto links so reporting bugs is one click.<span class="hl-punct">&lt;/</span><span class="hl-tag">description</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;/</span><span class="hl-tag">item</span><span class="hl-punct">&gt;</span>
+
+    <span class="hl-punct">&lt;</span><span class="hl-tag">item</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">title</span><span class="hl-punct">&gt;</span>JSON-native tree view with foldable brackets<span class="hl-punct">&lt;/</span><span class="hl-tag">title</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">link</span><span class="hl-punct">&gt;</span>https://prettyjsonxml.com/<span class="hl-punct">&lt;/</span><span class="hl-tag">link</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">pubDate</span><span class="hl-punct">&gt;</span>Thu, 22 May 2026 09:00:00 GMT<span class="hl-punct">&lt;/</span><span class="hl-tag">pubDate</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">description</span><span class="hl-punct">&gt;</span>For JSON sources, Tree view now uses native JSON syntax — { } [ ] foldable, not synthetic XML tags.<span class="hl-punct">&lt;/</span><span class="hl-tag">description</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;/</span><span class="hl-tag">item</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;/</span><span class="hl-tag">channel</span><span class="hl-punct">&gt;</span>
+<span class="hl-punct">&lt;/</span><span class="hl-tag">rss</span><span class="hl-punct">&gt;</span></code></pre>
+
+    <div class="callout">
+      <strong>Try it:</strong>
+      Click <em>"View this sample as a table"</em> above. The viewer auto-detects <code>&lt;item&gt;</code> as the repeated element and renders three rows with Title, Link, PubDate, Description as columns.
+    </div>
+
+    <h2>What is RSS?</h2>
+    <p>
+      RSS (Really Simple Syndication) is an XML-based format for publishing frequently updated content — blog posts, news headlines, podcast episodes, GitHub commits. A feed has one <code>&lt;channel&gt;</code> at the root, some metadata about the publication (title, link, description), then a list of <code>&lt;item&gt;</code> elements where each item is one piece of content.
+    </p>
+    <p>
+      The format dates to 1999 and is still everywhere — most blogs, podcasts, GitHub releases, and news sites expose an RSS feed even today. The basic structure looks like this:
+    </p>
+    <ul>
+      <li><strong>Channel</strong> — the feed itself, with metadata like <code>title</code>, <code>link</code>, <code>description</code>, <code>language</code></li>
+      <li><strong>Items</strong> — one per piece of content, with at minimum <code>title</code> and <code>link</code>, usually <code>pubDate</code> and <code>description</code> too</li>
+    </ul>
+
+    <h2>Why view RSS as a table?</h2>
+    <p>
+      RSS feeds are designed for machines (feed readers) but humans need to look at them too — debugging publishing pipelines, inspecting third-party feeds, comparing two podcast feeds, or just reading raw content without a feed reader.
+    </p>
+    <p>
+      Reading RSS as raw XML is exhausting — items are deeply indented and you can't easily compare them. Reading it as a table lets you:
+    </p>
+    <ul>
+      <li><strong>Sort by date</strong> to see the newest or oldest entries</li>
+      <li><strong>Search for a keyword</strong> across all titles and descriptions at once</li>
+      <li><strong>Spot missing fields</strong> at a glance (one column empty in one row = something's off)</li>
+      <li><strong>Compare</strong> the count and shape against another feed</li>
+    </ul>
+
+    <h2>How Pretty JSON &amp; XML handles RSS</h2>
+    <p>
+      When you paste an RSS feed, the viewer:
+    </p>
+    <ol>
+      <li>Detects <code>&lt;item&gt;</code> as the repeated element (there are 2+ of them with the same tag)</li>
+      <li>Renders each item as a row in the Table view</li>
+      <li>Picks the most useful fields as columns based on frequency and naming — usually <code>title</code>, <code>link</code>, <code>pubDate</code>, <code>description</code></li>
+      <li>Shows the channel-level metadata (title, link, language) above the table as a "context" strip</li>
+    </ol>
+    <p>
+      Click any row to see the full item including any optional fields like <code>guid</code>, <code>category</code>, <code>author</code>, <code>enclosure</code> (used for podcast audio), or custom namespaces (<code>itunes:</code>, <code>media:</code>, etc.).
+    </p>
+
+    <h2>Works for Atom too</h2>
+    <p>
+      Atom feeds (the newer alternative to RSS, often served at <code>/atom.xml</code>) have the same shape — a feed wrapper with repeated <code>&lt;entry&gt;</code> elements. Pretty JSON &amp; XML handles them identically: paste an Atom feed and you get a sortable table of entries.
+    </p>
+
+    <p style="text-align:center;">
+      <a class="cta-btn" href="/" style="display:inline-block; margin: 20px 0;">Open the viewer and paste your own feed →</a>
+    </p>
+
+    <div class="related-examples">
+      <h3>More examples</h3>
+      <ul>
+        <li><a href="/guide/view-json-as-table.html">📖 Guide: How to view JSON as a table</a></li>
+        <li><a href="/">▦ Open the live viewer</a></li>
+      </ul>
+    </div>
+  </article>
+</main>
+<footer>
+  <nav>
+    <a href="/">Home</a>·
+    <a href="/privacy.html">Privacy</a>·
+    <a href="/terms.html">Terms</a>·
+    <a href="/guide/view-json-as-table.html">Guide</a>·
+    <a href="/example/rss-feed.html">RSS example</a>·
+    <a href="mailto:aleksandre.mtchedlishvili@gmail.com">Contact</a>
+  </nav>
+  <p>&copy; 2026 Pretty JSON &amp; XML — runs in your browser, free forever.</p>
+</footer>
+
+<script>
+  // The raw XML (plain text, no markup) that gets copied or sent to the viewer
+  const SAMPLE_RSS = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Pretty JSON &amp; XML Blog</title>
+    <link>https://prettyjsonxml.com/</link>
+    <description>Updates from the JSON &amp; XML viewer</description>
+    <language>en-us</language>
+
+    <item>
+      <title>Virtual scrolling lands for huge JSON arrays</title>
+      <link>https://prettyjsonxml.com/guide/view-json-as-table.html</link>
+      <pubDate>Sat, 24 May 2026 12:00:00 GMT</pubDate>
+      <description>Tables with 30,000+ rows now render only the visible window — no more frozen tabs.</description>
+    </item>
+
+    <item>
+      <title>Feedback popover added to the header</title>
+      <link>https://prettyjsonxml.com/</link>
+      <pubDate>Fri, 23 May 2026 18:30:00 GMT</pubDate>
+      <description>Three pre-categorized mailto links so reporting bugs is one click.</description>
+    </item>
+
+    <item>
+      <title>JSON-native tree view with foldable brackets</title>
+      <link>https://prettyjsonxml.com/</link>
+      <pubDate>Thu, 22 May 2026 09:00:00 GMT</pubDate>
+      <description>For JSON sources, Tree view now uses native JSON syntax — { } [ ] foldable, not synthetic XML tags.</description>
+    </item>
+  </channel>
+</rss>`;
+
+  // Open the viewer with the sample data pre-loaded via sessionStorage. The
+  // main app reads this on load (see "example-sample" handling in index.html).
+  document.getElementById('loadInViewer').addEventListener('click', () => {
+    try {
+      sessionStorage.setItem('pjx_pending_sample', SAMPLE_RSS);
+      sessionStorage.setItem('pjx_pending_sample_name', 'rss-feed-sample.xml');
+    } catch (_) {}
+    window.location.href = '/';
+  });
+
+  document.getElementById('copySample').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(SAMPLE_RSS);
+      const btn = document.getElementById('copySample');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied';
+      setTimeout(() => { btn.textContent = orig; }, 1500);
+    } catch (err) {
+      alert('Copy failed — your browser may block clipboard access on this page. You can select the sample text manually.');
+    }
+  });
+</script>
+</body>
+</html>

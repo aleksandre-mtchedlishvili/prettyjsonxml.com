@@ -1,16 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Sitemap for Data Viewer
+  Sitemap for Pretty JSON & XML (https://prettyjsonxml.com/)
   Submit this URL in Google Search Console:
   https://prettyjsonxml.com/sitemap.xml
 
-  Update <lastmod> when you ship significant changes.
+  Update <lastmod> when you ship significant changes — freshness is a ranking
+  signal and crawlers will re-fetch sooner when this date changes.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://prettyjsonxml.com/</loc>
-    <lastmod>2026-05-22</lastmod>
-    <changefreq>monthly</changefreq>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://prettyjsonxml.com/guide/view-json-as-table.html</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prettyjsonxml.com/example/rss-feed.html</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://prettyjsonxml.com/privacy.html</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://prettyjsonxml.com/terms.html</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 </urlset>

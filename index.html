@@ -30,7 +30,7 @@
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Data Viewer — view XML and JSON beautifully, with table and tree views, search, and image preview. Free and browser-based.">
+<meta property="og:image:alt" content="Pretty JSON & XML — online JSON and XML viewer with table, tree, search, format, and image preview. Free, no signup, runs in your browser.">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
@@ -38,7 +38,7 @@
 <meta name="twitter:title" content="Pretty JSON &amp; XML — Paste or Upload, View Beautifully">
 <meta name="twitter:description" content="Paste or upload JSON / XML — get a beautiful, searchable, sortable table or tree. Format, minify, base64 image preview, full search. 100% in your browser.">
 <meta name="twitter:image" content="https://prettyjsonxml.com/og.jpg">
-<meta name="twitter:image:alt" content="Data Viewer — view XML and JSON beautifully, with table and tree views, search, and image preview.">
+<meta name="twitter:image:alt" content="Pretty JSON & XML — view JSON or XML as a beautiful table or tree. Format, minify, search. 100% in your browser.">
 
 <!-- Schema.org structured data — helps Google understand this is a free web app -->
 <script type="application/ld+json">
@@ -46,30 +46,165 @@
   "@context": "https://schema.org",
   "@type": "WebApplication",
   "name": "Pretty JSON & XML",
-  "alternateName": ["JSON Viewer", "XML Viewer", "JSON to Table", "XML to Table", "JSON Formatter", "XML Formatter"],
-  "description": "Paste or upload JSON / XML — get a beautiful, searchable, sortable table or tree. Format, minify, base64 image preview, full search. 100% in your browser.",
+  "alternateName": ["JSON Viewer", "XML Viewer", "JSON to Table", "XML to Table", "JSON Formatter", "XML Formatter", "SOAP Response Viewer", "RSS Feed Viewer"],
+  "description": "Online JSON and XML viewer — paste or upload to see your data as a beautiful searchable table or collapsible tree. Format, minify, sort, search, base64 image preview. 100% in your browser. Free, no signup.",
   "url": "https://prettyjsonxml.com/",
   "image": "https://prettyjsonxml.com/og.jpg",
+  "screenshot": "https://prettyjsonxml.com/og.jpg",
   "applicationCategory": "DeveloperApplication",
-  "operatingSystem": "Any",
+  "applicationSubCategory": "JSON / XML viewer and formatter",
+  "operatingSystem": "Web (any modern browser)",
   "browserRequirements": "Requires a modern browser (Chrome, Firefox, Safari, Edge).",
+  "softwareVersion": "1.0",
+  "dateModified": "2026-05-24",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "author": {
+    "@type": "Person",
+    "name": "Aleksandre Mtchedlishvili"
+  },
   "offers": {
     "@type": "Offer",
     "price": "0",
     "priceCurrency": "USD"
   },
   "featureList": [
-    "View XML files online",
-    "View JSON files online",
-    "Beautiful table view with expandable rows",
-    "Collapsible tree view",
+    "View JSON as a searchable, sortable table",
+    "View XML as a searchable, sortable table",
+    "Collapsible tree view for any structure",
     "Format / pretty-print JSON and XML",
     "Minify JSON and XML",
-    "Instant full-text search",
-    "Inline image preview for base64 data",
-    "Syntax highlighting in the editor",
-    "100% client-side — your files never leave your browser",
-    "No signup, no ads"
+    "Instant full-text search across rows and fields",
+    "Inline base64 image preview (PNG / JPEG / SVG)",
+    "Live syntax highlighting in the editor",
+    "Supports SOAP responses, RSS / Atom feeds, Maven POM, SVG",
+    "Handles large files (9 MB+) with virtual scrolling",
+    "100% client-side — your data never leaves your browser",
+    "No signup, no ads, no upload to any server"
+  ]
+}
+</script>
+
+<!-- FAQ Schema — earns "People Also Ask" rich results for common JSON/XML
+     viewer questions. Each Q&A here is also rendered visibly on the landing
+     page below; Google requires the answer text to match what users see. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I view a JSON file online?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Paste your JSON into the editor on prettyjsonxml.com, or click Upload to load a .json file. Then click View as Table to see fields as columns, or View as Tree for a foldable structure. Everything runs in your browser — your data is never uploaded to a server."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I convert JSON to a table?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Paste or upload your JSON, then click View as Table. Repeated objects of the same shape become rows; their fields become sortable columns. Click any column header to sort, type in the search box to filter, click any row to expand its full detail."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I convert XML to a table?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Paste or upload your XML. The viewer auto-detects repeated elements (like RSS items, SOAP records, or product entries) and renders them as table rows with the most useful fields as columns. Works for SOAP, RSS, Atom, Maven POM, and any custom XML."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is my data uploaded to a server?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. All parsing, formatting, search, and rendering happens in your browser. Your JSON and XML are never sent to any server. The page is a single HTML file with no backend."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can it handle large JSON or XML files?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. The viewer handles 9 MB+ files using virtual scrolling for the table view (only ~50 rows in the DOM at a time) and lazy tree expansion. JSON parsing runs in a Web Worker to keep the UI responsive."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does it work with SOAP responses and RSS feeds?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. SOAP envelopes, RSS / Atom feeds, Maven POM files, SVG documents, and any XML or JSON API response render correctly. Repeated elements become table rows; nested structures become foldable subtrees."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I format or minify JSON?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Paste your JSON into the editor, then click Format (✨) to pretty-print it with proper indentation, or Minify (⤴) to compress it to a single line. Both buttons work on JSON and XML, auto-detecting the format."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is it free? Do I need an account?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, completely free with no signup. No account, no ads, no upload. Just open the site and paste your data."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can it preview base64-encoded images embedded in JSON or XML?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Any field containing a base64-encoded PNG, JPEG, GIF, or SVG image is auto-detected and shown as an inline thumbnail. Click the thumbnail to zoom."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What file types does the viewer support?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": ".json, .xml, plus any text content that looks like JSON or XML — including SOAP responses, RSS / Atom feeds, Maven POM files, SVG, and API responses. Files are auto-detected by extension and content."
+      }
+    }
+  ]
+}
+</script>
+
+<!-- HowTo Schema — gives Google an explicit "how to view JSON as a table"
+     procedure it can surface as a rich snippet. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to view JSON or XML as a table online",
+  "description": "Turn any JSON or XML document into a searchable, sortable table in three steps — for free, without uploading to a server.",
+  "totalTime": "PT10S",
+  "step": [
+    {
+      "@type": "HowToStep",
+      "position": 1,
+      "name": "Paste or upload your JSON / XML",
+      "text": "Open prettyjsonxml.com and paste your JSON or XML into the editor, or click the Upload button to load a .json or .xml file from your computer."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 2,
+      "name": "Click View as Table",
+      "text": "Click the View as Table button. Repeated objects become rows and their fields become sortable columns. The viewer auto-detects the most useful fields based on frequency and naming convention."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 3,
+      "name": "Search, sort, expand",
+      "text": "Type in the search box to filter rows, click any column header to sort, click a row to expand its full nested detail. Switch to Tree view any time for the full document structure."
+    }
   ]
 }
 </script>
@@ -238,6 +373,98 @@
     gap: 14px;
     flex-wrap: wrap;
   }
+  /* Site footer — flow item after <main>, sits at the bottom of body
+     (which is flex column). Always visible across landing/table/tree views
+     so internal links to content pages are reachable from anywhere. */
+  .site-footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 10px 22px;
+    background: var(--bg-elev);
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .site-footer nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    margin: 0 4px;
+  }
+  .site-footer nav a:hover { color: var(--accent); text-decoration: underline; }
+  .site-footer nav span { color: var(--border); margin: 0 2px; }
+
+  /* ============================================================
+     Landing SEO sections — Use Cases and FAQ.
+     These are visible by default so Google can crawl them, and hidden
+     once the user loads data (via .hidden on the parent .landing).
+     ============================================================ */
+  .landing-section-title {
+    margin: 36px 0 12px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.2px;
+  }
+  .landing-usecases { max-width: 880px; }
+  .landing-usecase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+  }
+  .landing-usecase-grid article {
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+  }
+  .landing-usecase-grid h3 {
+    margin: 0 0 6px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .landing-usecase-grid p {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-dim);
+  }
+  .landing-faq { max-width: 880px; }
+  .landing-faq-item {
+    margin-bottom: 8px;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+  }
+  .landing-faq-item > summary {
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+    list-style: none;
+    padding-right: 24px;
+    position: relative;
+  }
+  .landing-faq-item > summary::-webkit-details-marker { display: none; }
+  .landing-faq-item > summary::marker { content: ''; }
+  .landing-faq-item > summary::after {
+    content: '+';
+    position: absolute;
+    right: 0; top: 0;
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 16px;
+    transition: transform 0.15s;
+  }
+  .landing-faq-item[open] > summary::after { content: '−'; }
+  .landing-faq-item > p {
+    margin: 8px 0 0 0;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--text-dim);
+  }
+
   /* ============================================================
      Feedback popover — native <details> so toggle is JS-free.
      Three preset categories pre-fill mailto subject/body so users
@@ -1776,6 +2003,87 @@ or
       <li><strong>📦 Any size</strong> — SOAP responses, RSS feeds, large arrays</li>
     </ul>
     <p class="landing-supports">Supports: <code>.xml</code> · <code>.json</code> · SOAP · RSS · Atom · POM · SVG · API responses</p>
+
+    <!-- Use Cases — keyword-rich H3s give Google clear topical relevance for
+         the "view X as table" / "online JSON viewer" / "SOAP response viewer"
+         family of queries. Visible content, not just meta-tag stuffing. -->
+    <section class="landing-usecases" aria-label="Use cases">
+      <h2 class="landing-section-title">What you can do with Pretty JSON &amp; XML</h2>
+      <div class="landing-usecase-grid">
+        <article>
+          <h3>View JSON as a table</h3>
+          <p>Paste any JSON array or object and click <em>View as Table</em>. Repeated records become rows; common fields become sortable columns.</p>
+        </article>
+        <article>
+          <h3>View XML as a table</h3>
+          <p>RSS feeds, SOAP responses, product catalogs — any XML with repeated elements renders as a clean table with the most relevant fields surfaced.</p>
+        </article>
+        <article>
+          <h3>Format &amp; minify JSON / XML</h3>
+          <p>One click to pretty-print with proper indentation, one click to compress to a single line. Auto-detects format and validates as it goes.</p>
+        </article>
+        <article>
+          <h3>Inspect SOAP responses</h3>
+          <p>WS-Security headers, encrypted envelopes, business payloads — fold the noise away and zoom into just the records you care about.</p>
+        </article>
+        <article>
+          <h3>Browse RSS / Atom feeds</h3>
+          <p>Paste a feed URL's response and see items as a sortable table — title, date, link, summary — with full search across all entries.</p>
+        </article>
+        <article>
+          <h3>Preview base64 images in your data</h3>
+          <p>Any base64-encoded PNG, JPEG, or SVG embedded in a field is decoded and shown as a clickable thumbnail right in the row.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- FAQ — answers the questions Google surfaces under "People also ask".
+         Each Q&A text matches the FAQPage JSON-LD schema in <head>, which is
+         required for rich-result eligibility. -->
+    <section class="landing-faq" aria-label="Frequently asked questions">
+      <h2 class="landing-section-title">Frequently asked questions</h2>
+      <details class="landing-faq-item">
+        <summary>How do I view a JSON file online?</summary>
+        <p>Paste your JSON into the editor above, or click <em>Upload</em> to load a .json file. Then click <em>View as Table</em> to see fields as columns, or <em>View as Tree</em> for a foldable structure. Everything runs in your browser — your data is never uploaded to a server.</p>
+      </details>
+      <details class="landing-faq-item">
+        <summary>How do I convert JSON to a table?</summary>
+        <p>Paste or upload your JSON, then click <em>View as Table</em>. Repeated objects of the same shape become rows; their fields become sortable columns. Click any column header to sort, type in the search box to filter, click any row to expand its full detail.</p>
+      </details>
+      <details class="landing-faq-item">
+        <summary>How do I convert XML to a table?</summary>
+        <p>Paste or upload your XML. The viewer auto-detects repeated elements (like RSS items, SOAP records, or product entries) and renders them as table rows with the most useful fields as columns. Works for SOAP, RSS, Atom, Maven POM, and any custom XML.</p>
+      </details>
+      <details class="landing-faq-item">
+        <summary>Is my data uploaded to a server?</summary>
+        <p>No. All parsing, formatting, search, and rendering happens in your browser. Your JSON and XML are never sent to any server. The page is a single HTML file with no backend.</p>
+      </details>
+      <details class="landing-faq-item">
+        <summary>Can it handle large JSON or XML files?</summary>
+        <p>Yes. The viewer handles 9 MB+ files using virtual scrolling for the table view (only ~50 rows in the DOM at a time) and lazy tree expansion. JSON parsing runs in a Web Worker to keep the UI responsive.</p>
+      </details>
+      <details class="landing-faq-item">
+        <summary>Does it work with SOAP responses and RSS feeds?</summary>
+        <p>Yes. SOAP envelopes, RSS / Atom feeds, Maven POM files, SVG documents, and any XML or JSON API response render correctly. Repeated elements become table rows; nested structures become foldable subtrees.</p>
+      </details>
+      <details class="landing-faq-item">
+        <summary>How do I format or minify JSON?</summary>
+        <p>Paste your JSON into the editor, then click <em>Format</em> (✨) to pretty-print it with proper indentation, or <em>Minify</em> (⤴) to compress it to a single line. Both buttons work on JSON and XML, auto-detecting the format.</p>
+      </details>
+      <details class="landing-faq-item">
+        <summary>Is it free? Do I need an account?</summary>
+        <p>Yes, completely free with no signup. No account, no ads, no upload. Just open the site and paste your data.</p>
+      </details>
+      <details class="landing-faq-item">
+        <summary>Can it preview base64-encoded images embedded in JSON or XML?</summary>
+        <p>Yes. Any field containing a base64-encoded PNG, JPEG, GIF, or SVG image is auto-detected and shown as an inline thumbnail. Click the thumbnail to zoom.</p>
+      </details>
+      <details class="landing-faq-item">
+        <summary>What file types does the viewer support?</summary>
+        <p>.json, .xml, plus any text content that looks like JSON or XML — including SOAP responses, RSS / Atom feeds, Maven POM files, SVG, and API responses. Files are auto-detected by extension and content.</p>
+      </details>
+    </section>
+
     <!-- Footer support link — opens email client.
          Since BMC/Ko-fi don't support Georgia, mailto lets donors reach out
          and we coordinate payment method per request. -->
@@ -1788,6 +2096,25 @@ or
   </section>
   <div id="viewerRoot" class="hidden" data-clarity-mask="true"></div>
 </main>
+<!-- Site-wide footer. Sits OUTSIDE <main> so it's always visible regardless
+     of which view is active. Provides crawlable links to the content pages
+     (privacy/terms/guide/examples) so Google can discover them from the home
+     page (essential for indexing — orphan pages don't rank). -->
+<footer class="site-footer">
+  <nav aria-label="Site links">
+    <a href="/">Home</a>
+    <span>·</span>
+    <a href="/guide/view-json-as-table.html">Guide</a>
+    <span>·</span>
+    <a href="/example/rss-feed.html">RSS example</a>
+    <span>·</span>
+    <a href="/privacy.html">Privacy</a>
+    <span>·</span>
+    <a href="/terms.html">Terms</a>
+    <span>·</span>
+    <a href="mailto:aleksandre.mtchedlishvili@gmail.com">Contact</a>
+  </nav>
+</footer>
 <div class="modal" id="modal">
   <button class="modal-close" id="modalClose">✕</button>
   <img id="modalImg" src="" alt="">
@@ -2092,6 +2419,29 @@ or
     });
     // Focus the editor on load so users can paste immediately
     setTimeout(() => editor.focus(), 50);
+
+    // ============================================================
+    // Example-page handoff. When a user clicks "View this sample"
+    // on an /example/* page, that page stashes the sample text in
+    // sessionStorage and navigates here. We pick it up and load it
+    // exactly as if the user had pasted it themselves. Cleared after
+    // consumption so a refresh doesn't keep replaying the sample.
+    // ============================================================
+    try {
+      const pendingSample = sessionStorage.getItem('pjx_pending_sample');
+      const pendingName = sessionStorage.getItem('pjx_pending_sample_name');
+      if (pendingSample) {
+        sessionStorage.removeItem('pjx_pending_sample');
+        sessionStorage.removeItem('pjx_pending_sample_name');
+        // Defer one tick so the editor + state are fully initialized.
+        setTimeout(() => {
+          if (typeof loadFromText === 'function') {
+            loadFromText(pendingSample);
+            if (pendingName) currentFileName = pendingName;
+          }
+        }, 50);
+      }
+    } catch (_) {}
   }
 
   // ---------- Syntax highlighting ----------
