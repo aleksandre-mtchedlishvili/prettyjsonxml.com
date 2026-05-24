@@ -2364,7 +2364,15 @@ or
   // ---------- File loading ----------
   loadBtn.addEventListener('click', () => fileInput.click());
   if (landingLoadFile) landingLoadFile.addEventListener('click', (e) => { e.preventDefault(); fileInput.click(); });
-  fileInput.addEventListener('change', (e) => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files[0]) loadFile(e.target.files[0]);
+    // Reset the input value AFTER reading the file. Without this, selecting
+    // the same file twice in a row (e.g. after clicking the brand logo to
+    // reset, then re-uploading the same file) doesn't fire `change` because
+    // the input's value hasn't actually changed — so loadFile never runs,
+    // parseContent never runs, afterParse never enables the View buttons.
+    e.target.value = '';
+  });
 
   // Drag-and-drop on the whole page (works for both landing and rendered view)
   ['dragenter', 'dragover'].forEach(evt => {
