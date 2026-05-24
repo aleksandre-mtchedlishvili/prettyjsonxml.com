@@ -447,20 +447,45 @@
     50%      { transform: translateY(4px); }
   }
 
-  /* While the loaded overlay is showing, make the primary View buttons
-     in the editor toolbar more prominent — slightly larger, with a steady
-     pulsing glow — so the user's eye lands on them as the obvious next
-     step. State is driven by a body class so we can apply it globally
-     without coupling the overlay to specific button IDs. */
-  body.has-loaded-overlay .editor-toolbar-btn.primary {
+  /* Editor-toolbar primary View buttons get chunkier whenever there's
+     parsed data — they're the obvious next step (Source → Table/Tree),
+     so they shouldn't look like generic toolbar buttons after the user
+     has loaded something. State driven by body.has-data, toggled in
+     afterParse / resetApp.
+
+     Three tiers of emphasis:
+       1) no data       → default small toolbar button
+       2) has-data      → chunkier padding + bumped font, calm
+       3) has-loaded-overlay (big file, overlay up) → also continuous pulse
+     A brief 2.5 s pulse fires on EVERY parse (via .pulse-data-loaded)
+     so the user notices "ready to view" after any change, not just
+     the very first parse. */
+  body.has-data .editor-toolbar-btn.primary {
     padding: 9px 18px;
     font-size: 13.5px;
-    animation: loadedBtnPulse 1.8s ease-in-out infinite;
-    box-shadow: 0 0 0 0 rgba(53, 89, 224, 0.45);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(53, 89, 224, 0.18);
+    transition: padding 0.15s, box-shadow 0.15s, background 0.15s, transform 0.1s;
   }
-  @keyframes loadedBtnPulse {
+  body.has-data .editor-toolbar-btn.primary:hover {
+    box-shadow: 0 2px 6px rgba(53, 89, 224, 0.28);
+    transform: translateY(-1px);
+  }
+  /* One-shot pulse — applied immediately after a successful parse,
+     auto-removed after 2.5 s. Draws the eye briefly without becoming
+     ambient noise. */
+  .editor-toolbar-btn.primary.pulse-data-loaded {
+    animation: pulseDataLoaded 1.25s ease-in-out 2;
+  }
+  @keyframes pulseDataLoaded {
     0%, 100% { box-shadow: 0 0 0 0 rgba(53, 89, 224, 0.5); }
-    50%      { box-shadow: 0 0 0 6px rgba(53, 89, 224, 0); }
+    50%      { box-shadow: 0 0 0 7px rgba(53, 89, 224, 0); }
+  }
+  /* Big-file mode → continuous pulse (overlay is hiding the actual data,
+     so the buttons stay as the active focal point). Overrides any
+     transient .pulse-data-loaded with the same keyframe but infinite. */
+  body.has-loaded-overlay .editor-toolbar-btn.primary {
+    animation: pulseDataLoaded 1.8s ease-in-out infinite;
   }
   .editor-loaded-overlay .loaded-escape-btn {
     margin-top: 12px;
@@ -2462,6 +2487,11 @@ or
     viewTreeBtn.disabled = true;
     if (btnViewAsTable) btnViewAsTable.disabled = true;
     if (btnViewAsTree) btnViewAsTree.disabled = true;
+    // Drop the "we have data" body flag so the View buttons go back to
+    // their idle (small, no halo) state on reset.
+    document.body.classList.remove('has-data');
+    if (btnViewAsTable) btnViewAsTable.classList.remove('pulse-data-loaded');
+    if (btnViewAsTree) btnViewAsTree.classList.remove('pulse-data-loaded');
     viewerRoot.innerHTML = '';
     // Roll back to clean landing
     if (contextToolbar) contextToolbar.classList.add('hidden');
@@ -3318,8 +3348,33 @@ or
     if (landingFeatures) landingFeatures.classList.add('hidden');
     if (landingSupports) landingSupports.classList.add('hidden');
     if (landingSupport) landingSupport.classList.add('hidden');
-    if (wasDisabled && currentView === 'source') {
-      // First time: pulse the view buttons to hint "click me to see the result"
+    // Any successful parse means we have data — flip the body class on
+    // so the editor-toolbar View buttons get the chunky / prominent
+    // treatment. Idempotent if already on.
+    document.body.classList.add('has-data');
+
+    // Briefly pulse the editor-toolbar View buttons after EVERY parse
+    // (not just the first). 2.5 s halo to draw the eye to "click me to
+    // see your data"; removed once done so it doesn't become noise.
+    // We toggle pulse-data-loaded off-and-on inside an rAF to retrigger
+    // the CSS animation even when the class is already present from a
+    // previous parse — otherwise the browser ignores the second add.
+    if (btnViewAsTable && btnViewAsTree) {
+      btnViewAsTable.classList.remove('pulse-data-loaded');
+      btnViewAsTree.classList.remove('pulse-data-loaded');
+      requestAnimationFrame(() => {
+        btnViewAsTable.classList.add('pulse-data-loaded');
+        btnViewAsTree.classList.add('pulse-data-loaded');
+        setTimeout(() => {
+          btnViewAsTable.classList.remove('pulse-data-loaded');
+          btnViewAsTree.classList.remove('pulse-data-loaded');
+        }, 2500);
+      });
+    }
+    // Legacy context-toolbar buttons (only visible in Table/Tree view)
+    // also get a one-time pulse on first-ever parse — kept for the case
+    // where someone is already in Table view when they switch source.
+    if (wasDisabled && currentView !== 'source') {
       viewTableBtn.classList.add('pulse-hint');
       viewTreeBtn.classList.add('pulse-hint');
       setTimeout(() => {
