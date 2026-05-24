@@ -13,3 +13,7 @@ Thumbs.db
 # Local environment / secrets
 .env
 .env.local
+
+# Build/deploy artifacts (regenerated locally before each Cloudflare upload)
+deploy/
+*.zip
