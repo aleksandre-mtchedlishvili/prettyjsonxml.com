@@ -4044,31 +4044,41 @@ or
     }
     if (current) groups.push(current);
 
-    // Batch consecutive scalar properties into one combined card so we get a
-    // multi-column grid layout (like the inline fields inside a nested object)
-    // instead of one tall card per scalar — which was wasting a lot of vertical
-    // space when a JSON object had many flat fields at the root.
+    // Two-pass classification + render. The old code did one pass and flushed
+    // the scalar batch every time it hit a non-scalar — so a JSON like
+    // { batchId, source, records:[…], totalRecords } produced TWO "Details"
+    // cards (one before `records`, one after), because the scalars on either
+    // side of `records` got flushed separately.
     //
-    // If the root also has nested objects/arrays (mixed content), wrap the
-    // scalar batch in the same `top-level-nested` shell those siblings use —
-    // gives the bare scalars a "Details" header + field count + collapse
-    // chevron, so they look like a sibling of e.g. "Address" rather than an
-    // orphan floating above it. For pure-scalar roots we keep the bare card
-    // since a "Details" header would just be visual noise.
-    const hasNonScalarSibling = groups.some(g =>
-      g.els.length >= 2 || g.els[0].children.length > 0
-    );
+    // We want ONE Details card for ALL root-level scalars combined, then the
+    // non-scalar groups in their document order. So:
+    //   pass 1 — bucket scalars vs non-scalars while preserving non-scalar
+    //            order
+    //   pass 2 — render the combined scalar card first (if any), then walk
+    //            the non-scalars in original order
+    const scalarFields = []; // { tag, val }
+    const nonScalarGroups = []; // groups in original document order
+    groups.forEach(g => {
+      if (g.els.length >= 2) {
+        nonScalarGroups.push(g);
+      } else {
+        const el = g.els[0];
+        if (el.children.length === 0) {
+          scalarFields.push({ tag: g.tag, val: (el.textContent || '').trim() });
+        } else {
+          nonScalarGroups.push(g);
+        }
+      }
+    });
 
-    let scalarBatch = [];
-    function flushScalars() {
-      if (scalarBatch.length === 0) return;
-      const fields = scalarBatch;
-      scalarBatch = [];
+    const hasNonScalarSibling = nonScalarGroups.length > 0;
 
+    // Render the combined scalar card (if any scalars at all)
+    if (scalarFields.length > 0) {
       function buildInnerGrid() {
         const grid = document.createElement('div');
         grid.className = 'section-context';
-        fields.forEach(s => {
+        scalarFields.forEach(s => {
           const row = document.createElement('div');
           row.className = 'detail-kv';
           row.innerHTML = `<div class="detail-kv-key">${escapeHtml(humanize(s.tag))}</div><div class="detail-kv-val">${escapeHtml(s.val)}</div>`;
@@ -4078,64 +4088,52 @@ or
       }
 
       if (!hasNonScalarSibling) {
-        // Pure scalars — keep the simple bare card, no header needed.
+        // Pure scalars — simple bare card, no header noise.
         const ctx = buildInnerGrid();
         ctx.classList.add('standalone');
         container.appendChild(ctx);
-        return;
+      } else {
+        // Mixed content — wrap in the same top-level-nested shell other
+        // sibling sections use, so the scalars feel like a peer of the
+        // object groups rather than orphans above them.
+        const wrap = document.createElement('div');
+        wrap.className = 'section-nested top-level-nested';
+
+        const title = document.createElement('div');
+        title.className = 'section-nested-title';
+        const fc = scalarFields.length;
+        title.innerHTML = `
+          <span class="section-icon">📋</span>
+          <span class="section-name">Details</span>
+          <span class="section-fieldcount">${fc} ${fc === 1 ? 'field' : 'fields'}</span>
+        `;
+        title.addEventListener('click', (e) => {
+          if (e.target.tagName === 'A') return;
+          e.stopPropagation();
+          wrap.classList.toggle('collapsed');
+        });
+        wrap.appendChild(title);
+
+        const body = document.createElement('div');
+        body.className = 'section-nested-body';
+        body.appendChild(buildInnerGrid());
+        wrap.appendChild(body);
+
+        container.appendChild(wrap);
       }
-
-      // Mixed content — wrap in the same header-card shell other siblings use.
-      const wrap = document.createElement('div');
-      wrap.className = 'section-nested top-level-nested';
-
-      const title = document.createElement('div');
-      title.className = 'section-nested-title';
-      const fc = fields.length;
-      title.innerHTML = `
-        <span class="section-icon">📋</span>
-        <span class="section-name">Details</span>
-        <span class="section-fieldcount">${fc} ${fc === 1 ? 'field' : 'fields'}</span>
-      `;
-      title.addEventListener('click', (e) => {
-        if (e.target.tagName === 'A') return;
-        e.stopPropagation();
-        wrap.classList.toggle('collapsed');
-      });
-      wrap.appendChild(title);
-
-      const body = document.createElement('div');
-      body.className = 'section-nested-body';
-      body.appendChild(buildInnerGrid());
-      wrap.appendChild(body);
-
-      container.appendChild(wrap);
     }
 
-    groups.forEach(g => {
+    // Now render the non-scalar groups in their original document order.
+    nonScalarGroups.forEach(g => {
       if (g.els.length >= 2) {
-        // Array of objects → table section.
-        // Don't include parent-extras: the other properties of `parent` are
-        // already being rendered at the top level by this function.
-        flushScalars();
         const section = renderTableSection(g.tag, g.els, path, parent, { parentExtras: false });
         container.appendChild(section);
-        return;
-      }
-      const el = g.els[0];
-      if (el.children.length === 0) {
-        // Scalar property → queue for batched render
-        const val = (el.textContent || '').trim();
-        scalarBatch.push({ tag: g.tag, val });
       } else {
-        // Object property → nested sub-section (recursive)
-        flushScalars();
-        const sub = renderNestedStructure(el, path ? `${path} › ${g.tag}` : g.tag);
+        const sub = renderNestedStructure(g.els[0], path ? `${path} › ${g.tag}` : g.tag);
         sub.classList.add('top-level-nested');
         container.appendChild(sub);
       }
     });
-    flushScalars();
   }
 
   function findAllCollections(root) {
