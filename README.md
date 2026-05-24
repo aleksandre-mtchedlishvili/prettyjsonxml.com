@@ -63,49 +63,11 @@ robots.txt                        Crawler rules
 test-xmls/                        Sample fixtures for testing
 ```
 
-## Deploying your own copy
+## Run locally
 
-Pretty JSON & XML is hostable on any static host — Cloudflare Pages, GitHub Pages, Netlify, S3 + CloudFront, plain nginx, etc.
+Clone the repo and open `index.html` in any modern browser. That's it — no build step, no install, no internet needed once loaded.
 
-### Cloudflare Pages (recommended)
-
-Build a clean `deploy/` folder containing just the runtime files:
-
-```bash
-rm -rf deploy && mkdir -p deploy/guide deploy/example
-cp index.html privacy.html terms.html _headers robots.txt sitemap.xml og.jpg deploy/
-cp guide/view-json-as-table.html deploy/guide/
-cp example/rss-feed.html deploy/example/
-```
-
-Then drag the `deploy/` folder into **Cloudflare Pages → Direct upload**.
-
-> ⚠ **Don't ZIP it on Windows.** PowerShell's `Compress-Archive` writes paths with backslashes, which Cloudflare's Linux-based extractor doesn't decode as folders. Use folder upload, or build the ZIP with 7-Zip / `git archive`.
-
-### GitHub Pages
-
-Enable Pages in repo settings → point to `main` branch root. The site will be at `<username>.github.io/<repo>` immediately.
-
-### nginx VPS
-
-```nginx
-server {
-  root /var/www/prettyjsonxml;
-  index index.html;
-  # Then copy each rule from _headers into matching add_header directives
-}
-```
-
-## Configuration
-
-Before deploying your own instance, search-and-replace `prettyjsonxml.com` with your domain in:
-
-- `index.html` (head section — canonical, OG, JSON-LD)
-- `sitemap.xml`
-- `robots.txt`
-- `og.svg`
-
-To wire up your own analytics (the deployed site uses three trackers — GA4, Microsoft Clarity, and Cloudflare Web Analytics — but you don't need any of them), search `index.html` for `// --- Google Analytics 4 ---` and the surrounding block. Replace the IDs with your own, or delete the entire analytics setup if you don't want any tracking.
+For contributors testing changes: edit `index.html`, refresh the browser, repeat.
 
 ## Security & privacy posture
 
