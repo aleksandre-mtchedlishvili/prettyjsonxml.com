@@ -2324,8 +2324,12 @@ or
       // Show landing (which contains the editor)
       landing.classList.remove('hidden');
       viewerRoot.classList.add('hidden');
-      // Hide context toolbar in Source view — editor's own toolbar has everything
+      // Hide context toolbar AND path-bar in Source view — the editor has its
+      // own status pill so the path-bar would be redundant, and in Source we
+      // never call render() (which is what populates path-bar text), so an
+      // unhidden empty bar would just waste vertical space above the editor.
       if (contextToolbar) contextToolbar.classList.add('hidden');
+      if (pathBar) pathBar.classList.add('hidden');
       // Only copy currentSource → editor when they're known to differ AND
       // the content is small enough that assigning to textarea.value won't
       // freeze the main thread. For big files (>5 MB) we keep the placeholder
@@ -2355,8 +2359,11 @@ or
       }
       setTimeout(() => editor?.focus(), 10);
     } else if (currentDoc) {
-      // Show context toolbar in Table/Tree — that's where view tools belong
+      // Show context toolbar AND path-bar in Table/Tree — that's where view
+      // tools belong and where the path-bar's "X elements · depth Y" info
+      // is populated by render() / updateStats().
       if (contextToolbar) contextToolbar.classList.remove('hidden');
+      if (pathBar) pathBar.classList.remove('hidden');
       render();
     }
   }
@@ -3098,10 +3105,15 @@ or
     search.disabled = false;
     expandBtn.disabled = false;
     collapseBtn.disabled = false;
-    // Data is now parsed — reveal file-info path bar and hide marketing copy.
-    // The context toolbar stays hidden in Source view (shown only when user
-    // actually switches to Table/Tree), to avoid cluttering the editor.
-    if (pathBar) pathBar.classList.remove('hidden');
+    // Data is now parsed — hide marketing copy. The path-bar and context
+    // toolbar are NOT shown in Source view (editor has its own status pill;
+    // the path-bar would only have content after a render() call which
+    // doesn't fire for Source). They're revealed in switchView() when the
+    // user moves to Table or Tree.
+    if (pathBar) {
+      if (currentView === 'source') pathBar.classList.add('hidden');
+      else pathBar.classList.remove('hidden');
+    }
     if (landingFeatures) landingFeatures.classList.add('hidden');
     if (landingSupports) landingSupports.classList.add('hidden');
     if (landingSupport) landingSupport.classList.add('hidden');
