@@ -16,4 +16,8 @@ Thumbs.db
 
 # Build/deploy artifacts (regenerated locally before each Cloudflare upload)
 deploy/
+prettyjsonxml-deploy/
 *.zip
+
+# External blog drafts — kept locally for reference, not project content
+devto-post.md
