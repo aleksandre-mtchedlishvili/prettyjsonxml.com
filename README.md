@@ -1,148 +1,143 @@
-# Pretty JSON & XML — `prettyjsonxml.com`
+# Pretty JSON & XML
 
-Free, browser-based viewer for JSON and XML. Paste or upload, get a searchable sortable **table** or a foldable **tree**. Format / minify, inline base64 image preview, full-text search. 100% client-side — files never leave the browser.
+> Free, browser-based viewer for JSON and XML.
+> Paste or upload — get a searchable, sortable **table** or a foldable **tree**.
+> Format, minify, base64 image preview, full-text search.
+> 100% client-side: your data never leaves the browser.
 
-Live at **<https://prettyjsonxml.com/>**.
+**Live at [prettyjsonxml.com](https://prettyjsonxml.com)**
 
-## Files in this directory
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![No build required](https://img.shields.io/badge/build-none-brightgreen)
+![No dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)
+![Single file](https://img.shields.io/badge/size-~225%20KB-blue)
 
-| File | Purpose |
-|---|---|
-| `index.html` | **The app.** Single-file HTML/CSS/JS. ~225 KB. |
-| `privacy.html` | Privacy policy page |
-| `terms.html` | Terms of use page |
-| `guide/view-json-as-table.html` | Long-form SEO guide |
-| `example/rss-feed.html` | Sample-data landing page (RSS) |
-| `og.jpg` | 1200×630 social-share image (Open Graph / Twitter) |
-| `og.svg` | Editable source for `og.jpg` (regenerate if branding changes) |
-| `og-template.html` | HTML version of the OG image — design reference |
-| `sitemap.xml` | Sitemap listing all 5 indexable URLs |
-| `robots.txt` | Crawler rules (allows search engines, blocks GPTBot/CCBot/ClaudeBot/Google-Extended) |
-| `_headers` | Cloudflare Pages HTTP headers (CSP, HSTS, X-Frame-Options, cache rules) |
-| `test-xmls/` | Sample XML/JSON fixtures used during development (not deployed) |
-| `deploy/` | Build artifact: just the runtime files, ready to drag-upload (gitignored) |
-| `response_1779436642581.xml` | 9.4 MB SOAP fixture for perf testing (gitignored) |
+## Why
 
-## Analytics
+Every JSON viewer pretty-prints. Useful for a 10-line config — useless for the actual data shape developers deal with every day: an array of objects. A pretty-printed 50-row API response is still 500 lines you scroll top-to-bottom.
 
-The site loads three trackers, all deferred until after `window.load`:
+Pretty JSON & XML treats those arrays as **tables**: sortable columns, searchable rows, click any row to expand the full nested detail. Same data, but you scan it instead of read it.
 
-- **Google Analytics 4** — measurement ID `G-7429L5S7E8`. Rotate via search-and-replace in `index.html` (2 occurrences).
-- **Microsoft Clarity** — project ID `wvbuum2njr`. Session recordings + heatmaps. The editor, viewer, and path-bar are masked with `data-clarity-mask="true"` so Clarity records the layout but never the data you paste.
-- **Cloudflare Web Analytics** — token `b19f5e1e82ce4c659c6b44aea880391f`. Cookieless, GDPR-friendly.
+It also handles XML — including SOAP envelopes, RSS / Atom feeds, Maven POM, SVG, and any custom XML — using the same table-view detection (repeated elements become rows).
 
-All three are skipped on `localhost` so dev traffic doesn't pollute prod.
+## Features
 
-## Deploying to Cloudflare Pages
+- ▦ **Table view** with auto-detected columns (frequency + semantic priority)
+- 🌳 **Tree view** with foldable `{ } [ ]` brackets (native JSON syntax for JSON sources)
+- ✨ **Format / minify** for both JSON and XML
+- ⌕ **Instant full-text search** across rows + nested detail
+- 🖼 **Inline base64 image preview** (PNG / JPEG / GIF / SVG)
+- 📦 **Handles 9 MB+ files** via virtual scrolling + lazy tree expansion
+- 🔒 **100% client-side** — single HTML file, no backend, no upload
+- 🌓 Light / dark theme
 
-### Build the deploy folder
+## Use
 
-From this directory:
+Just open [prettyjsonxml.com](https://prettyjsonxml.com) and paste your data.
+
+Or run it offline: download `index.html` and open it in any modern browser. No server, no install, no internet needed once loaded.
+
+## Architecture
+
+- **Single HTML file** — no build step, no bundler, no node_modules
+- **Vanilla JavaScript** — zero runtime dependencies
+- **Web Worker** for `JSON.parse` / format / minify (inline blob URL)
+- **Virtual scroller** for tables with ≥ 100 rows (only ~50 in DOM at any time)
+- **`content-visibility: auto`** for off-screen layout skipping
+- **Lazy tree expansion** beyond depth 2 for large documents
+
+For the detailed perf story (what worked, what didn't, including the Web Worker that made things slower), see the [guide](https://prettyjsonxml.com/guide/view-json-as-table) and the [dev.to write-up](#).
+
+## Project layout
+
+```
+index.html                        The app — single HTML/CSS/JS file
+privacy.html                      Privacy policy
+terms.html                        Terms of use
+guide/view-json-as-table.html     Long-form guide / SEO content
+example/rss-feed.html             Sample-data landing page
+og.jpg / og.svg                   1200×630 social-share image (+ source)
+_headers                          Cloudflare Pages HTTP headers
+sitemap.xml                       Sitemap for search engines
+robots.txt                        Crawler rules
+build-deploy.ps1                  Windows helper: builds deploy/ folder
+test-xmls/                        Sample fixtures for testing
+```
+
+## Deploying your own copy
+
+Pretty JSON & XML is hostable on any static host — Cloudflare Pages, GitHub Pages, Netlify, S3 + CloudFront, plain nginx, etc.
+
+### Cloudflare Pages (recommended)
+
+```powershell
+# Windows — runs the build-deploy.ps1 helper
+.\build-deploy.ps1
+```
 
 ```bash
+# Mac / Linux equivalent
 rm -rf deploy && mkdir -p deploy/guide deploy/example
 cp index.html privacy.html terms.html _headers robots.txt sitemap.xml og.jpg deploy/
 cp guide/view-json-as-table.html deploy/guide/
 cp example/rss-feed.html deploy/example/
 ```
 
-This gives you a `deploy/` directory with only the runtime files (no `.git`, no test fixtures, no oversize sample XML).
+Then drag the `deploy/` folder into **Cloudflare Pages → Direct upload**.
 
-### Upload — drag the **folder**, not a ZIP
+> ⚠ **Don't ZIP it on Windows.** PowerShell's `Compress-Archive` writes paths with backslashes, which Cloudflare's Linux-based extractor doesn't decode as folders. Use folder upload, or build the ZIP with 7-Zip / `git archive`.
 
-In the Cloudflare dashboard:
+### GitHub Pages
 
-1. **Workers & Pages → your project → Create deployment → Direct upload**
-2. **Drag the entire `deploy/` folder** into the upload area
-3. Wait ~30 seconds for propagation across edges
-4. Visit the URLs to verify
+Enable Pages in repo settings → point to `main` branch root. The site will be at `<username>.github.io/<repo>` immediately.
 
-**Avoid ZIP uploads on Windows.** PowerShell's `Compress-Archive` writes paths with backslashes (`guide\view-json-as-table.html`), which violates the ZIP spec. Cloudflare's Linux-based extractor interprets the backslash as part of the filename rather than a folder separator, so subfolder pages 404.
+### nginx VPS
 
-If you really need a ZIP, build it with 7-Zip / WinRAR / `git archive` / Git Bash's `zip` — those use forward slashes correctly.
-
-### After deploy — verify these URLs
-
-| URL | Should serve |
-|---|---|
-| `prettyjsonxml.com/` | Main app |
-| `prettyjsonxml.com/privacy` | Privacy policy |
-| `prettyjsonxml.com/terms` | Terms |
-| `prettyjsonxml.com/guide/view-json-as-table` | Long-form guide |
-| `prettyjsonxml.com/example/rss-feed` | RSS example |
-| `prettyjsonxml.com/sitemap.xml` | Raw XML sitemap |
-
-Cloudflare Pages auto-strips `.html` extensions in the address bar (clean URLs). The `.html` form still works as a 301 redirect.
-
-If you see a 404 right after upload, wait 60 seconds and try again — edge propagation is usually that fast but not instant.
-
-## Submitting to search engines
-
-1. **Google Search Console** ([search.google.com/search-console](https://search.google.com/search-console))
-   - Verify property via DNS TXT (already done — see verification records on the zone)
-   - Sitemaps → Add new sitemap → `sitemap.xml`
-   - URL Inspection → "Request indexing" for each new URL
-
-2. **Bing Webmaster Tools** ([bing.com/webmasters](https://bing.com/webmasters)) — same sitemap
-
-3. **Validate rich results** ([search.google.com/test/rich-results](https://search.google.com/test/rich-results))
-   - Home page should detect `WebApplication`, `FAQPage`, `HowTo`
-   - Guide page should detect `Article`
-
-## Regenerating `og.jpg` (after editing `og.svg`)
-
-```bash
-npx http-server . -p 8765
+```nginx
+server {
+  root /var/www/prettyjsonxml;
+  index index.html;
+  # Then copy each rule from _headers into matching add_header directives
+}
 ```
 
-Open `http://localhost:8765/og.svg` and in the browser console:
+## Configuration
 
-```js
-(async () => {
-  const r = await fetch('/og.svg');
-  const svg = await r.text();
-  const url = URL.createObjectURL(new Blob([svg], {type:'image/svg+xml'}));
-  const img = new Image();
-  await new Promise(res => { img.onload = res; img.src = url; });
-  const c = document.createElement('canvas');
-  c.width = 1200; c.height = 630;
-  c.getContext('2d').drawImage(img, 0, 0, 1200, 630);
-  c.toBlob(b => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(b);
-    a.download = 'og.jpg';
-    a.click();
-  }, 'image/jpeg', 0.9);
-})();
-```
+Before deploying your own instance, search-and-replace `prettyjsonxml.com` with your domain in:
 
-Quality `0.9` keeps the file around 80 KB. Adjust if you need smaller.
+- `index.html` (head section — canonical, OG, JSON-LD)
+- `sitemap.xml`
+- `robots.txt`
+- `og.svg`
 
-## Security posture
+To wire up your own analytics (the deployed site uses three trackers — GA4, Microsoft Clarity, and Cloudflare Web Analytics — but you don't need any of them), search `index.html` for `// --- Google Analytics 4 ---` and the surrounding block. Replace the IDs with your own, or delete the entire analytics setup if you don't want any tracking.
 
-- **CSP** — restricts to own origin + inline scripts/styles + analytics origins. `worker-src 'self' blob:` for the inline JSON-parse worker. `frame-ancestors 'none'`, `object-src 'none'`, `form-action 'none'`.
-- **HSTS** — one year, includeSubDomains, preload-eligible
-- **X-Frame-Options: DENY** — clickjacking protection
-- **Referrer-Policy: no-referrer** — no URL leakage on outbound links
-- **All processing is client-side** — server never sees user data
-- **Editor/viewer masked from Clarity** via `data-clarity-mask="true"`
+## Security & privacy posture
 
-## Performance posture
+- **CSP** restricts the page to its own origin + inline scripts/styles + the three analytics origins
+- **HSTS** — one year, `includeSubDomains`, preload-eligible
+- **X-Frame-Options: DENY** + `frame-ancestors 'none'` — clickjacking protection
+- **Referrer-Policy: no-referrer** — no URL leakage on outbound clicks
+- **All file processing is client-side** — server never sees user data
+- Sensitive elements (editor, viewer, path bar) are masked from session-recording analytics via `data-clarity-mask="true"`
 
-- **Phase 1**: `content-visibility: auto` on table sections/rows/cards — browser skips off-screen layout
-- **Phase 2**: JSON parse/format/minify in a Web Worker (blob URL, inline source)
-- **Phase 3**: Virtual scrolling for table sections with ≥100 rows — only ~50 rows in DOM at a time
-- **Editor read-only above 5 MB** — assigning huge strings to a `<textarea>` freezes the main thread. The data still parses and renders fully.
-- **Defer DOMParser** via `setTimeout(0)` after upload so the toast paints first
+See [`privacy.html`](privacy.html) for the user-facing privacy commitments.
 
-## Alternative hosting
+## Contributing
 
-- **GitHub Pages** — push to a public repo, enable Pages, point to root
-- **AWS S3 + CloudFront** — upload as static site, attach an ACM cert
-- **nginx VPS** — drop the files in `/var/www/html`, copy `_headers` rules into nginx `add_header` directives
+Bug reports, feature ideas, and PRs are welcome.
 
-## File-size threshold
+- **Found a bug?** [Open an issue](https://github.com/aleksandre-mtchedlishvili/prettyjsonxml.com/issues/new) — include the file or data shape that triggers it
+- **Want a feature?** Open an issue describing the use case
+- **Have a fix?** PRs welcome — please keep the no-build / no-dependency philosophy
 
-Files over **50 MB** trigger a confirmation dialog before parsing. Adjust `SIZE_WARN_MB` in `index.html` if you need a different threshold.
+Areas with open territory:
+- CSV / TSV export from the table view
+- JSONC / JSON5 support (allow comments)
+- Multi-column sort
+- Service Worker for true offline use
+- More example pages (`/example/soap-response`, `/example/maven-pom`, etc.)
 
-The 5 MB editor-skip threshold is `EDITOR_SKIP_MB` (also in `index.html`) — files above this load into the viewer but skip the textarea population.
+## License
+
+[MIT](LICENSE) — use it, fork it, ship it. Attribution appreciated but not required.
