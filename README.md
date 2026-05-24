@@ -1,75 +1,101 @@
-# Data Viewer — XML & JSON
+# Pretty JSON & XML — `prettyjsonxml.com`
 
-Free online XML and JSON viewer with beautiful table and tree views, instant search, and inline image preview. Files stay 100% in the user's browser — never uploaded to a server.
+Free, browser-based viewer for JSON and XML. Paste or upload, get a searchable sortable **table** or a foldable **tree**. Format / minify, inline base64 image preview, full-text search. 100% client-side — files never leave the browser.
+
+Live at **<https://prettyjsonxml.com/>**.
 
 ## Files in this directory
 
 | File | Purpose |
 |---|---|
-| `xml-viewer.html` | **The app.** Rename to `index.html` when deploying. |
-| `og.png` | 1200×630 social-share preview image (Open Graph / Twitter Card) |
-| `og.svg` | Editable source for `og.png` (regenerate if branding changes) |
-| `og-template.html` | HTML version of the OG image (mostly just a design reference now that og.svg exists) |
-| `sitemap.xml` | Single-URL sitemap for Google Search Console |
-| `robots.txt` | Crawler rules (blocks GPTBot/CCBot/etc. by default) |
-| `_headers` | Cloudflare Pages HTTP headers (CSP, HSTS, etc.) |
-| `test-xmls/` | Sample XML/JSON files used during development |
+| `index.html` | **The app.** Single-file HTML/CSS/JS. ~225 KB. |
+| `privacy.html` | Privacy policy page |
+| `terms.html` | Terms of use page |
+| `guide/view-json-as-table.html` | Long-form SEO guide |
+| `example/rss-feed.html` | Sample-data landing page (RSS) |
+| `og.jpg` | 1200×630 social-share image (Open Graph / Twitter) |
+| `og.svg` | Editable source for `og.jpg` (regenerate if branding changes) |
+| `og-template.html` | HTML version of the OG image — design reference |
+| `sitemap.xml` | Sitemap listing all 5 indexable URLs |
+| `robots.txt` | Crawler rules (allows search engines, blocks GPTBot/CCBot/ClaudeBot/Google-Extended) |
+| `_headers` | Cloudflare Pages HTTP headers (CSP, HSTS, X-Frame-Options, cache rules) |
+| `test-xmls/` | Sample XML/JSON fixtures used during development (not deployed) |
+| `deploy/` | Build artifact: just the runtime files, ready to drag-upload (gitignored) |
+| `response_1779436642581.xml` | 9.4 MB SOAP fixture for perf testing (gitignored) |
 
-## Before you deploy — replace placeholders
+## Analytics
 
-Search-and-replace **`prettyjsonxml.com`** with your real domain in:
+The site loads three trackers, all deferred until after `window.load`:
 
-- `xml-viewer.html` (head section, ~9 occurrences: canonical, og:url, og:image, twitter:url, twitter:image, JSON-LD `url` & `image`)
-- `sitemap.xml` (1 occurrence)
-- `robots.txt` (1 occurrence)
-- `og.svg` (1 occurrence — bottom-right corner text)
-- `og.png` — regenerate after updating `og.svg`, see "Regenerating og.png" below
+- **Google Analytics 4** — measurement ID `G-7429L5S7E8`. Rotate via search-and-replace in `index.html` (2 occurrences).
+- **Microsoft Clarity** — project ID `wvbuum2njr`. Session recordings + heatmaps. The editor, viewer, and path-bar are masked with `data-clarity-mask="true"` so Clarity records the layout but never the data you paste.
+- **Cloudflare Web Analytics** — token `b19f5e1e82ce4c659c6b44aea880391f`. Cookieless, GDPR-friendly.
 
-### Analytics (Google Analytics 4)
+All three are skipped on `localhost` so dev traffic doesn't pollute prod.
 
-Currently wired to GA4 ID **`G-7429L5S7E8`**. If you ever rotate the property, search-and-replace the ID in `xml-viewer.html` (2 occurrences).
+## Deploying to Cloudflare Pages
 
-If you don't want analytics at all, delete the whole `<!-- Analytics -->` block. The CSP allows GA's domains regardless; that's fine and costs nothing.
+### Build the deploy folder
 
-### Optional: Cloudflare Web Analytics (free, cookieless)
+From this directory:
 
-In Cloudflare dashboard → Analytics → Web Analytics → enable for your domain → copy the token. Then uncomment the `<script defer src='...cloudflareinsights...'>` line in `xml-viewer.html` and replace `YOUR-CF-TOKEN`.
+```bash
+rm -rf deploy && mkdir -p deploy/guide deploy/example
+cp index.html privacy.html terms.html _headers robots.txt sitemap.xml og.jpg deploy/
+cp guide/view-json-as-table.html deploy/guide/
+cp example/rss-feed.html deploy/example/
+```
 
-Cloudflare's stats are *real* numbers (not ad-blocked) and GDPR-compliant out of the box. Many people run both — GA for ecosystem integrations, CF for honest numbers.
+This gives you a `deploy/` directory with only the runtime files (no `.git`, no test fixtures, no oversize sample XML).
 
-### Optional: Monetization link
+### Upload — drag the **folder**, not a ZIP
 
-Footer has a "Buy me a coffee" link with `href="https://www.buymeacoffee.com/YOUR-USERNAME"`. Replace with your real BMC / Ko-fi / GitHub Sponsors URL, or delete the `<p class="landing-support">` block if you don't want a donation link.
+In the Cloudflare dashboard:
 
-## Deploying to Cloudflare Pages (recommended)
+1. **Workers & Pages → your project → Create deployment → Direct upload**
+2. **Drag the entire `deploy/` folder** into the upload area
+3. Wait ~30 seconds for propagation across edges
+4. Visit the URLs to verify
 
-1. **Create a new Pages project** in the Cloudflare dashboard (Pages → Create → Direct Upload). No git required.
-2. **Rename** `xml-viewer.html` → `index.html`.
-3. **Upload** these files to the project root:
-   - `index.html`
-   - `og.png`
-   - `sitemap.xml`
-   - `robots.txt`
-   - `_headers`
-4. **Connect your domain** under Custom Domains. Cloudflare will issue an SSL cert automatically.
-5. **If your domain is on Route 53**, point its NS records to Cloudflare, OR keep DNS on Route 53 and add a `CNAME` to the Pages URL.
-6. Done. Site is live, on a global CDN, free, with HTTPS.
+**Avoid ZIP uploads on Windows.** PowerShell's `Compress-Archive` writes paths with backslashes (`guide\view-json-as-table.html`), which violates the ZIP spec. Cloudflare's Linux-based extractor interprets the backslash as part of the filename rather than a folder separator, so subfolder pages 404.
 
-## Submitting to Google
+If you really need a ZIP, build it with 7-Zip / WinRAR / `git archive` / Git Bash's `zip` — those use forward slashes correctly.
 
-1. Go to [Google Search Console](https://search.google.com/search-console)
-2. Add your domain as a property (verify via DNS TXT record)
-3. **Sitemaps → Add new sitemap** → enter `sitemap.xml`
-4. **URL Inspection → Request indexing** for the homepage
-5. Allow 1–7 days for first indexing
+### After deploy — verify these URLs
 
-## Regenerating `og.png` (after editing `og.svg`)
+| URL | Should serve |
+|---|---|
+| `prettyjsonxml.com/` | Main app |
+| `prettyjsonxml.com/privacy` | Privacy policy |
+| `prettyjsonxml.com/terms` | Terms |
+| `prettyjsonxml.com/guide/view-json-as-table` | Long-form guide |
+| `prettyjsonxml.com/example/rss-feed` | RSS example |
+| `prettyjsonxml.com/sitemap.xml` | Raw XML sitemap |
 
-The PNG was rendered by drawing `og.svg` to a 1200×630 canvas in the browser. To redo:
+Cloudflare Pages auto-strips `.html` extensions in the address bar (clean URLs). The `.html` form still works as a 301 redirect.
 
-1. Serve the dir locally: `npx http-server . -p 8765`
-2. Open `http://localhost:8765/og.svg` in any modern browser
-3. Run this in the browser console:
+If you see a 404 right after upload, wait 60 seconds and try again — edge propagation is usually that fast but not instant.
+
+## Submitting to search engines
+
+1. **Google Search Console** ([search.google.com/search-console](https://search.google.com/search-console))
+   - Verify property via DNS TXT (already done — see verification records on the zone)
+   - Sitemaps → Add new sitemap → `sitemap.xml`
+   - URL Inspection → "Request indexing" for each new URL
+
+2. **Bing Webmaster Tools** ([bing.com/webmasters](https://bing.com/webmasters)) — same sitemap
+
+3. **Validate rich results** ([search.google.com/test/rich-results](https://search.google.com/test/rich-results))
+   - Home page should detect `WebApplication`, `FAQPage`, `HowTo`
+   - Guide page should detect `Article`
+
+## Regenerating `og.jpg` (after editing `og.svg`)
+
+```bash
+npx http-server . -p 8765
+```
+
+Open `http://localhost:8765/og.svg` and in the browser console:
 
 ```js
 (async () => {
@@ -84,28 +110,39 @@ The PNG was rendered by drawing `og.svg` to a 1200×630 canvas in the browser. T
   c.toBlob(b => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(b);
-    a.download = 'og.png';
+    a.download = 'og.jpg';
     a.click();
-  }, 'image/png');
+  }, 'image/jpeg', 0.9);
 })();
 ```
 
-Alternative: use any online SVG→PNG converter (cloudconvert.com, svgtopng.com).
-
-## Alternative hosting
-
-- **GitHub Pages**: push to a public repo, enable Pages in settings, point Pages to root. Free, public source.
-- **AWS S3 + CloudFront**: upload as static site, attach an ACM cert, alias Route 53 record to CloudFront distribution.
-- **Your Hostinger VPS**: drop the files in `/var/www/html`, set up nginx with the headers from `_headers` rewritten as nginx `add_header` directives.
+Quality `0.9` keeps the file around 80 KB. Adjust if you need smaller.
 
 ## Security posture
 
-- **CSP** restricts the page to its own origin + inline scripts/styles + `data:`/`blob:` images
-- **`Referrer-Policy: no-referrer`** prevents leaking the host URL on outbound clicks
-- **`X-Frame-Options: DENY`** and **`frame-ancestors 'none'`** prevent clickjacking
-- **HSTS** for one year (preload-eligible)
-- All file processing is client-side — server never sees user data
+- **CSP** — restricts to own origin + inline scripts/styles + analytics origins. `worker-src 'self' blob:` for the inline JSON-parse worker. `frame-ancestors 'none'`, `object-src 'none'`, `form-action 'none'`.
+- **HSTS** — one year, includeSubDomains, preload-eligible
+- **X-Frame-Options: DENY** — clickjacking protection
+- **Referrer-Policy: no-referrer** — no URL leakage on outbound links
+- **All processing is client-side** — server never sees user data
+- **Editor/viewer masked from Clarity** via `data-clarity-mask="true"`
 
-## Notes on file-size guard
+## Performance posture
 
-Files over **50 MB** trigger a confirmation dialog before parsing. Adjust `SIZE_WARN_MB` in `xml-viewer.html` if you want a different threshold.
+- **Phase 1**: `content-visibility: auto` on table sections/rows/cards — browser skips off-screen layout
+- **Phase 2**: JSON parse/format/minify in a Web Worker (blob URL, inline source)
+- **Phase 3**: Virtual scrolling for table sections with ≥100 rows — only ~50 rows in DOM at a time
+- **Editor read-only above 5 MB** — assigning huge strings to a `<textarea>` freezes the main thread. The data still parses and renders fully.
+- **Defer DOMParser** via `setTimeout(0)` after upload so the toast paints first
+
+## Alternative hosting
+
+- **GitHub Pages** — push to a public repo, enable Pages, point to root
+- **AWS S3 + CloudFront** — upload as static site, attach an ACM cert
+- **nginx VPS** — drop the files in `/var/www/html`, copy `_headers` rules into nginx `add_header` directives
+
+## File-size threshold
+
+Files over **50 MB** trigger a confirmation dialog before parsing. Adjust `SIZE_WARN_MB` in `index.html` if you need a different threshold.
+
+The 5 MB editor-skip threshold is `EDITOR_SKIP_MB` (also in `index.html`) — files above this load into the viewer but skip the textarea population.
