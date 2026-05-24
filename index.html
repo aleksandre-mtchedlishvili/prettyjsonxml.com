@@ -440,9 +440,27 @@
     color: var(--accent);
     animation: loadedArrowBounce 1.4s ease-in-out infinite;
   }
+  /* Bounce downward — the View buttons are below the editor, the arrow
+     should point and gesture *towards* them. */
   @keyframes loadedArrowBounce {
     0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-4px); }
+    50%      { transform: translateY(4px); }
+  }
+
+  /* While the loaded overlay is showing, make the primary View buttons
+     in the editor toolbar more prominent — slightly larger, with a steady
+     pulsing glow — so the user's eye lands on them as the obvious next
+     step. State is driven by a body class so we can apply it globally
+     without coupling the overlay to specific button IDs. */
+  body.has-loaded-overlay .editor-toolbar-btn.primary {
+    padding: 9px 18px;
+    font-size: 13.5px;
+    animation: loadedBtnPulse 1.8s ease-in-out infinite;
+    box-shadow: 0 0 0 0 rgba(53, 89, 224, 0.45);
+  }
+  @keyframes loadedBtnPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(53, 89, 224, 0.5); }
+    50%      { box-shadow: 0 0 0 6px rgba(53, 89, 224, 0); }
   }
   .editor-loaded-overlay .loaded-escape-btn {
     margin-top: 12px;
@@ -2079,8 +2097,8 @@ or
         <div class="loaded-title" id="loadedTitle">File loaded</div>
         <div class="loaded-subtitle" id="loadedSubtitle"></div>
         <div class="loaded-hint">
-          <span class="loaded-arrow" aria-hidden="true">↑</span>
-          <span>Use <strong>View as Table</strong> or <strong>View as Tree</strong> above to explore the data.</span>
+          <span class="loaded-arrow" aria-hidden="true">↓</span>
+          <span>Click <strong>View as Table</strong> or <strong>View as Tree</strong> below to explore the data.</span>
         </div>
         <button class="loaded-escape-btn" id="loadedEscapeBtn" type="button" title="Load this content into the editor textarea — may freeze the tab briefly for large files">
           Load into editor anyway
@@ -2368,9 +2386,13 @@ or
     if (loadedTitleEl) loadedTitleEl.textContent = title || 'File loaded';
     if (loadedSubtitleEl) loadedSubtitleEl.textContent = subtitle || '';
     editorLoadedOverlay.classList.remove('hidden');
+    // Body class drives the View-buttons emphasis (chunkier + steady pulse)
+    // — defined in CSS as body.has-loaded-overlay .editor-toolbar-btn.primary
+    document.body.classList.add('has-loaded-overlay');
   }
   function hideLoadedOverlay() {
     if (editorLoadedOverlay) editorLoadedOverlay.classList.add('hidden');
+    document.body.classList.remove('has-loaded-overlay');
   }
 
   // "Load into editor anyway" — escape hatch for power users who really
