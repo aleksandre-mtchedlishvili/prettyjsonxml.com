@@ -60,7 +60,6 @@ og.jpg / og.svg                   1200×630 social-share image (+ source)
 _headers                          Cloudflare Pages HTTP headers
 sitemap.xml                       Sitemap for search engines
 robots.txt                        Crawler rules
-build-deploy.ps1                  Windows helper: builds deploy/ folder
 test-xmls/                        Sample fixtures for testing
 ```
 
@@ -70,13 +69,9 @@ Pretty JSON & XML is hostable on any static host — Cloudflare Pages, GitHub Pa
 
 ### Cloudflare Pages (recommended)
 
-```powershell
-# Windows — runs the build-deploy.ps1 helper
-.\build-deploy.ps1
-```
+Build a clean `deploy/` folder containing just the runtime files:
 
 ```bash
-# Mac / Linux equivalent
 rm -rf deploy && mkdir -p deploy/guide deploy/example
 cp index.html privacy.html terms.html _headers robots.txt sitemap.xml og.jpg deploy/
 cp guide/view-json-as-table.html deploy/guide/
