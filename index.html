@@ -4318,6 +4318,16 @@ or
     const state = {
       visibleItems: items,        // current sorted/filtered view (defaults to all)
       expandedIdx: -1,             // index within visibleItems
+      expandedDetailHeight: 0,     // ACTUAL measured height of the currently
+                                   // expanded row's detail content (in px).
+                                   // Detail rows have wildly variable heights
+                                   // depending on field count, base64 images,
+                                   // nested arrays — a fixed HINT misses by
+                                   // hundreds of pixels for deep records,
+                                   // which then causes total-tbody-height
+                                   // jitter and the scroll-to-top bug.
+                                   // Updated whenever the detail row is added
+                                   // to live DOM (we read offsetHeight).
       lastRange: null,
       scrollContainer: null,       // resolved on first render (section is in DOM by then)
     };
@@ -4395,7 +4405,7 @@ or
       if (tbodyRect.bottom < viewTopInWindow || tbodyRect.top > viewBottomInWindow) {
         let n = spacerTop.nextSibling;
         while (n && n !== spacerBottom) { const nx = n.nextSibling; tbody.removeChild(n); n = nx; }
-        stTd.style.height = `${total * ROW_HEIGHT + (state.expandedIdx >= 0 ? DETAIL_HEIGHT_HINT : 0)}px`;
+        stTd.style.height = `${total * ROW_HEIGHT + (state.expandedIdx >= 0 ? (state.expandedDetailHeight || DETAIL_HEIGHT_HINT) : 0)}px`;
         sbTd.style.height = '0px';
         state.lastRange = null;
         return;
@@ -4428,6 +4438,14 @@ or
           if (isOpen) {
             const prev = state.expandedIdx;
             state.expandedIdx = i;
+            // Measure the actual detail height NOW (the detail row was just
+            // attached and is visible). offsetHeight forces a synchronous
+            // layout, but it's a one-time cost per click. Storing the real
+            // value here means subsequent renders — including the one that
+            // happens when the row scrolls off-screen — can use it in spacer
+            // math, keeping total tbody height constant.
+            const h = detailRow.offsetHeight;
+            if (h > 0) state.expandedDetailHeight = h;
             if (prev !== -1 && prev !== i) {
               // Force a re-render so the previously expanded row collapses
               // visually (its DOM is recreated on next render).
@@ -4435,7 +4453,10 @@ or
               render();
             }
           } else {
-            if (state.expandedIdx === i) state.expandedIdx = -1;
+            if (state.expandedIdx === i) {
+              state.expandedIdx = -1;
+              state.expandedDetailHeight = 0;
+            }
           }
         });
         if (state.expandedIdx === i) {
@@ -4451,26 +4472,41 @@ or
       // Spacer math — total tbody height must stay CONSTANT regardless of
       // which slice is rendered. Otherwise the browser's scroll-position
       // preservation kicks in when the height changes mid-scroll, which can
-      // snap the viewport to top (the bug: scroll down, snap to top).
+      // snap the viewport to top.
       //
-      // When state.expandedIdx is in the visible slice [firstIdx, lastIdx),
-      // the detail row IS in the live content — no spacer adjustment needed.
-      // When it's OUTSIDE the slice, the detail row is NOT in the live DOM,
-      // so the appropriate spacer has to absorb its DETAIL_HEIGHT_HINT to
-      // keep the total tbody height the same as when the expanded row IS
-      // visible.
+      // CRITICAL: use the MEASURED detail height (state.expandedDetailHeight),
+      // not the static DETAIL_HEIGHT_HINT. Detail rows for SOAP records,
+      // nested JSON, base64 images, etc. vary from ~150 px to 800+ px. A
+      // fixed 280 hint missed by 100–500 px for typical records — still
+      // enough jitter to trigger scroll-to-top. Fall back to the hint only
+      // before we've ever measured one (e.g. expanded then re-rendered
+      // before measurement could occur).
+      const detailH = state.expandedDetailHeight || DETAIL_HEIGHT_HINT;
       let topHeight = firstIdx * ROW_HEIGHT;
       let bottomHeight = Math.max(0, (total - lastIdx)) * ROW_HEIGHT;
       if (state.expandedIdx >= 0) {
         if (state.expandedIdx < firstIdx) {
-          topHeight += DETAIL_HEIGHT_HINT;       // expanded row is above viewport
+          topHeight += detailH;       // expanded row is above viewport
         } else if (state.expandedIdx >= lastIdx) {
-          bottomHeight += DETAIL_HEIGHT_HINT;    // expanded row is below viewport
+          bottomHeight += detailH;    // expanded row is below viewport
         }
         // else: in visible slice → detail row already in live content
       }
       stTd.style.height = `${topHeight}px`;
       sbTd.style.height = `${bottomHeight}px`;
+
+      // If the expanded row is in the visible slice, the detail row is in
+      // live DOM right now — measure its actual height so future renders
+      // (when the row scrolls off-screen) use the correct spacer offset.
+      // Force-synchronous via offsetHeight; one-time cost per render that
+      // includes the expanded row.
+      if (state.expandedIdx >= firstIdx && state.expandedIdx < lastIdx) {
+        const liveDetail = tbody.querySelector('tr.row-detail:not(.hidden)');
+        if (liveDetail) {
+          const h = liveDetail.offsetHeight;
+          if (h > 0) state.expandedDetailHeight = h;
+        }
+      }
     }
 
     const handle = {
