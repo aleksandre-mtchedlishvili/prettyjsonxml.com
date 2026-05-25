@@ -4445,11 +4445,29 @@ or
       }
       tbody.insertBefore(frag, spacerBottom);
 
-      // Spacer math. The expanded row's height is captured by the live row
-      // itself (it's between the spacers), so the spacers only need to cover
-      // the *unrendered* rows on each side.
-      stTd.style.height = `${firstIdx * ROW_HEIGHT}px`;
-      sbTd.style.height = `${Math.max(0, (total - lastIdx)) * ROW_HEIGHT}px`;
+      // Spacer math — total tbody height must stay CONSTANT regardless of
+      // which slice is rendered. Otherwise the browser's scroll-position
+      // preservation kicks in when the height changes mid-scroll, which can
+      // snap the viewport to top (the bug: scroll down, snap to top).
+      //
+      // When state.expandedIdx is in the visible slice [firstIdx, lastIdx),
+      // the detail row IS in the live content — no spacer adjustment needed.
+      // When it's OUTSIDE the slice, the detail row is NOT in the live DOM,
+      // so the appropriate spacer has to absorb its DETAIL_HEIGHT_HINT to
+      // keep the total tbody height the same as when the expanded row IS
+      // visible.
+      let topHeight = firstIdx * ROW_HEIGHT;
+      let bottomHeight = Math.max(0, (total - lastIdx)) * ROW_HEIGHT;
+      if (state.expandedIdx >= 0) {
+        if (state.expandedIdx < firstIdx) {
+          topHeight += DETAIL_HEIGHT_HINT;       // expanded row is above viewport
+        } else if (state.expandedIdx >= lastIdx) {
+          bottomHeight += DETAIL_HEIGHT_HINT;    // expanded row is below viewport
+        }
+        // else: in visible slice → detail row already in live content
+      }
+      stTd.style.height = `${topHeight}px`;
+      sbTd.style.height = `${bottomHeight}px`;
     }
 
     const handle = {
