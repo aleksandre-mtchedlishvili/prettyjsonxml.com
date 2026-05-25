@@ -4397,24 +4397,58 @@ or
         viewBottomInWindow = cRect.bottom;
       }
       // How far into tbody is the top/bottom of the container's viewport.
-      const viewTop    = Math.max(0, viewTopInWindow    - tbodyRect.top);
-      const viewBottom = Math.max(0, viewBottomInWindow - tbodyRect.top);
+      let viewTop    = Math.max(0, viewTopInWindow    - tbodyRect.top);
+      let viewBottom = Math.max(0, viewBottomInWindow - tbodyRect.top);
 
-      // Compute the visible window. If the tbody is entirely above or below
-      // the viewport, viewTop/viewBottom will both clamp to the same value
-      // and firstIdx >= lastIdx naturally produces zero rendered rows — no
-      // need for an off-screen short-circuit (it caused scroll-jump bugs by
-      // moving spacer heights around mid-scroll).
-      let firstIdx = Math.max(0, Math.floor(viewTop / ROW_HEIGHT) - BUFFER);
-      let lastIdx  = Math.min(total, Math.ceil(viewBottom / ROW_HEIGHT) + BUFFER);
+      // Clamp viewport to the real content extent. Without this, when the
+      // viewport scrolls past the bottom of tbody (e.g. into trailing detail
+      // padding that no longer exists for the current filter), the index
+      // math can produce out-of-range values.
+      const detailH = state.expandedDetailHeight || DETAIL_HEIGHT_HINT;
+      const totalContentHeight =
+        total * ROW_HEIGHT + (state.expandedIdx >= 0 ? detailH : 0);
+      viewTop    = Math.max(0, Math.min(viewTop,    totalContentHeight));
+      viewBottom = Math.max(0, Math.min(viewBottom, totalContentHeight));
+
+      // Position-to-index mapping that accounts for the inserted detail row.
+      // Naive `floor(y / ROW_HEIGHT)` treats tbody as uniform-height — but
+      // when a row is expanded, an arbitrarily-tall detail row (often 200-
+      // 1300+ px for SOAP records, nested JSON, base64 images) is inserted
+      // between expandedIdx and expandedIdx+1. The spacer math accounts for
+      // that detail height (total tbody height stays constant), but a naive
+      // index map does not, so a viewport scrolled into the detail row's
+      // y-range gets mapped to indices way past `total` → 0 rows rendered →
+      // blank table.
+      const posToIndex = (y) => {
+        if (state.expandedIdx < 0) return Math.floor(y / ROW_HEIGHT);
+        const expandedRowEnd = (state.expandedIdx + 1) * ROW_HEIGHT;
+        if (y < expandedRowEnd)            return Math.floor(y / ROW_HEIGHT);
+        if (y < expandedRowEnd + detailH)  return state.expandedIdx; // inside detail
+        return state.expandedIdx + 1 +
+               Math.floor((y - expandedRowEnd - detailH) / ROW_HEIGHT);
+      };
+
+      let firstIdx = Math.max(0, posToIndex(viewTop) - BUFFER);
+      let lastIdx  = Math.min(total, posToIndex(viewBottom) + 1 + BUFFER);
       // Clamp so that off-screen states never produce negative or inverted ranges.
       firstIdx = Math.min(firstIdx, total);
       lastIdx  = Math.max(lastIdx, firstIdx);
 
-      // Skip re-render if the visible window + expansion state hasn't changed
+      // Skip re-render if the visible window + expansion state hasn't changed.
+      // Include expandedDetailHeight in the key — a change in the measured
+      // detail height shifts which indices map to which y-positions.
       const cached = state.lastRange;
-      if (cached && cached.first === firstIdx && cached.last === lastIdx && cached.expandedIdx === state.expandedIdx) return;
-      state.lastRange = { first: firstIdx, last: lastIdx, expandedIdx: state.expandedIdx };
+      if (cached
+          && cached.first === firstIdx
+          && cached.last === lastIdx
+          && cached.expandedIdx === state.expandedIdx
+          && cached.detailH === detailH) return;
+      state.lastRange = {
+        first: firstIdx,
+        last: lastIdx,
+        expandedIdx: state.expandedIdx,
+        detailH,
+      };
 
       // Tear down current live rows
       let n = spacerTop.nextSibling;
