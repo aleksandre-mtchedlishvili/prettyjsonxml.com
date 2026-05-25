@@ -4512,7 +4512,7 @@ or
       // enough jitter to trigger scroll-to-top. Fall back to the hint only
       // before we've ever measured one (e.g. expanded then re-rendered
       // before measurement could occur).
-      const detailH = state.expandedDetailHeight || DETAIL_HEIGHT_HINT;
+      // (detailH was computed earlier in this function — reuse it.)
       let topHeight = firstIdx * ROW_HEIGHT;
       let bottomHeight = Math.max(0, (total - lastIdx)) * ROW_HEIGHT;
       if (state.expandedIdx >= 0) {
