@@ -384,9 +384,9 @@
   .editor-loaded-overlay {
     position: absolute;
     top: 0; left: 0; right: 0;
-    height: calc(100vh - 330px);
-    min-height: 280px;
-    max-height: 620px;
+    height: calc(100vh - 380px);
+    min-height: 240px;
+    max-height: 580px;
     z-index: 3;
     background: var(--bg-card);
     border: 1px dashed var(--border);
@@ -982,9 +982,9 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     /* Match textarea sizing so the overlay doesn't extend into the toolbar */
-    height: calc(100vh - 330px);
-    min-height: 280px;
-    max-height: 620px;
+    height: calc(100vh - 380px);
+    min-height: 240px;
+    max-height: 580px;
     margin: 0;
     padding: 16px 20px;
     font-family: 'JetBrains Mono', 'Fira Code', Consolas, ui-monospace, monospace;
@@ -1018,11 +1018,14 @@
     position: relative;
     z-index: 2;
     width: 100%;
-    /* Adaptive: fill viewport minus (header + intro + upload + divider + toolbar + footer-buffer).
-       Empirically tuned so the editor toolbar stays just inside the fold on common viewports. */
-    height: calc(100vh - 330px);
-    min-height: 280px;
-    max-height: 620px;
+    /* Adaptive: fill viewport minus (header + intro + upload + divider +
+       editor toolbar + site footer). Empirically tuned so the editor toolbar
+       stays just inside the fold on common viewports, and not clipped by the
+       site footer (added later than this rule, hence the 50 px bump from
+       the original 330 baseline). */
+    height: calc(100vh - 380px);
+    min-height: 240px;
+    max-height: 580px;
     background: transparent;
     color: transparent;        /* text is shown by the highlight overlay */
     caret-color: var(--text);  /* but caret stays visible */
