@@ -4037,6 +4037,40 @@ or
     const container = document.createElement('div');
     container.className = 'table-view';
 
+    // Auto-unwrap single-key root wrappers — the most common REST API
+    // response shape: { "data": { ... } }, { "result": { ... } },
+    // { "response": { "payload": { ... } } } etc. Without unwrapping, the
+    // actual tables get nested inside a useless "Data" / "Result" section
+    // for no real benefit.
+    //
+    // Rules:
+    // - Only applies to synthetic JSON roots (we know the wrapper is JSON,
+    //   not a meaningful XML element).
+    // - Walks down iteratively (handles { response: { data: { ... } } }).
+    // - Only unwraps if the wrapper has EXACTLY ONE child element AND
+    //   that child has MULTIPLE grandchildren — otherwise we'd lose the
+    //   intermediate name on a scalar or a single nested object that's
+    //   semantically meaningful.
+    // - Moves the inner element's children up to root and lifts attributes,
+    //   then discards the intermediate wrappers. Root keeps tagName "root"
+    //   so the downstream rendering branches still match.
+    if (root.tagName === 'root') {
+      let unwrapped = 0;
+      while (root.children.length === 1 && root.children[0].children.length >= 2) {
+        const wrapper = root.children[0];
+        // Lift the wrapper's attributes onto root (rare but possible).
+        for (const a of Array.from(wrapper.attributes || [])) {
+          root.setAttribute(a.name, a.value);
+        }
+        // Move the wrapper's children up to root (replaces the wrapper).
+        const kids = Array.from(wrapper.children);
+        wrapper.remove();
+        for (const k of kids) root.appendChild(k);
+        unwrapped++;
+        if (unwrapped > 10) break; // safety: don't loop forever
+      }
+    }
+
     // Special path: when the original input was a JSON OBJECT (not array),
     // render its top-level properties in document order. Each property becomes:
     //   - scalar  → key/value row
