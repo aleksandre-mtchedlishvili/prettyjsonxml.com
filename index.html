@@ -4761,10 +4761,25 @@ or
       });
       return n;
     };
-    // Only keep fields that appear (with content) in at least half the rows.
-    // Sparse fields (1/2 of items, etc.) are not useful as top-level columns —
-    // they still show up in each row's expand-detail.
-    const minColumnFreq = Math.max(2, Math.ceil(items.length * 0.5));
+    // Column-frequency threshold.
+    //
+    // For LARGE tables (>10 rows): require fields in ≥50% of rows. This
+    // keeps the header clean when one outlier row introduces a one-off
+    // field — that field still appears in the row's expand detail, just
+    // not as a column.
+    //
+    // For SMALL tables (≤10 rows): show any field that appears at least
+    // once. Mixed-shape data is common in small XML samples (e.g. some
+    // <book>Title</book> with inline text + others with nested <title>
+    // children). Hiding sparse columns here makes the table useless —
+    // rows look empty when they actually have data, just in a different
+    // shape than their siblings.
+    //
+    // The hard column cap of 6 (applied below) prevents this from
+    // exploding into a 20-column table even when every field qualifies.
+    const minColumnFreq = items.length <= 10
+      ? 1
+      : Math.max(2, Math.ceil(items.length * 0.5));
     const allFields = Array.from(fieldFreq.entries())
       .filter(([f]) => !/^icon$|image|logo|picture|photo|thumb/i.test(f))
       .filter(([f]) => nonEmptyCount(f) > 0)
