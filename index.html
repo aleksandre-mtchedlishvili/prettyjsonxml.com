@@ -4244,15 +4244,62 @@ or
     //            the non-scalars in original order
     const scalarFields = []; // { tag, val }
     const nonScalarGroups = []; // groups in original document order
+
+    // Surface the parent element's own attributes as scalar fields. Handles
+    // patterns like <product id="p001"> where the root's id attribute would
+    // otherwise be invisible because the children-only walk ignores it.
+    // The '@' prefix matches the table-view column-header convention and
+    // gets stripped in display via the same humanize(...) helper.
+    for (const a of Array.from(parent.attributes || [])) {
+      // Skip XML namespace declarations — they're metadata, not data.
+      if (a.name === 'xmlns' || a.name.startsWith('xmlns:')) continue;
+      scalarFields.push({ tag: '@' + a.name, val: a.value });
+    }
+
+    // Helper: is this element a "scalar-array wrapper" — i.e. a single
+    // parent whose only children are 2+ same-tagged leaf-text elements?
+    // Example: <tags><tag>red</tag><tag>blue</tag></tags>. Renders much
+    // better as a comma-joined scalar in the parent's Details card than
+    // as a 1-column "Tag" table.
+    function scalarArrayValue(el) {
+      const kids = Array.from(el.children);
+      if (kids.length < 2) return null;
+      const firstTag = localName(kids[0]);
+      const allMatch = kids.every(c =>
+        localName(c) === firstTag &&
+        c.children.length === 0 &&
+        (c.attributes || []).length === 0
+      );
+      if (!allMatch) return null;
+      return kids.map(c => (c.textContent || '').trim()).filter(Boolean).join(', ');
+    }
+
     groups.forEach(g => {
       if (g.els.length >= 2) {
-        nonScalarGroups.push(g);
+        // Multiple same-tagged siblings at this level. If every one is a
+        // leaf scalar, treat as one joined-value scalar in the Details card.
+        const allLeaf = g.els.every(e =>
+          e.children.length === 0 && (e.attributes || []).length === 0
+        );
+        if (allLeaf) {
+          const joined = g.els.map(e => (e.textContent || '').trim()).filter(Boolean).join(', ');
+          scalarFields.push({ tag: g.tag, val: joined });
+        } else {
+          nonScalarGroups.push(g);
+        }
       } else {
         const el = g.els[0];
         if (el.children.length === 0) {
           scalarFields.push({ tag: g.tag, val: (el.textContent || '').trim() });
         } else {
-          nonScalarGroups.push(g);
+          // Single wrapper with children — may itself be a scalar-array
+          // wrapper (e.g. <tags><tag>a</tag><tag>b</tag></tags>).
+          const arr = scalarArrayValue(el);
+          if (arr !== null) {
+            scalarFields.push({ tag: g.tag, val: arr });
+          } else {
+            nonScalarGroups.push(g);
+          }
         }
       }
     });
@@ -4341,6 +4388,16 @@ or
       const consumed = new Set();
       for (const [tag, items] of groups) {
         if (items.length >= 2) {
+          // Skip "scalar arrays" — repeated leaf elements with no children
+          // and no attributes (e.g. <tag>red</tag><tag>green</tag><tag>blue</tag>).
+          // Tabulating those produces a wasteful 1-column table where each
+          // row only has a "TEXT" field. They render much better as a single
+          // joined scalar in the parent — handled downstream by
+          // renderJsonObjectSections' scalar-array-wrapper detection.
+          const allLeafScalars = items.every(it =>
+            it.children.length === 0 && (it.attributes || []).length === 0
+          );
+          if (allLeafScalars) continue;
           found.push({ tag, items, parentPath: path, parentEl: el });
           items.forEach(it => consumed.add(it));
         }
