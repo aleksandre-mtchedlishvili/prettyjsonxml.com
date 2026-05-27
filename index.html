@@ -4702,6 +4702,19 @@ or
       }
       tbody.insertBefore(frag, spacerBottom);
 
+      // If a search query is active, highlight matches in the newly-rendered
+      // rows. Virtual rows get re-created on every scroll/filter, so previous
+      // highlights are gone — re-apply them here every time. Skipped when
+      // there's no query (empty/null) to avoid a needless tree walk.
+      if (window.__currentSearchQuery) {
+        const q = window.__currentSearchQuery;
+        let n = spacerTop.nextSibling;
+        while (n && n !== spacerBottom) {
+          if (n.nodeType === 1) highlightInElement(n, q);
+          n = n.nextSibling;
+        }
+      }
+
       // Spacer math — total tbody height must stay CONSTANT regardless of
       // which slice is rendered. Otherwise the browser's scroll-position
       // preservation kicks in when the height changes mid-scroll, which can
@@ -5863,6 +5876,10 @@ or
 
   function runSearch() {
     const q = search.value.trim().toLowerCase();
+    // Publish current query as a global so the virtual scroller can apply
+    // highlights to newly-rendered rows on scroll. Cleared (set to '') when
+    // there's no query, so the scroller skips the highlight pass entirely.
+    window.__currentSearchQuery = q || '';
     // Clear highlights
     main.querySelectorAll('.highlight').forEach(h => {
       const parent = h.parentNode;
@@ -6085,7 +6102,9 @@ or
     showToast._t = setTimeout(() => toast.classList.remove('show'), 1800);
   }
   document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') { e.preventDefault(); search.focus(); search.select(); }
+    // Don't hijack Ctrl/Cmd+F — let the browser's native find-in-page work,
+    // which is what most users expect. The search box already has its own
+    // visible affordance + placeholder, no shortcut needed.
     if ((e.ctrlKey || e.metaKey) && e.key === 'o') { e.preventDefault(); fileInput.click(); }
   });
 })();
