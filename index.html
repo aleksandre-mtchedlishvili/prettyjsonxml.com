@@ -4925,20 +4925,37 @@ or
     // that EVERY item has (avoids creating sparse columns like Length being
     // empty for half the rows just because one item happens to have
     // `dimensions: {...}`).
-    const singletonCounts = new Map();
-    itemMeta.forEach(m => {
-      for (const [tag, group] of m.nestedGroups) {
-        if (group.length === 1) {
-          singletonCounts.set(tag, (singletonCounts.get(tag) || 0) + 1);
+    // Helper — compute the current set of "universal singleton" tags across
+    // all items' nestedGroups. A tag qualifies when EVERY item has it as a
+    // single-instance wrapper. Recomputed between lift rounds so newly-
+    // revealed deeper wrappers can also be lifted (e.g.
+    // Service > serviceCommissions > {maxCommission, ...} — the commission
+    // wrapper appears as a singleton only after the outer Service lift).
+    function computeLiftTags() {
+      const counts = new Map();
+      itemMeta.forEach(m => {
+        for (const [tag, group] of m.nestedGroups) {
+          if (group.length === 1) {
+            counts.set(tag, (counts.get(tag) || 0) + 1);
+          }
         }
+      });
+      const lift = new Set();
+      for (const [tag, count] of counts) {
+        if (count === items.length) lift.add(tag);
       }
-    });
-    const liftTags = new Set();
-    for (const [tag, count] of singletonCounts) {
-      if (count === items.length) liftTags.add(tag);
+      return lift;
     }
+    let liftTags = computeLiftTags();
 
-    // PASS 3 — apply lifting to selected tags, iteratively (handles nested wrappers)
+    // PASS 3 — apply lifting. Loop until no more universal singletons can
+    // be lifted. After each round we recompute liftTags so that newly-
+    // exposed inner wrappers can join the lift set.
+    let totalLiftPasses = 0;
+    let liftedThisRound = true;
+    while (liftedThisRound && totalLiftPasses < 6) {
+      liftedThisRound = false;
+      totalLiftPasses++;
     itemMeta.forEach(m => {
       function addScalar(name, val) {
         if (detectImageMime(val, name) && !m.imageField) {
@@ -4962,9 +4979,7 @@ or
                 const t = localName(c);
                 if (!m.nestedGroups.has(t)) m.nestedGroups.set(t, []);
                 m.nestedGroups.get(t).push(c);
-                // a newly-revealed deeper singleton may itself be "universal"
-                // — but we already locked liftTags in pass 2. Only one round
-                // of decisions; that's OK for the common 1-deep case.
+                // Newly-revealed deeper wrapper — eligible for next round.
               }
             });
             // Also capture wrapper's own inline text (rare, but possible).
@@ -4975,10 +4990,16 @@ or
             wText = wText.trim();
             if (wText) addScalar('#text', wText);
             changed = true;
+            liftedThisRound = true;
           }
         }
       }
     });
+      // After this lift round, recompute liftTags so newly-revealed
+      // universal singletons (e.g. serviceCommissions exposed after
+      // lifting its parent Service) become eligible for the next round.
+      liftTags = computeLiftTags();
+    } // end of multi-pass lifting
 
     // PASS 4 — compute final fieldFreq based on lifted scalars
     const fieldFreq = new Map();
@@ -5057,8 +5078,9 @@ or
       /^#text$/, // XML inline-text content (e.g. <book id="1">Title</book> → "Title")
       /^name$/i, /^title$/i, /^displayName$/i, /^shortName$/i, /^label$/i,
       /^description$/i, /Description$/, /^summary$/i,
-      /^amount$/i, /^price$/i, /^total$/i, /^quantity$/i,
+      /^amount$/i, /Amount$/i, /^price$/i, /^total$/i, /^quantity$/i,
       /^ccy$/i, /^currency$/i,
+      /^commission$/i, /Commission$/i, /^fee$/i, /Fee$/i, /^tax$/i, /Tax$/i,
       /^code$/i, /^id$/i, /^key$/i, /Id$/, /Code$/,
       /^value$/i,
       /^status$/i, /Status$/,
@@ -5069,7 +5091,17 @@ or
       if (f) prioritized.push(f);
     });
     allFields.forEach(f => { if (!prioritized.includes(f)) prioritized.push(f); });
-    const columns = prioritized.slice(0, 6);
+    // Adaptive column cap: show more columns when the table is small enough
+    // that horizontal scrolling beats hiding meaningful fields. For tables
+    // with many rows the cap stays at 6 to keep the visual scan reasonable.
+    //   - 1 row : up to 16 columns (basically "show everything reachable")
+    //   - 2-5 rows : up to 12 columns
+    //   - 6-10 rows : up to 8 columns
+    //   - 11+ rows : 6 columns (original behavior)
+    const colCap = items.length <= 1 ? 16
+                 : items.length <= 5 ? 12
+                 : items.length <= 10 ? 8 : 6;
+    const columns = prioritized.slice(0, colCap);
 
     // Build table
     const wrap = document.createElement('div');
