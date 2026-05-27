@@ -3107,6 +3107,10 @@ or
       if (looksLikeJson && !looksLikeXml) msg = 'Invalid JSON';
       else if (looksLikeXml && !looksLikeJson) msg = 'Invalid XML';
       editorStatus.textContent = msg;
+      // Disable the View buttons so the user can't click through to a stale
+      // render of the previously valid data. They re-enable on next success
+      // (afterParse).
+      disableViewButtons();
       return;
     }
 
@@ -3303,11 +3307,33 @@ or
     }
   }
 
+  // Disable both pairs of View buttons (context-toolbar + editor-toolbar)
+  // when input is invalid, so the user can't click through to a stale render
+  // of the previously valid data. afterParse() re-enables them on next success.
+  function disableViewButtons() {
+    if (viewTableBtn) viewTableBtn.disabled = true;
+    if (viewTreeBtn) viewTreeBtn.disabled = true;
+    if (btnViewAsTable) btnViewAsTable.disabled = true;
+    if (btnViewAsTree) btnViewAsTree.disabled = true;
+  }
+
   function parseXml(text) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(text, 'text/xml');
     const err = doc.querySelector('parsererror');
-    if (err) { showError('XML parse error', err.textContent); return; }
+    if (err) {
+      showError('XML parse error', err.textContent);
+      // Also mirror the JSON-parse error UI: update the editor status pill
+      // and disable View buttons so clicking them doesn't show stale data.
+      if (editorShell && editorStatus) {
+        editorShell.classList.remove('valid');
+        editorShell.classList.add('invalid');
+        editorStatus.className = 'editor-status err';
+        editorStatus.textContent = 'Invalid XML';
+      }
+      disableViewButtons();
+      return;
+    }
     currentDoc = doc;
     currentJson = null; // tree renderer will use the XML path
     afterParse();
@@ -3330,6 +3356,9 @@ or
         editorStatus.className = 'editor-status err';
         editorStatus.textContent = 'Invalid JSON';
       }
+      // Disable View buttons so the user can't click through to a stale
+      // render of the previously valid data.
+      disableViewButtons();
       pendingParseMeta = null;
       return;
     }
