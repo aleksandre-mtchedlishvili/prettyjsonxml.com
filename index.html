@@ -5419,21 +5419,74 @@ or
       title.innerHTML = `<span>${inferIcon(tag)}</span> ${escapeHtml(humanize(tag))} <span style="color:var(--text-muted);font-weight:400;">(${items.length})</span>`;
       section.appendChild(title);
 
-      // Collect all fields across these nested items, and detect image columns
+      // Collect all fields across these nested items, and detect image columns.
+      // We also recursively lift "universal singleton wrappers" — child
+      // elements that appear exactly once in every item. Without this the
+      // sub-table for e.g. `<Service>` rows would miss the data nested in
+      // `<serviceCommissions>` (which is always 1-per-Service), so columns
+      // like `maxCommission` never surface in the row's expanded detail.
       const subFields = new Set();
       const imageColumns = new Set();
-      const subRows = items.map(it => {
-        const sc = {};
-        Array.from(it.attributes).forEach(a => { sc['@' + a.name] = a.value; subFields.add('@' + a.name); });
-        Array.from(it.children).forEach(c => {
-          if (c.children.length === 0) {
-            const name = localName(c);
-            const val = (c.textContent || '').trim();
-            sc[name] = val;
-            subFields.add(name);
-            if (detectImageMime(val, name)) imageColumns.add(name);
+      // Iteratively compute which wrappers should be lifted. Re-runs across
+      // multiple depth levels via the outer loop.
+      const liftWrappers = new Set();
+      const inspectionItems = items.map(it => ({ el: it, lifted: new Set() }));
+      let liftChanged = true;
+      let liftRounds = 0;
+      while (liftChanged && liftRounds < 6) {
+        liftChanged = false;
+        liftRounds++;
+        const counts = new Map();
+        inspectionItems.forEach(ii => {
+          const groups = new Map();
+          // Collect direct + lifted-wrapper children's groups
+          function walk(el) {
+            for (const c of Array.from(el.children)) {
+              if (c.children.length === 0) continue;
+              const t = localName(c);
+              if (!groups.has(t)) groups.set(t, []);
+              groups.get(t).push(c);
+              if (liftWrappers.has(t)) walk(c);
+            }
+          }
+          walk(ii.el);
+          for (const [t, group] of groups) {
+            if (group.length === 1) {
+              counts.set(t, (counts.get(t) || 0) + 1);
+            }
           }
         });
+        for (const [t, count] of counts) {
+          if (count === items.length && !liftWrappers.has(t)) {
+            liftWrappers.add(t);
+            liftChanged = true;
+          }
+        }
+      }
+      // Now build subRows. Recurse through liftWrappers when collecting fields.
+      const subRows = items.map(it => {
+        const sc = {};
+        function processElement(el) {
+          Array.from(el.attributes || []).forEach(a => {
+            const k = '@' + a.name;
+            if (!(k in sc)) { sc[k] = a.value; subFields.add(k); }
+          });
+          Array.from(el.children).forEach(c => {
+            if (c.children.length === 0) {
+              const name = localName(c);
+              const val = (c.textContent || '').trim();
+              if (!(name in sc)) {
+                sc[name] = val;
+                subFields.add(name);
+                if (detectImageMime(val, name)) imageColumns.add(name);
+              }
+            } else if (liftWrappers.has(localName(c))) {
+              // Lift this wrapper's scalars into the current row's columns.
+              processElement(c);
+            }
+          });
+        }
+        processElement(it);
         return sc;
       });
       // Order columns: images first, then others
