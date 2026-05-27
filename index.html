@@ -1944,12 +1944,11 @@
      Force it to win so we can hide elements declaratively in markup. */
   [hidden] { display: none !important; }
 
-  /* For the landing ↔ viewer swap, `display: none` would force the browser to
-     re-layout the (potentially huge) syntax-highlighted editor DOM every time
-     the user switches Table → Source. `content-visibility: hidden` keeps the
-     element off-screen but PRESERVES its computed layout — so switching back
-     is just a paint, not a re-layout. Falls back to invisible on older browsers. */
-  #landing.hidden,
+  /* For the viewer root, `display: none` would force the browser to re-layout
+     the (potentially huge) syntax-highlighted editor DOM every time the user
+     switches Table ↔ Source. `content-visibility: hidden` keeps the element
+     off-screen but PRESERVES its computed layout — so switching back is just
+     a paint, not a re-layout. */
   #viewerRoot.hidden {
     display: block !important;     /* override .hidden */
     content-visibility: hidden;
@@ -1957,7 +1956,15 @@
     pointer-events: none;
     overflow: hidden;
     height: 0;
+    min-height: 0;                 /* override flex item's min-height: auto */
+    padding: 0;
+    margin: 0;
   }
+  /* #landing.hidden uses the plain `.hidden { display: none }` rule above.
+     The landing section is small (buttons + dividers) so re-layout on toggle
+     is negligible — and the content-visibility trick fails for it because
+     it's a flex item whose `min-height: auto` overrides `height: 0`, letting
+     the 16px+40px padding still take ~56px of vertical space. */
 
   /* Modal */
   .modal {
