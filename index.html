@@ -4821,15 +4821,44 @@ or
       }
 
       Array.from(item.attributes || []).forEach(a => addScalar('@' + a.name, a.value));
-      Array.from(item.children).forEach(c => {
-        if (c.children.length === 0) {
-          addScalar(localName(c), (c.textContent || '').trim());
+      // Group children by tag first — needed because XML may have repeated
+      // same-tagged siblings within an item (typically when a JSON array of
+      // scalars was converted to XML, like `vehicleTypes: [0, 2]` becoming
+      // `<vehicleTypes>0</vehicleTypes><vehicleTypes>2</vehicleTypes>`).
+      // Without this grouping, addScalar's first-wins dedupe would drop all
+      // values after the first ("0" kept, "2" lost).
+      const childGroups = new Map();
+      for (const c of Array.from(item.children)) {
+        const t = localName(c);
+        if (!childGroups.has(t)) childGroups.set(t, []);
+        childGroups.get(t).push(c);
+      }
+      for (const [tag, els] of childGroups) {
+        if (els.length === 1) {
+          const c = els[0];
+          if (c.children.length === 0) {
+            addScalar(tag, (c.textContent || '').trim());
+          } else {
+            if (!nestedGroups.has(tag)) nestedGroups.set(tag, []);
+            nestedGroups.get(tag).push(c);
+          }
         } else {
-          const t = localName(c);
-          if (!nestedGroups.has(t)) nestedGroups.set(t, []);
-          nestedGroups.get(t).push(c);
+          // 2+ same-tagged siblings inside this item.
+          const allLeaf = els.every(c =>
+            c.children.length === 0 && (c.attributes || []).length === 0
+          );
+          if (allLeaf) {
+            // Array of scalars — join as comma-separated value so the
+            // column shows all entries instead of just the first.
+            const joined = els.map(c => (c.textContent || '').trim()).filter(v => v !== '').join(', ');
+            addScalar(tag, joined);
+          } else {
+            // Array of structured objects — keep as a nested sub-collection.
+            if (!nestedGroups.has(tag)) nestedGroups.set(tag, []);
+            for (const c of els) nestedGroups.get(tag).push(c);
+          }
         }
-      });
+      }
       // Capture inline text content (text directly inside the element, not
       // inside nested children). Patterns like `<book id="1">Title</book>`
       // would otherwise drop the title entirely — only attributes get
@@ -4949,7 +4978,12 @@ or
       ? 1
       : Math.max(2, Math.ceil(items.length * 0.5));
     const allFields = Array.from(fieldFreq.entries())
-      .filter(([f]) => !/^icon$|image|logo|picture|photo|thumb/i.test(f))
+      // No more name-based image filtering. `detectImageMime` already
+      // redirects values that ARE images (data URLs, base64-encoded image
+      // blobs) into `imageField` before they reach `scalars` — so the only
+      // entries here are non-image values. Filtering by name dropped
+      // legitimate text columns like `hasLogo` (boolean) and `logoPath`
+      // (short string path that's not an actual image payload).
       .filter(([f]) => nonEmptyCount(f) > 0)
       .filter(([, freq]) => freq >= minColumnFreq || items.length === 1)
       .sort((a, b) => b[1] - a[1])
