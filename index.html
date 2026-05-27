@@ -4662,6 +4662,18 @@ or
           nestedGroups.get(t).push(c);
         }
       });
+      // Capture inline text content (text directly inside the element, not
+      // inside nested children). Patterns like `<book id="1">Title</book>`
+      // would otherwise drop the title entirely — only attributes get
+      // captured by the loop above. Stored under the `#text` key so it
+      // can be rendered as a column or in detail. Ignores whitespace-only
+      // text (the typical inter-element whitespace in pretty-printed XML).
+      let inlineText = '';
+      for (const node of item.childNodes) {
+        if (node.nodeType === 3 /* TEXT_NODE */) inlineText += node.nodeValue || '';
+      }
+      inlineText = inlineText.trim();
+      if (inlineText) addScalar('#text', inlineText);
       return { item, scalars, nestedGroups, imageField };
     });
 
@@ -4711,6 +4723,13 @@ or
                 // of decisions; that's OK for the common 1-deep case.
               }
             });
+            // Also capture wrapper's own inline text (rare, but possible).
+            let wText = '';
+            for (const node of w.childNodes) {
+              if (node.nodeType === 3) wText += node.nodeValue || '';
+            }
+            wText = wText.trim();
+            if (wText) addScalar('#text', wText);
             changed = true;
           }
         }
@@ -4771,6 +4790,7 @@ or
     // General-purpose priority by semantic meaning: identity/label first,
     // then key codes/ids, then money fields, then status, then dates.
     const priorityRx = [
+      /^#text$/, // XML inline-text content (e.g. <book id="1">Title</book> → "Title")
       /^name$/i, /^title$/i, /^displayName$/i, /^shortName$/i, /^label$/i,
       /^description$/i, /Description$/, /^summary$/i,
       /^amount$/i, /^price$/i, /^total$/i, /^quantity$/i,
@@ -4800,7 +4820,7 @@ or
     if (someHaveImage) headRow.innerHTML += `<th class="img-col"></th>`;
     columns.forEach((col, i) => {
       const th = document.createElement('th');
-      th.textContent = humanize(col.replace(/^@/, ''));
+      th.textContent = humanize(col.replace(/^[@#]/, ''));
       th.dataset.col = col;
       th.dataset.idx = i;
       th.addEventListener('click', () => sortTableBy(table, col));
@@ -5053,7 +5073,7 @@ or
       kv.className = 'detail-kv';
       const kEl = document.createElement('div');
       kEl.className = 'detail-kv-key';
-      kEl.textContent = humanize(k.replace(/^@/, '')) + (k.startsWith('@') ? ' (attr)' : '');
+      kEl.textContent = humanize(k.replace(/^[@#]/, '')) + (k.startsWith('@') ? ' (attr)' : '');
       kv.appendChild(kEl);
 
       const vEl = document.createElement('div');
@@ -5132,7 +5152,7 @@ or
       const thr = document.createElement('tr');
       subCols.forEach(c => {
         const cell = document.createElement('th');
-        cell.textContent = imageColumns.has(c) ? '' : humanize(c.replace(/^@/, ''));
+        cell.textContent = imageColumns.has(c) ? '' : humanize(c.replace(/^[@#]/, ''));
         if (imageColumns.has(c)) cell.style.width = '56px';
         thr.appendChild(cell);
       });
