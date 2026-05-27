@@ -4060,6 +4060,81 @@ or
       return;
     }
 
+    // Surface "orphan metadata" — leaf scalars that exist in the tree but
+    // weren't included in any collection's items. Typical case: SOAP envelope
+    // Header (RequestId, Timestamp, MessageId) — the findAllCollections walker
+    // treats <Envelope>/<Header>/<Body> as structural noise and descends past
+    // them, which correctly surfaces the inner <Account> table BUT silently
+    // drops the leaf data inside <Header>. For someone debugging a SOAP call,
+    // the request ID is exactly what they need to see. Render those scalars
+    // as a Metadata details card above the table(s).
+    const collectedSet = new Set();
+    collections.forEach(c => c.items.forEach(it => {
+      collectedSet.add(it);
+      const walker = document.createTreeWalker(it, NodeFilter.SHOW_ELEMENT);
+      let n;
+      while ((n = walker.nextNode())) collectedSet.add(n);
+    }));
+    const orphanScalars = []; // { name, val, path }
+    (function walkOrphans(el, path) {
+      for (const child of Array.from(el.children)) {
+        if (collectedSet.has(child)) continue;
+        if (child.children.length === 0) {
+          const text = (child.textContent || '').trim();
+          if (text) orphanScalars.push({ name: localName(child), val: text, path });
+        } else {
+          const next = path ? `${path} › ${localName(child)}` : localName(child);
+          walkOrphans(child, next);
+        }
+      }
+    })(root, '');
+
+    if (orphanScalars.length > 0) {
+      const wrap = document.createElement('div');
+      // Default to collapsed. The metadata card surfaces wrapper-element
+      // leaf data (SOAP RequestId/Timestamp, invoice top-level scalars,
+      // etc.) — useful for the case when users actually need it, but the
+      // primary thing the user came for is the table below. Showing it
+      // expanded by default pushed that table down for content most
+      // viewers don't read first.
+      wrap.className = 'section-nested top-level-nested collapsed';
+      const title = document.createElement('div');
+      title.className = 'section-nested-title';
+      const fc = orphanScalars.length;
+      title.innerHTML = `
+        <span class="section-icon">📋</span>
+        <span class="section-name">Metadata</span>
+        <span class="section-fieldcount">${fc} ${fc === 1 ? 'field' : 'fields'}</span>
+      `;
+      title.addEventListener('click', (e) => {
+        if (e.target.tagName === 'A') return;
+        e.stopPropagation();
+        wrap.classList.toggle('collapsed');
+      });
+      wrap.appendChild(title);
+      // Wrap grid in `.section-nested-body` so the collapse CSS rule
+      // (.section-nested.collapsed > .section-nested-body { display:none })
+      // can actually hide it on click.
+      const body = document.createElement('div');
+      body.className = 'section-nested-body';
+      const grid = document.createElement('div');
+      grid.className = 'section-context';
+      orphanScalars.forEach(s => {
+        const row = document.createElement('div');
+        row.className = 'detail-kv';
+        // Include path in the key only when it adds info (i.e. the scalar
+        // lives inside a wrapper element — for root-level scalars the path
+        // is empty and we just show the name).
+        const keyLabel = humanize(s.name) +
+          (s.path ? ` <span style="color:var(--text-muted);font-weight:400;font-size:11px;">${escapeHtml(s.path)}</span>` : '');
+        row.innerHTML = `<div class="detail-kv-key">${keyLabel}</div><div class="detail-kv-val">${escapeHtml(s.val)}</div>`;
+        grid.appendChild(row);
+      });
+      body.appendChild(grid);
+      wrap.appendChild(body);
+      container.appendChild(wrap);
+    }
+
     // Table of contents (only if more than one section)
     if (collections.length > 1) {
       const toc = document.createElement('div');
