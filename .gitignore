@@ -25,3 +25,14 @@ devto-post.md
 # Windows-specific local tooling — Mac/Linux users have the bash version
 # documented in README; the .ps1 helper isn't needed in the repo
 build-deploy.ps1
+
+# Local deploy automation — contains Cloudflare account ID and worker name,
+# not safe to publish. See DEPLOY.md for the rationale and the three deploy
+# paths (Claude / wrangler / manual dashboard / standalone Node script).
+DEPLOY.md
+deploy.js
+wrangler.toml
+.wrangler/
+
+# Misc local working files
+_research/
