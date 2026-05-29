@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RSS Feed Example — View &amp; Parse RSS / XML Online | Pretty JSON &amp; XML</title>
+<title>RSS Feed Example — View &amp; Parse RSS / XML Online</title>
 <meta name="description" content="Sample RSS 2.0 feed XML rendered as a sortable table. Paste your own RSS or Atom feed to inspect any feed in the browser.">
 <meta name="keywords" content="rss feed viewer, rss xml example, parse rss online, view rss feed, rss feed parser, atom feed viewer">
 <link rel="canonical" href="https://prettyjsonxml.com/example/rss-feed">
@@ -15,6 +15,57 @@
 <meta property="og:url" content="https://prettyjsonxml.com/example/rss-feed">
 <meta property="og:image" content="https://prettyjsonxml.com/og.jpg">
 <meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="RSS Feed Example — View &amp; Parse RSS / XML Online">
+<meta name="twitter:description" content="A working RSS feed sample you can view as a table or tree, plus an explanation of the format.">
+<meta name="twitter:image" content="https://prettyjsonxml.com/og.jpg">
+
+<!-- Article Schema — mirrors the homepage / guide JSON-LD style so this
+     worked example can be surfaced as an article result. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "RSS Feed Example — View & Parse RSS / XML Online",
+  "description": "A sample RSS 2.0 feed rendered as a sortable table, with a plain-English explanation of the format and how to inspect any RSS or Atom feed in the browser.",
+  "image": "https://prettyjsonxml.com/og.jpg",
+  "datePublished": "2026-05-24T12:00:00Z",
+  "dateModified": "2026-05-29T12:00:00Z",
+  "author": {
+    "@type": "Person",
+    "name": "Aleksandre Mchedlishvili",
+    "url": "https://prettyjsonxml.com/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Pretty JSON & XML",
+    "logo": { "@type": "ImageObject", "url": "https://prettyjsonxml.com/og.jpg" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://prettyjsonxml.com/example/rss-feed" }
+}
+</script>
+
+<!-- BreadcrumbList Schema — Home > RSS feed example. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://prettyjsonxml.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "RSS feed example",
+      "item": "https://prettyjsonxml.com/example/rss-feed"
+    }
+  ]
+}
+</script>
 
 <style>
   :root {
