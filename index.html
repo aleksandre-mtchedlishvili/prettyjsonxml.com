@@ -5,14 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- ============================================================
-     SEO + Social
-     TODO before deploy: replace prettyjsonxml.com with the real
-     domain (search-and-replace; ~12 occurrences in canonical,
-     og:url, og:image, twitter:url, twitter:image, and JSON-LD).
+     SEO + Social — canonical, OG, Twitter, schema.org, sitemap-friendly.
+     All absolute URLs use https://prettyjsonxml.com/ to match the
+     canonical and the production HTTP origin.
      ============================================================ -->
-<title>Pretty JSON &amp; XML — Online Viewer, Formatter &amp; Table Converter (Free)</title>
+<title>Pretty JSON &amp; XML Viewer — Format, Table, Tree (Free)</title>
 <meta name="description" content="Free online JSON & XML viewer. Paste or upload to see your data as a sortable table or foldable tree. Format, minify, search — all in your browser.">
-<meta name="keywords" content="pretty json, pretty xml, json viewer, xml viewer, json formatter, xml formatter, json to table, xml to table, json beautifier, xml beautifier, online JSON viewer, online XML viewer, json pretty print, xml pretty print, SOAP viewer, RSS viewer">
+<meta name="keywords" content="pretty json, pretty xml, json viewer, xml viewer, json to table, xml formatter">
 <meta name="author" content="Pretty JSON &amp; XML">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#7c9cff">
@@ -56,7 +55,7 @@
   "operatingSystem": "Web (any modern browser)",
   "browserRequirements": "Requires a modern browser (Chrome, Firefox, Safari, Edge).",
   "softwareVersion": "1.0",
-  "dateModified": "2026-05-24T12:00:00Z",
+  "dateModified": "2026-05-28T12:00:00Z",
   "inLanguage": "en",
   "isAccessibleForFree": true,
   "author": {
@@ -220,12 +219,24 @@
      For production, also set these as real HTTP headers via the
      host (e.g. _headers on Cloudflare Pages).
      ============================================================ -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://static.cloudflareinsights.com https://www.clarity.ms https://*.clarity.ms; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com https://*.clarity.ms https://c.bing.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://cloudflareinsights.com https://www.clarity.ms https://*.clarity.ms; font-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://static.cloudflareinsights.com https://www.clarity.ms https://*.clarity.ms; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: https://*.google-analytics.com https://*.googletagmanager.com https://*.clarity.ms https://c.bing.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://cloudflareinsights.com https://www.clarity.ms https://*.clarity.ms; font-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 
-<!-- Inline SVG favicon — no extra request -->
+<!-- Favicons.
+     Inline SVG = zero extra request, used by browser tabs that support it.
+     Real PNG files at /favicon.ico, /favicon-192.png, etc. = required by Google
+     for search-result favicons (Google ignores data: URIs since 2019).
+     apple-touch-icon = iOS Safari home-screen icon. -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c9cff'/%3E%3Ctext x='50' y='68' font-size='52' font-weight='700' fill='white' text-anchor='middle' font-family='-apple-system,BlinkMacSystemFont,sans-serif'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="shortcut icon" href="/favicon.ico">
+<!-- Web App Manifest — small SEO + PWA win. Lets mobile users "Add to Home
+     screen" with the brand icon, and gives Google a structured app name. -->
+<link rel="manifest" href="/site.webmanifest">
 
 <!-- Preconnect to analytics origins so DNS + TLS handshakes happen in parallel
      with HTML parse, not serially when the script tag is appended later.
@@ -1674,6 +1685,13 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
+    /* table-layout:fixed prevents any single overlong cell value (a URL, a
+       multi-line address, a 50-char description) from forcing the table to
+       overflow the viewport. Each column gets a deterministic share of the
+       container width; cell content longer than that share gets clipped via
+       cell-truncate's ellipsis (still readable via title hover, and the full
+       value is also visible in the row's expand panel). */
+    table-layout: fixed;
   }
   .data-table thead {
     background: var(--bg-elev-2);
@@ -1780,6 +1798,17 @@
     background: var(--bg-elev);
     border-left: 3px solid var(--accent);
   }
+  /* Brief "Loading…" message shown while the expand panel is being built
+     asynchronously off the click handler. Keeps the UI responsive on
+     deeply nested records (e.g. 100-row TreasuryCodes sub-tables). */
+  .detail-loading {
+    padding: 16px 20px 18px 60px;
+    background: var(--bg-elev);
+    border-left: 3px solid var(--accent);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-style: italic;
+  }
   .detail-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -1829,13 +1858,51 @@
     align-items: center;
     gap: 6px;
   }
-  .sub-table {
-    width: 100%;
-    border-collapse: collapse;
+  /* Visual frame for multi-row sub-tables. The shell stays put; the inner
+     .sub-table-wrap is the scroll container; the table inside it can be
+     wider than the viewport. */
+  .sub-table-shell {
+    position: relative;
     background: var(--bg-card);
     border: 1px solid var(--border-soft);
     border-radius: 8px;
     overflow: hidden;
+  }
+  .sub-table-wrap {
+    overflow-x: auto;
+    /* Use thin scrollbars so the bottom-edge UI doesn't dominate. */
+    scrollbar-width: thin;
+  }
+  /* Right-edge fade — only shown when there's horizontal overflow AND the
+     user hasn't scrolled all the way right yet. Signals "more content this
+     way" without stealing space from the table itself. */
+  .sub-table-shell.has-overflow::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 48px;
+    background: linear-gradient(to right, transparent, var(--bg-card) 78%);
+    pointer-events: none;
+    z-index: 2;
+  }
+  /* "↔ scroll" hint in the section title, only when overflow exists. */
+  .detail-sub-title .scroll-hint {
+    display: none;
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .detail-sub-section:has(.sub-table-shell.has-scroll) .scroll-hint {
+    display: inline;
+  }
+  .sub-table {
+    width: 100%;
+    border-collapse: collapse;
     font-size: 12px;
   }
   .sub-table th {
@@ -1848,14 +1915,52 @@
     letter-spacing: 0.5px;
     font-weight: 600;
     border-bottom: 1px solid var(--border-soft);
+    white-space: nowrap;
   }
   .sub-table td {
     padding: 7px 10px;
     border-bottom: 1px solid var(--border-soft);
     color: var(--text);
     vertical-align: top;
+    white-space: nowrap;
   }
   .sub-table tr:last-child td { border-bottom: none; }
+  /* Sub-row expand affordance — same visual language as the main table:
+     clickable row, hover tint, expand button rotates when open. */
+  .sub-table tr.sub-row-main { transition: background 0.1s; cursor: pointer; }
+  .sub-table tr.sub-row-main:hover { background: var(--bg-elev-2); }
+  .sub-table tr.sub-row-main.expanded { background: var(--bg-elev-2); }
+  .sub-table td.sub-expand-cell {
+    width: 34px;
+    padding: 4px 6px;
+    text-align: center;
+  }
+  .sub-table th.sub-expand-col { padding: 0; }
+  .sub-table tr.sub-row-main .expand-btn {
+    width: 20px; height: 20px;
+    font-size: 9px;
+    border-radius: 5px;
+  }
+  .sub-table tr.sub-row-main.expanded .expand-btn {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    transform: rotate(90deg);
+  }
+  .sub-table tr.sub-row-detail.hidden { display: none; }
+  .sub-table tr.sub-row-detail > td {
+    padding: 0;
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+  }
+  /* The recursive detail-content inside a sub-row gets a tighter padding
+     than the top-level expand panel so nested levels don't keep eating
+     horizontal space. Border-left accent ties it visually to its parent row. */
+  .sub-table tr.sub-row-detail .detail-content {
+    padding: 10px 14px 12px 28px;
+    border-left: 3px solid var(--accent);
+    background: var(--bg-elev);
+  }
 
   /* ====================== TREE VIEW ====================== */
   .tree-view {
@@ -2183,7 +2288,7 @@ or
       <div class="landing-usecase-grid">
         <article>
           <h3>View JSON as a table</h3>
-          <p>Paste any JSON array or object and click <em>View as Table</em>. Repeated records become rows; common fields become sortable columns.</p>
+          <p>Paste any JSON array or object and click <em>View as Table</em>. Repeated records become rows; common fields become sortable columns. See our <a href="./guide/view-json-as-table">guide to viewing JSON as a table</a> for a walkthrough.</p>
         </article>
         <article>
           <h3>View XML as a table</h3>
@@ -2199,7 +2304,7 @@ or
         </article>
         <article>
           <h3>Browse RSS / Atom feeds</h3>
-          <p>Paste a feed URL's response and see items as a sortable table — title, date, link, summary — with full search across all entries.</p>
+          <p>Paste a feed URL's response and see items as a sortable table — title, date, link, summary — with full search across all entries. Try it with our <a href="./example/rss-feed">RSS feed example</a>.</p>
         </article>
         <article>
           <h3>Preview base64 images in your data</h3>
@@ -2275,18 +2380,18 @@ or
   <nav aria-label="Site links">
     <a href="./">Home</a>
     <span>·</span>
-    <a href="./guide/view-json-as-table.html">Guide</a>
+    <a href="./guide/view-json-as-table">Guide</a>
     <span>·</span>
-    <a href="./example/rss-feed.html">RSS example</a>
+    <a href="./example/rss-feed">RSS example</a>
     <span>·</span>
     <a class="gh" href="https://github.com/aleksandre-mtchedlishvili/prettyjsonxml.com" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
       GitHub
     </a>
     <span>·</span>
-    <a href="./privacy.html">Privacy</a>
+    <a href="./privacy">Privacy</a>
     <span>·</span>
-    <a href="./terms.html">Terms</a>
+    <a href="./terms">Terms</a>
     <span>·</span>
     <a href="mailto:aleksandre.mtchedlishvili@gmail.com">Contact</a>
   </nav>
@@ -3774,7 +3879,7 @@ or
       stats.images++;
       const det = detectImageMime(imageField.value, imageField.name);
       const img = document.createElement('img');
-      img.src = `data:${det.mime};base64,${det.data}`;
+      img.src = det.src;
       img.loading = 'lazy';
       img.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -3931,7 +4036,7 @@ or
       stats.images++;
       const img = document.createElement('img');
       img.className = 'card-image';
-      img.src = `data:${det.mime};base64,${det.data}`;
+      img.src = det.src;
       img.loading = 'lazy';
       img.addEventListener('click', () => {
         modalImg.src = img.src;
@@ -4854,72 +4959,7 @@ or
     // so users see the actual statement fields instead of just the wrapper.
     // PASS 1 — for each item, collect direct scalars and direct nested groups
     // (no lifting yet — we need to see all items to decide what's "universal").
-    const itemMeta = items.map(item => {
-      const scalars = {};
-      const nestedGroups = new Map();
-      let imageField = null;
-
-      function addScalar(name, val) {
-        if (detectImageMime(val, name) && !imageField) {
-          imageField = { name, value: val };
-          return;
-        }
-        if (!(name in scalars)) scalars[name] = val;
-      }
-
-      Array.from(item.attributes || []).forEach(a => addScalar('@' + a.name, a.value));
-      // Group children by tag first — needed because XML may have repeated
-      // same-tagged siblings within an item (typically when a JSON array of
-      // scalars was converted to XML, like `vehicleTypes: [0, 2]` becoming
-      // `<vehicleTypes>0</vehicleTypes><vehicleTypes>2</vehicleTypes>`).
-      // Without this grouping, addScalar's first-wins dedupe would drop all
-      // values after the first ("0" kept, "2" lost).
-      const childGroups = new Map();
-      for (const c of Array.from(item.children)) {
-        const t = localName(c);
-        if (!childGroups.has(t)) childGroups.set(t, []);
-        childGroups.get(t).push(c);
-      }
-      for (const [tag, els] of childGroups) {
-        if (els.length === 1) {
-          const c = els[0];
-          if (c.children.length === 0) {
-            addScalar(tag, (c.textContent || '').trim());
-          } else {
-            if (!nestedGroups.has(tag)) nestedGroups.set(tag, []);
-            nestedGroups.get(tag).push(c);
-          }
-        } else {
-          // 2+ same-tagged siblings inside this item.
-          const allLeaf = els.every(c =>
-            c.children.length === 0 && (c.attributes || []).length === 0
-          );
-          if (allLeaf) {
-            // Array of scalars — join as comma-separated value so the
-            // column shows all entries instead of just the first.
-            const joined = els.map(c => (c.textContent || '').trim()).filter(v => v !== '').join(', ');
-            addScalar(tag, joined);
-          } else {
-            // Array of structured objects — keep as a nested sub-collection.
-            if (!nestedGroups.has(tag)) nestedGroups.set(tag, []);
-            for (const c of els) nestedGroups.get(tag).push(c);
-          }
-        }
-      }
-      // Capture inline text content (text directly inside the element, not
-      // inside nested children). Patterns like `<book id="1">Title</book>`
-      // would otherwise drop the title entirely — only attributes get
-      // captured by the loop above. Stored under the `#text` key so it
-      // can be rendered as a column or in detail. Ignores whitespace-only
-      // text (the typical inter-element whitespace in pretty-printed XML).
-      let inlineText = '';
-      for (const node of item.childNodes) {
-        if (node.nodeType === 3 /* TEXT_NODE */) inlineText += node.nodeValue || '';
-      }
-      inlineText = inlineText.trim();
-      if (inlineText) addScalar('#text', inlineText);
-      return { item, scalars, nestedGroups, imageField };
-    });
+    const itemMeta = items.map(item => extractMetaFromElement(item));
 
     // PASS 2 — pick which singleton-wrapper tags to lift. Only lift wrappers
     // that EVERY item has (avoids creating sparse columns like Length being
@@ -5086,22 +5126,43 @@ or
       /^status$/i, /Status$/,
       /Date$/i, /Time$/i, /^createdAt$/i, /^updatedAt$/i, /^timestamp$/i,
     ];
+    // For each regex, push ALL matching fields (not just the first). Otherwise a
+    // table with both minCommission AND maxCommission would only see one of them
+    // promoted by /Commission$/i and the other would fall to the catch-all tail,
+    // potentially getting dropped when colCap caps the column count.
     priorityRx.forEach(rx => {
-      const f = allFields.find(x => rx.test(x) && !prioritized.includes(x));
-      if (f) prioritized.push(f);
+      allFields.forEach(x => {
+        if (rx.test(x) && !prioritized.includes(x)) prioritized.push(x);
+      });
     });
     allFields.forEach(f => { if (!prioritized.includes(f)) prioritized.push(f); });
-    // Adaptive column cap: show more columns when the table is small enough
-    // that horizontal scrolling beats hiding meaningful fields. For tables
-    // with many rows the cap stays at 6 to keep the visual scan reasonable.
-    //   - 1 row : up to 16 columns (basically "show everything reachable")
-    //   - 2-5 rows : up to 12 columns
-    //   - 6-10 rows : up to 8 columns
-    //   - 11+ rows : 6 columns (original behavior)
-    const colCap = items.length <= 1 ? 16
-                 : items.length <= 5 ? 12
-                 : items.length <= 10 ? 8 : 6;
+    // Primary-column cap is the MIN of two bounds:
+    //
+    //   (a) ROW-COUNT bound — large tables stay scannable by capping at 6 cols
+    //       regardless of viewport. Small tables can show more.
+    //   (b) VIEWPORT-WIDTH bound — the primary row must FIT inside the visible
+    //       width of the viewport. No horizontal scrolling. If row (a) would
+    //       overflow the viewport, columns past that point go into the
+    //       continuation strip instead.
+    //
+    // Anything past colCap renders below the main row as label:value chips
+    // in the continuation strip — still visible, just not in the column grid.
+    const rowBasedCap = items.length <= 1 ? 16
+                      : items.length <= 5 ? 12
+                      : items.length <= 10 ? 8 : 6;
+    // Viewport-width cap. Empirical: each column needs ~150px to read
+    // comfortably (label + a few words of value before ellipsis). Subtract
+    // ~100px for page chrome (margins, expand button column). Floor with a
+    // min of 4 so even narrow viewports still get a real table.
+    const MIN_COL_PX = 150;
+    const viewportW = (typeof window !== 'undefined' ? window.innerWidth : 1400);
+    const availW = Math.max(400, viewportW - 100 - (someHaveImage ? 70 : 0));
+    const widthBasedCap = Math.max(4, Math.floor(availW / MIN_COL_PX));
+    const colCap = Math.min(rowBasedCap, widthBasedCap);
     const columns = prioritized.slice(0, colCap);
+    // Overflow fields (anything past colCap) aren't shown in the primary
+    // grid — they're reachable via the expand panel, which renders ALL
+    // fields including the ones the cap left out.
 
     // Build table
     const wrap = document.createElement('div');
@@ -5152,7 +5213,7 @@ or
           const det = detectImageMime(meta.imageField.value, meta.imageField.name);
           const img = document.createElement('img');
           img.className = 'row-thumb';
-          img.src = `data:${det.mime};base64,${det.data}`;
+          img.src = det.src;
           img.loading = 'lazy';
           img.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -5189,6 +5250,7 @@ or
         }
         tr.appendChild(td);
       });
+
       return { tr, expandBtn };
     }
 
@@ -5198,11 +5260,18 @@ or
       let detailBuilt = false;
       const toggle = () => {
         const isOpen = tr.classList.toggle('expanded');
+        detailRow.classList.toggle('hidden', !isOpen);
         if (isOpen && !detailBuilt) {
-          detailTd.appendChild(buildDetailContent(meta));
+          // Deferred build — for records with deeply nested data (many
+          // ServiceProviderAccount/Service entries, each with TreasuryCodes
+          // arrays of 100+), building everything synchronously can lock the
+          // main thread for 200-1000+ ms. Yielding to the next animation
+          // frame lets the row open visibly first (with a placeholder),
+          // then the expensive DOM construction happens off the click
+          // handler. UX feels instant even when the work is slow.
+          buildDetailWithPlaceholder(detailTd, meta);
           detailBuilt = true;
         }
-        detailRow.classList.toggle('hidden', !isOpen);
         if (onChange) onChange(isOpen);
       };
       expandBtn.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
@@ -5354,10 +5423,53 @@ or
     return wrap;
   }
 
-  function buildDetailContent(meta) {
+  // Build a detail panel asynchronously after showing a loading placeholder.
+  // Pattern: synchronously insert a "Loading…" stub so the row visually opens
+  // immediately (rotated button + visible body), THEN on the next event loop
+  // turn run the expensive buildDetailContent. For deeply nested SOAP-style
+  // payloads a single click can produce hundreds of sub-rows + observers,
+  // which used to block the main thread for 200-1000+ ms (perceived as a
+  // frozen tab).
+  //
+  // We use setTimeout(0) rather than requestAnimationFrame because rAF is
+  // throttled in background/hidden tabs. setTimeout still fires reliably
+  // even when the tab is in the background, so a user who clicks expand
+  // and switches tabs still gets their content built. The browser typically
+  // paints between the click handler returning and the setTimeout firing,
+  // so the placeholder is visible during the heavy build.
+  function buildDetailWithPlaceholder(targetTd, meta, opts) {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'detail-loading';
+    placeholder.textContent = 'Loading…';
+    targetTd.appendChild(placeholder);
+    setTimeout(() => {
+      try {
+        const content = buildDetailContent(meta, opts);
+        if (placeholder.parentNode === targetTd) {
+          targetTd.replaceChild(content, placeholder);
+        } else {
+          targetTd.appendChild(content);
+        }
+      } catch (e) {
+        // If the build fails we still want to clear the placeholder.
+        placeholder.textContent = 'Error rendering details: ' + (e && e.message || e);
+        placeholder.style.color = 'var(--accent-warn, #c62828)';
+        throw e;
+      }
+    }, 0);
+  }
+
+  function buildDetailContent(meta, opts) {
+    opts = opts || {};
     const wrap = document.createElement('div');
     wrap.className = 'detail-content';
-
+    // When this detail panel is rendered for a SUB-ROW expand (one level
+    // deeper than the top-level expand), the parent's table already shows
+    // all scalars in its cells — re-rendering them here would just duplicate.
+    // `skipScalars: true` hides them and shows only the nested sub-tables.
+    if (opts.skipScalars) {
+      // skip scalar grid block; jump to nested groups below
+    } else {
     // All scalar fields
     const grid = document.createElement('div');
     grid.className = 'detail-grid';
@@ -5378,7 +5490,7 @@ or
       const det = detectImageMime(trimmed, k);
       if (det) {
         const img = document.createElement('img');
-        img.src = `data:${det.mime};base64,${det.data}`;
+        img.src = det.src;
         img.style.maxWidth = '160px';
         img.style.maxHeight = '160px';
         img.style.borderRadius = '6px';
@@ -5409,6 +5521,7 @@ or
       grid.appendChild(kv);
     });
     wrap.appendChild(grid);
+    } // end !opts.skipScalars branch
 
     // Nested sub-tables for nested groups
     meta.nestedGroups.forEach((items, tag) => {
@@ -5489,67 +5602,240 @@ or
         processElement(it);
         return sc;
       });
-      // Order columns: images first, then others
-      const subCols = [
-        ...Array.from(subFields).filter(c => imageColumns.has(c)),
-        ...Array.from(subFields).filter(c => !imageColumns.has(c)),
+      // Order columns: images first, then prioritized scalars by semantic meaning.
+      // Mirrors the priority list used in renderTableSection so commission /
+      // amount / fee fields surface near the front of the sub-table instead of
+      // disappearing off-screen-right after dozens of less interesting columns.
+      const subPriorityRx = [
+        /^#text$/,
+        /^name$/i, /^title$/i, /^displayName$/i, /^shortName$/i, /^label$/i,
+        /^description$/i, /Description$/, /^summary$/i,
+        /^amount$/i, /Amount$/i, /^price$/i, /^total$/i, /^quantity$/i,
+        /^ccy$/i, /^currency$/i,
+        /^commission$/i, /Commission$/i, /^fee$/i, /Fee$/i, /^tax$/i, /Tax$/i,
+        /^code$/i, /^id$/i, /^key$/i, /Id$/, /Code$/,
+        /^value$/i,
+        /^status$/i, /Status$/,
+        /Date$/i, /Time$/i, /^createdAt$/i, /^updatedAt$/i, /^timestamp$/i,
       ];
-
-      const t = document.createElement('table');
-      t.className = 'sub-table';
-      const th = document.createElement('thead');
-      const thr = document.createElement('tr');
-      subCols.forEach(c => {
-        const cell = document.createElement('th');
-        cell.textContent = imageColumns.has(c) ? '' : humanize(c.replace(/^[@#]/, ''));
-        if (imageColumns.has(c)) cell.style.width = '56px';
-        thr.appendChild(cell);
-      });
-      th.appendChild(thr);
-      t.appendChild(th);
-      const tb = document.createElement('tbody');
-      subRows.forEach(r => {
-        const tr = document.createElement('tr');
-        subCols.forEach(c => {
-          const td = document.createElement('td');
-          const v = r[c];
-          if (imageColumns.has(c)) {
-            const det = v ? detectImageMime(v, c) : null;
-            if (det) {
-              stats.images++;
-              const img = document.createElement('img');
-              img.className = 'row-thumb';
-              img.src = `data:${det.mime};base64,${det.data}`;
-              img.loading = 'lazy';
-              img.addEventListener('click', (e) => {
-                e.stopPropagation();
-                modalImg.src = img.src;
-                modal.classList.add('open');
-              });
-              td.appendChild(img);
-            } else {
-              td.innerHTML = '<span class="cell-empty">—</span>';
-            }
-          } else if (v === undefined || v === '') {
-            td.innerHTML = '<span class="cell-empty">—</span>';
-          } else if (/^(true|false)$/i.test(v)) {
-            const tt = v.toLowerCase() === 'true';
-            td.innerHTML = `<span class="badge-status ${tt ? 'active' : 'inactive'}">${tt ? '● Yes' : '● No'}</span>`;
-          } else if (v.length > 80) {
-            const span = document.createElement('span');
-            span.className = 'cell-truncate';
-            span.textContent = v;
-            span.title = v;
-            td.appendChild(span);
-          } else {
-            td.textContent = v;
-          }
-          tr.appendChild(td);
+      const subAll = Array.from(subFields);
+      const subImg = subAll.filter(c => imageColumns.has(c));
+      const subRest = subAll.filter(c => !imageColumns.has(c));
+      const subOrdered = [];
+      // Same "match-all-per-regex" semantics as renderTableSection so that
+      // both min* and max* siblings get promoted together instead of one
+      // falling through to the catch-all tail.
+      subPriorityRx.forEach(rx => {
+        subRest.forEach(x => {
+          if (rx.test(x) && !subOrdered.includes(x)) subOrdered.push(x);
         });
-        tb.appendChild(tr);
       });
-      t.appendChild(tb);
-      section.appendChild(t);
+      subRest.forEach(f => { if (!subOrdered.includes(f)) subOrdered.push(f); });
+      const subCols = [...subImg, ...subOrdered];
+
+      // Per-row meta — used to decide which sub-rows need their own expand
+      // button. A row needs expand if its source element contains nested
+      // collections that DIDN'T get lifted into the row's scalars. Typical
+      // example: ServiceProviderAccount with 100+ <TreasuryCodes> children —
+      // those aren't lifted (multi-instance) and they aren't scalars either,
+      // so without expand the data is dropped entirely.
+      const subRowMetas = items.map(it => {
+        const fullMeta = extractMetaFromElement(it);
+        const remaining = new Map();
+        for (const [tg, els] of fullMeta.nestedGroups) {
+          if (!liftWrappers.has(tg)) remaining.set(tg, els);
+        }
+        return { item: it, scalars: fullMeta.scalars, nestedGroups: remaining, imageField: fullMeta.imageField };
+      });
+      const anyHasNested = subRowMetas.some(m => m.nestedGroups.size > 0);
+
+      // Sub-table always renders as a scrollable table, regardless of row
+      // count. Mixing two layouts (vertical grid for 1 row, table for 2+)
+      // was confusing — user feedback said: keep it consistent. The shell
+      // wraps the table in an overflow-x:auto container with edge-fade
+      // gradient + "↔ scroll" hint so wide content is reachable.
+      {
+        const shell = document.createElement('div');
+        shell.className = 'sub-table-shell';
+        const tableWrap = document.createElement('div');
+        tableWrap.className = 'sub-table-wrap';
+
+        const t = document.createElement('table');
+        t.className = 'sub-table';
+        const th = document.createElement('thead');
+        const thr = document.createElement('tr');
+        // Expand column for rows that contain non-lifted nested collections.
+        // Only present if at least one row in this sub-table has them.
+        if (anyHasNested) {
+          const expandTh = document.createElement('th');
+          expandTh.className = 'expand-col sub-expand-col';
+          expandTh.style.width = '34px';
+          thr.appendChild(expandTh);
+        }
+        subCols.forEach(c => {
+          const cell = document.createElement('th');
+          cell.textContent = imageColumns.has(c) ? '' : humanize(c.replace(/^[@#]/, ''));
+          if (imageColumns.has(c)) cell.style.width = '56px';
+          thr.appendChild(cell);
+        });
+        th.appendChild(thr);
+        t.appendChild(th);
+        const totalSubCols = subCols.length + (anyHasNested ? 1 : 0);
+        const tb = document.createElement('tbody');
+        subRows.forEach((r, rowIdx) => {
+          const tr = document.createElement('tr');
+          tr.className = 'sub-row-main';
+          // Expand button cell (or empty placeholder to keep columns aligned)
+          if (anyHasNested) {
+            const expandTd = document.createElement('td');
+            expandTd.className = 'sub-expand-cell';
+            if (subRowMetas[rowIdx].nestedGroups.size > 0) {
+              const expBtn = document.createElement('button');
+              expBtn.className = 'expand-btn';
+              expBtn.innerHTML = '▶';
+              expBtn.title = 'Show nested data';
+              expandTd.appendChild(expBtn);
+              // Defer wiring until after we've built the tr + detail row.
+              tr.__subExpandBtn = expBtn;
+              tr.__subRowMeta = subRowMetas[rowIdx];
+            }
+            tr.appendChild(expandTd);
+          }
+          subCols.forEach(c => {
+            const td = document.createElement('td');
+            const v = r[c];
+            if (imageColumns.has(c)) {
+              const det = v ? detectImageMime(v, c) : null;
+              if (det) {
+                stats.images++;
+                const img = document.createElement('img');
+                img.className = 'row-thumb';
+                img.src = det.src;
+                img.loading = 'lazy';
+                img.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  modalImg.src = img.src;
+                  modal.classList.add('open');
+                });
+                td.appendChild(img);
+              } else {
+                td.innerHTML = '<span class="cell-empty">—</span>';
+              }
+            } else if (v === undefined || v === '') {
+              td.innerHTML = '<span class="cell-empty">—</span>';
+            } else if (/^(true|false)$/i.test(v)) {
+              const tt = v.toLowerCase() === 'true';
+              td.innerHTML = `<span class="badge-status ${tt ? 'active' : 'inactive'}">${tt ? '● Yes' : '● No'}</span>`;
+            } else if (v.length > 80) {
+              const span = document.createElement('span');
+              span.className = 'cell-truncate';
+              span.textContent = v;
+              span.title = v;
+              td.appendChild(span);
+            } else {
+              td.textContent = v;
+            }
+            tr.appendChild(td);
+          });
+          tb.appendChild(tr);
+
+          // If this sub-row has its own nested groups, append a hidden detail
+          // row immediately below it. Click on the expand button lazy-builds
+          // the detail content (recursive buildDetailContent, skipping the
+          // scalar grid since the row's scalars are already in its cells).
+          if (tr.__subExpandBtn) {
+            const detailRow = document.createElement('tr');
+            detailRow.className = 'sub-row-detail hidden';
+            const detailTd = document.createElement('td');
+            detailTd.colSpan = totalSubCols;
+            detailTd.className = 'sub-row-detail-cell';
+            detailRow.appendChild(detailTd);
+            tb.appendChild(detailRow);
+
+            let built = false;
+            const rowMeta = tr.__subRowMeta;
+            const expBtn = tr.__subExpandBtn;
+            const toggle = () => {
+              const open = tr.classList.toggle('expanded');
+              detailRow.classList.toggle('hidden', !open);
+              if (open && !built) {
+                // Same async-build pattern as the top-level expand. Critical
+                // here: a sub-row may itself contain a 100-row TreasuryCodes
+                // collection — that's exactly the case that froze the tab.
+                buildDetailWithPlaceholder(detailTd, rowMeta, { skipScalars: true });
+                built = true;
+              }
+            };
+            expBtn.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+            tr.addEventListener('click', (e) => {
+              if (e.target.tagName === 'IMG' || e.target.tagName === 'A') return;
+              if (window.getSelection().toString().length > 0) return;
+              toggle();
+            });
+            // Clean up the transient references
+            delete tr.__subExpandBtn;
+            delete tr.__subRowMeta;
+          }
+        });
+        t.appendChild(tb);
+        tableWrap.appendChild(t);
+        shell.appendChild(tableWrap);
+        section.appendChild(shell);
+
+        // After layout, detect horizontal overflow and:
+        //   - tag the shell with .has-overflow so the right-edge fade appears
+        //   - inject a "↔ scroll" hint next to the title (auto-hides via CSS
+        //     when .has-scroll isn't on the shell)
+        //
+        // Layout timing is tricky here. The detail row uses
+        // `content-visibility:auto` which defers layout until the row
+        // crosses into the viewport. A synchronous read or a single rAF
+        // both measure 0×0 in that case. To cover all cases we wire up
+        // THREE triggers, all converging on the same `updateOverflowState`:
+        //   1. Immediate + rAF — catches the common case where layout is
+        //      already computed (row was created in-view).
+        //   2. ResizeObserver — fires the moment the wrap gets a real size,
+        //      which is when content-visibility expands.
+        //   3. Window scroll listener — fires as the user scrolls the parent
+        //      page, eventually bringing the row into view and triggering
+        //      content-visibility layout.
+        //   4. Horizontal scroll on the wrap — toggles the right-edge fade
+        //      off when the user has scrolled all the way to the right end.
+        const updateOverflowState = () => {
+          if (tableWrap.clientWidth === 0) return;
+          const scrollable = tableWrap.scrollWidth > tableWrap.clientWidth + 1;
+          const atRightEdge = tableWrap.scrollLeft + tableWrap.clientWidth >= tableWrap.scrollWidth - 1;
+          shell.classList.toggle('has-overflow', scrollable && !atRightEdge);
+          shell.classList.toggle('has-scroll', scrollable);
+        };
+        if (typeof ResizeObserver !== 'undefined') {
+          new ResizeObserver(updateOverflowState).observe(tableWrap);
+        }
+        if (typeof IntersectionObserver !== 'undefined') {
+          // Fires the first time the shell intersects the viewport — i.e.
+          // exactly when content-visibility:auto switches the detail row
+          // from skipped to laid-out. Disconnects after the first hit since
+          // ResizeObserver covers subsequent resize/scroll changes.
+          const io = new IntersectionObserver((entries) => {
+            if (entries.some(e => e.isIntersecting)) {
+              updateOverflowState();
+              io.disconnect();
+            }
+          });
+          io.observe(shell);
+        }
+        tableWrap.addEventListener('scroll', updateOverflowState, { passive: true });
+        updateOverflowState();
+        requestAnimationFrame(updateOverflowState);
+        // "↔ scroll" hint in the title — auto-hidden by CSS when no overflow.
+        if (!title.querySelector('.scroll-hint')) {
+          const hint = document.createElement('span');
+          hint.className = 'scroll-hint';
+          hint.textContent = '↔ scroll';
+          title.appendChild(hint);
+        }
+      }
+
       wrap.appendChild(section);
     });
 
@@ -5902,22 +6188,57 @@ or
   }
 
   // ---------- Image detection ----------
+  // Detect whether a value represents an image. Recognises three kinds:
+  //   1. HTTP(S) URLs whose path ends in a known image extension (with or
+  //      without a query string). Returns the URL directly as `.src`.
+  //   2. Inline `data:image/*;base64,...` URLs.
+  //   3. Raw base64 strings that magic-byte-match a known image format.
+  //
+  // Returns `{ mime, src, isUrl }` on a hit, null otherwise. Callers should
+  // use `det.src` to render the image — it's already a usable `<img src>`
+  // value for both base64 and remote-URL cases.
   function detectImageMime(text, tagName) {
-    if (!text || text.length < 32) return null;
-    const trimmed = String(text).trim().replace(/\s+/g, '');
+    if (!text) return null;
+    const raw = String(text).trim();
+    // URL case — must be the entire value, http(s) scheme, path ending in
+    // an image extension (optional query string). Common in real-world
+    // APIs (real estate listings, CMS payloads, product catalogs, etc.)
+    // where image fields are URLs to thumbnails rather than inline base64.
+    const urlMatch = raw.match(/^https?:\/\/[^\s]+?\.(jpe?g|png|gif|webp|svg|bmp|ico|avif|heic|heif)(\?[^\s]*)?$/i);
+    if (urlMatch) {
+      const extToMime = {
+        jpg: 'image/jpeg', jpeg: 'image/jpeg',
+        png: 'image/png', gif: 'image/gif',
+        webp: 'image/webp', svg: 'image/svg+xml',
+        bmp: 'image/bmp', ico: 'image/x-icon',
+        avif: 'image/avif', heic: 'image/heic', heif: 'image/heif',
+      };
+      const mime = extToMime[urlMatch[1].toLowerCase()] || 'image/jpeg';
+      return { mime, src: raw, isUrl: true };
+    }
+    if (text.length < 32) return null;
+    const trimmed = raw.replace(/\s+/g, '');
     const dataUrlMatch = trimmed.match(/^data:(image\/[a-z+]+);base64,([A-Za-z0-9+/=]+)$/i);
-    if (dataUrlMatch) return { mime: dataUrlMatch[1], data: dataUrlMatch[2] };
+    if (dataUrlMatch) {
+      return { mime: dataUrlMatch[1], data: dataUrlMatch[2], src: trimmed, isUrl: false };
+    }
     if (!/^[A-Za-z0-9+/]+=*$/.test(trimmed)) return null;
     if (trimmed.length < 64) return null;
     const head = trimmed.substring(0, 16);
-    if (head.startsWith('iVBORw0K')) return { mime: 'image/png', data: trimmed };
-    if (head.startsWith('/9j/')) return { mime: 'image/jpeg', data: trimmed };
-    if (head.startsWith('R0lGOD')) return { mime: 'image/gif', data: trimmed };
-    if (head.startsWith('Qk')) return { mime: 'image/bmp', data: trimmed };
-    if (head.startsWith('UklGR')) return { mime: 'image/webp', data: trimmed };
-    if (head.startsWith('PHN2Z') || head.startsWith('PD94bWw')) return { mime: 'image/svg+xml', data: trimmed };
+    let mime = null;
+    if (head.startsWith('iVBORw0K')) mime = 'image/png';
+    else if (head.startsWith('/9j/')) mime = 'image/jpeg';
+    else if (head.startsWith('R0lGOD')) mime = 'image/gif';
+    else if (head.startsWith('Qk')) mime = 'image/bmp';
+    else if (head.startsWith('UklGR')) mime = 'image/webp';
+    else if (head.startsWith('PHN2Z') || head.startsWith('PD94bWw')) mime = 'image/svg+xml';
+    if (mime) {
+      return { mime, data: trimmed, src: `data:${mime};base64,${trimmed}`, isUrl: false };
+    }
     const tagHint = /icon|image|logo|picture|photo|thumb|avatar|img/i.test(tagName || '');
-    if (tagHint && trimmed.length > 200) return { mime: 'image/png', data: trimmed };
+    if (tagHint && trimmed.length > 200) {
+      return { mime: 'image/png', data: trimmed, src: `data:image/png;base64,${trimmed}`, isUrl: false };
+    }
     return null;
   }
   function maybeRenderImagePreview(text, tagName, parentWrapper) {
@@ -5927,17 +6248,86 @@ or
     const img = document.createElement('img');
     img.className = 'image-preview';
     img.loading = 'lazy';
-    img.src = `data:${det.mime};base64,${det.data}`;
+    img.src = det.src;
     img.addEventListener('click', (e) => {
       e.stopPropagation();
       modalImg.src = img.src;
       modal.classList.add('open');
     });
     img.addEventListener('error', () => {
-      if (det.mime === 'image/png' && tagName) { img.onerror = null; img.src = `data:image/jpeg;base64,${det.data}`; }
-      else { img.remove(); stats.images--; }
+      // For base64 fallback: if PNG decode failed and the tag name hinted at
+      // an image, try JPEG before giving up. URL-sourced images have a
+      // correct extension already — just drop them on load failure.
+      if (!det.isUrl && det.mime === 'image/png' && tagName && det.data) {
+        img.onerror = null; img.src = `data:image/jpeg;base64,${det.data}`;
+      } else { img.remove(); stats.images--; }
     });
     parentWrapper.appendChild(img);
+  }
+
+  // Build a meta record for one XML element: direct scalars, attribute-derived
+  // scalars, inline text, and child-element groups (one group per tag).
+  //
+  // Used in two places:
+  //   1. renderTableSection — to build itemMeta[] for top-level collection rows
+  //   2. buildDetailContent — to RECURSIVELY peek into sub-table rows so that
+  //      each sub-row can offer its own expand-button if it has nested children.
+  //      That's what makes deeply-nested data (e.g. SOAP responses with
+  //      Provider → ServiceProviderAccount → TreasuryCodes → ...) fully
+  //      reachable through the table view at any depth.
+  function extractMetaFromElement(item) {
+    const scalars = {};
+    const nestedGroups = new Map();
+    let imageField = null;
+
+    function addScalar(name, val) {
+      if (detectImageMime(val, name) && !imageField) {
+        imageField = { name, value: val };
+        return;
+      }
+      if (!(name in scalars)) scalars[name] = val;
+    }
+
+    Array.from(item.attributes || []).forEach(a => addScalar('@' + a.name, a.value));
+    // Group children by tag — handles repeated same-tagged siblings (scalar
+    // arrays like `<vehicleTypes>0</vehicleTypes><vehicleTypes>2</vehicleTypes>`
+    // become comma-joined; arrays of structured objects become nested groups).
+    const childGroups = new Map();
+    for (const c of Array.from(item.children)) {
+      const t = localName(c);
+      if (!childGroups.has(t)) childGroups.set(t, []);
+      childGroups.get(t).push(c);
+    }
+    for (const [tag, els] of childGroups) {
+      if (els.length === 1) {
+        const c = els[0];
+        if (c.children.length === 0) {
+          addScalar(tag, (c.textContent || '').trim());
+        } else {
+          if (!nestedGroups.has(tag)) nestedGroups.set(tag, []);
+          nestedGroups.get(tag).push(c);
+        }
+      } else {
+        const allLeaf = els.every(c =>
+          c.children.length === 0 && (c.attributes || []).length === 0
+        );
+        if (allLeaf) {
+          const joined = els.map(c => (c.textContent || '').trim()).filter(v => v !== '').join(', ');
+          addScalar(tag, joined);
+        } else {
+          if (!nestedGroups.has(tag)) nestedGroups.set(tag, []);
+          for (const c of els) nestedGroups.get(tag).push(c);
+        }
+      }
+    }
+    // Inline text (`<book id="1">Title</book>` → Title) stored under #text key.
+    let inlineText = '';
+    for (const node of item.childNodes) {
+      if (node.nodeType === 3 /* TEXT_NODE */) inlineText += node.nodeValue || '';
+    }
+    inlineText = inlineText.trim();
+    if (inlineText) addScalar('#text', inlineText);
+    return { item, scalars, nestedGroups, imageField };
   }
 
   // ---------- Modal ----------

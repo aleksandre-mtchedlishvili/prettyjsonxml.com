@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XML to Table — View XML as a Sortable Table (Free)</title>
+<meta name="description" content="Turn any XML into a real sortable, searchable table. Auto-detects repeated elements and renders them as rows — free, no signup, runs in your browser.">
+<meta name="keywords" content="xml to table, convert xml to table, xml table viewer, xml to grid, view xml as table, xml array viewer, online xml viewer">
+<link rel="canonical" href="https://prettyjsonxml.com/xml-to-table">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#7c9cff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c9cff'/%3E%3Ctext x='50' y='68' font-size='52' font-weight='700' fill='white' text-anchor='middle' font-family='-apple-system,BlinkMacSystemFont,sans-serif'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="XML to Table — View XML as a Sortable Table">
+<meta property="og:description" content="Turn any XML into a real sortable, searchable table. Auto-detects repeated elements and renders them as rows — in your browser, no upload required.">
+<meta property="og:url" content="https://prettyjsonxml.com/xml-to-table">
+<meta property="og:image" content="https://prettyjsonxml.com/og.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="XML to Table — View XML as a Sortable Table">
+<meta name="twitter:description" content="Turn any XML into a real sortable, searchable table. Auto-detects repeated elements and renders them as rows.">
+<meta name="twitter:image" content="https://prettyjsonxml.com/og.jpg">
+
+<!-- WebApplication schema — tells Google this is a free, in-browser tool
+     that converts XML to a table. Mirrors the homepage WebApplication node. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "XML to Table — Pretty JSON & XML",
+  "alternateName": ["XML to Table", "XML Table Viewer", "View XML as Table"],
+  "description": "Convert any XML into a sortable, searchable table online. The viewer auto-detects repeated elements (RSS items, SOAP records, product entries) and renders them as table rows with the most useful fields as columns. 100% in your browser. Free, no signup.",
+  "url": "https://prettyjsonxml.com/xml-to-table",
+  "image": "https://prettyjsonxml.com/og.jpg",
+  "screenshot": "https://prettyjsonxml.com/og.jpg",
+  "applicationCategory": "DeveloperApplication",
+  "applicationSubCategory": "XML to table viewer",
+  "operatingSystem": "Web (any modern browser)",
+  "browserRequirements": "Requires a modern browser (Chrome, Firefox, Safari, Edge).",
+  "softwareVersion": "1.0",
+  "dateModified": "2026-05-29T12:00:00Z",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "author": {
+    "@type": "Person",
+    "name": "Aleksandre Mchedlishvili",
+    "url": "https://prettyjsonxml.com/"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "featureList": [
+    "Auto-detect repeated XML elements and render them as table rows",
+    "Sortable columns picked by field frequency and naming",
+    "Instant full-text search across rows and nested fields",
+    "Expand any row to see its full nested XML detail",
+    "Collapsible tree view for the complete document structure",
+    "Works with SOAP responses, RSS / Atom feeds, Maven POM, SVG",
+    "Handles large XML files (9 MB+) with virtual scrolling",
+    "100% client-side — your XML never leaves your browser",
+    "No signup, no ads, no upload to any server"
+  ]
+}
+</script>
+
+<!-- BreadcrumbList — Home > XML to Table. Matches the absolute-URL,
+     position-indexed style used by the homepage structured data. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://prettyjsonxml.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "XML to Table",
+      "item": "https://prettyjsonxml.com/xml-to-table"
+    }
+  ]
+}
+</script>
+
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --bg-elev: #ffffff;
+    --bg-card: #ffffff;
+    --bg-elev-2: #eef1f7;
+    --border: #d8dde8;
+    --border-soft: #e8ecf3;
+    --text: #1a1f2e;
+    --text-dim: #5a6478;
+    --text-muted: #94a0b5;
+    --accent: #3559e0;
+    --accent-2: #0e9f6e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text);
+    font-weight: 600; font-size: 16px;
+  }
+  .brand-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #7c9cff, #c084fc);
+    border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 13px;
+  }
+  .brand-sub { color: var(--text-muted); font-weight: 400; }
+  .cta-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .cta-btn:hover { background: #2a47b8; }
+  .cta-btn:active { transform: translateY(1px); }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 24px 60px; }
+  h1 {
+    margin: 0 0 12px 0;
+    font-size: 36px;
+    letter-spacing: -0.6px;
+    line-height: 1.2;
+  }
+  .lede {
+    font-size: 17px;
+    color: var(--text-dim);
+    margin: 0 0 16px 0;
+  }
+  .updated { color: var(--text-muted); font-size: 13px; margin: 0 0 36px 0; }
+  h2 {
+    margin: 44px 0 14px 0;
+    font-size: 24px;
+    letter-spacing: -0.3px;
+  }
+  h3 {
+    margin: 28px 0 10px 0;
+    font-size: 18px;
+    color: var(--text);
+  }
+  p, ul, li, ol { font-size: 16px; color: var(--text-dim); }
+  p { margin: 0 0 14px 0; }
+  ul, ol { padding-left: 24px; margin: 0 0 14px 0; }
+  li { margin-bottom: 8px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  code {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13.5px;
+    background: var(--bg-elev-2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--text);
+  }
+  pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 14px 0;
+  }
+  pre code { background: transparent; padding: 0; }
+  a { color: var(--accent); }
+  a:hover { text-decoration: underline; }
+  .callout {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    font-size: 15px;
+    color: var(--text-dim);
+  }
+  .callout.tip { border-left-color: var(--accent-2); }
+  .callout strong { display: block; margin-bottom: 4px; color: var(--text); }
+  .inline-cta {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin: 16px 0;
+    transition: background 0.15s;
+  }
+  .inline-cta:hover { background: #2a47b8; text-decoration: none; }
+  .step {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 16px 0;
+  }
+  .step h3 {
+    margin: 0 0 8px 0;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .step-num {
+    width: 26px; height: 26px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 24px 0 32px;
+    font-size: 14px;
+  }
+  .toc strong { display: block; margin-bottom: 8px; }
+  .toc a {
+    display: block;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 3px 0;
+  }
+  .toc a:hover { color: var(--accent); }
+  .related {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 32px 0 8px;
+    font-size: 15px;
+  }
+  .related strong { display: block; margin-bottom: 10px; color: var(--text); }
+  .related ul { margin: 0; padding-left: 20px; }
+  .related li { margin-bottom: 6px; }
+  footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 24px;
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  footer nav a { color: var(--text-dim); text-decoration: none; margin: 0 8px; }
+  footer nav a:hover { color: var(--accent); text-decoration: underline; }
+  footer nav a.gh { display: inline-flex; align-items: center; gap: 4px; }
+  footer nav a.gh svg { width: 14px; height: 14px; vertical-align: -2px; fill: currentColor; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">
+    <span class="brand-icon">{ }</span>
+    <span>Pretty <span class="brand-sub">JSON &amp; XML</span></span>
+  </a>
+  <a class="cta-btn" href="/">Try the viewer →</a>
+</header>
+<main>
+  <article>
+    <h1>XML to Table — View XML as a Sortable Table</h1>
+    <p class="lede">
+      XML is a tree, but the data inside it is usually a list — feed items, SOAP records, catalog entries, line items. Reading that as raw angle brackets is slow and error-prone. This tool flips it: paste your XML and it auto-detects the repeated elements and renders them as a real sortable, searchable table. No signup, no upload, all in your browser.
+    </p>
+    <p class="updated">Free online tool · Updated 29 May 2026</p>
+
+    <nav class="toc" aria-label="On this page">
+      <strong>On this page</strong>
+      <a href="#why">Why a table beats raw XML</a>
+      <a href="#how">Convert XML to a table in three steps</a>
+      <a href="#detect">How repeated elements become rows</a>
+      <a href="#attributes">Attributes, text, and nested tags</a>
+      <a href="#formats">SOAP, RSS, Atom, POM — it just works</a>
+      <a href="#large">Large XML files (9 MB+)</a>
+      <a href="#privacy">Is my XML uploaded anywhere?</a>
+    </nav>
+
+    <h2 id="why">Why a table beats raw XML</h2>
+    <p>
+      Say you have a feed like this:
+    </p>
+    <pre><code>&lt;catalog&gt;
+  &lt;product id="1"&gt;&lt;name&gt;Keyboard&lt;/name&gt;&lt;price&gt;49&lt;/price&gt;&lt;/product&gt;
+  &lt;product id="2"&gt;&lt;name&gt;Mouse&lt;/name&gt;&lt;price&gt;19&lt;/price&gt;&lt;/product&gt;
+  &lt;product id="3"&gt;&lt;name&gt;Monitor&lt;/name&gt;&lt;price&gt;229&lt;/price&gt;&lt;/product&gt;
+&lt;/catalog&gt;</code></pre>
+    <p>
+      Pretty-printing re-indents the tags, which helps a little. But you still read it line by line, and you can't sort by price or scan for one product without re-reading the whole document. A table gives you the same data with each <code>&lt;product&gt;</code> as a row and its child tags as columns:
+    </p>
+    <pre><code>┌────┬──────────┬───────┐
+│ ID │ NAME     │ PRICE │
+├────┼──────────┼───────┤
+│ 1  │ Keyboard │ 49    │
+│ 2  │ Mouse    │ 19    │
+│ 3  │ Monitor  │ 229   │
+└────┴──────────┴───────┘</code></pre>
+    <p>
+      Now you can click <em>Price</em> to sort, type "monitor" to filter, and click a row to expand its full detail. The same data — but you <em>scan</em> it instead of <em>parsing</em> it in your head. That is the whole point of the converter, and it is the one thing most XML "viewers" don't actually do.
+    </p>
+
+    <h2 id="how">Convert XML to a table in three steps</h2>
+
+    <div class="step">
+      <h3><span class="step-num">1</span> Paste or upload your XML</h3>
+      <p>
+        Open <a href="https://prettyjsonxml.com/">prettyjsonxml.com</a> and drop your XML into the editor in the middle of the page. You have two options:
+      </p>
+      <ul>
+        <li><strong>Paste</strong> — click into the editor and press <code>Ctrl+V</code> (or <code>Cmd+V</code> on Mac). The editor highlights the markup as you go.</li>
+        <li><strong>Upload</strong> — click the "Upload a file" button and pick any <code>.xml</code> file. It is parsed client-side; nothing is sent to a server.</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">2</span> Click "View as Table"</h3>
+      <p>
+        With your XML loaded, click <strong>View as Table</strong> in the toolbar above the editor. The viewer parses the document with the browser's native <code>DOMParser</code>, walks the tree to find the repeated element (the list inside your XML), and turns each occurrence into a row. Child tags and attributes become the columns.
+      </p>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">3</span> Sort, search, expand</h3>
+      <p>
+        The table is now yours to drive:
+      </p>
+      <ul>
+        <li><strong>Click any column header</strong> to sort ascending; click again for descending. Numeric columns sort numerically, text alphabetically.</li>
+        <li><strong>Type in the search box</strong> to filter rows. The match is full-text — it covers visible cells <em>and</em> the nested content hidden in each row's detail.</li>
+        <li><strong>Click any row</strong> to expand its complete element, including child elements, attributes, and any base64 image decoded as a thumbnail.</li>
+      </ul>
+    </div>
+
+    <p style="text-align:center;">
+      <a class="inline-cta" href="https://prettyjsonxml.com/">Open the viewer →</a>
+    </p>
+
+    <h2 id="detect">How repeated elements become rows</h2>
+    <p>
+      The converter doesn't ask you to write an XPath or pick a node by hand. It scans the parsed tree for the element that repeats most as a sibling set — <code>&lt;item&gt;</code> in an RSS feed, <code>&lt;product&gt;</code> in a catalog, a record element inside a SOAP body — and treats that as the row unit. Then it picks columns the same way the JSON table does:
+    </p>
+    <ol>
+      <li><strong>Frequency.</strong> A child tag present on most rows is column-worthy. A tag on one row in fifty is a sparse outlier, kept available on expand.</li>
+      <li><strong>Semantic priority.</strong> Tags named <code>name</code>, <code>title</code>, <code>id</code>, <code>code</code>, <code>status</code>, dates, and amounts get bumped to the front, because that is what people scan first.</li>
+      <li><strong>Readable cap.</strong> The viewer shows a handful of the most useful columns rather than every tag, so a record with 30 children stays legible. The rest are one click away in the row detail.</li>
+    </ol>
+
+    <h2 id="attributes">Attributes, text, and nested tags</h2>
+    <p>
+      Real XML mixes attributes, element text, and deeper nesting. The converter handles each:
+    </p>
+    <ul>
+      <li><strong>Attributes</strong> like <code>id="1"</code> are pulled out as their own columns alongside child-element text, so <code>&lt;product id="1"&gt;</code> gives you an <code>ID</code> column for free.</li>
+      <li><strong>Singleton wrappers</strong> — when every row has the same single-child wrapper element, its fields are lifted to first-class columns instead of hiding a level down.</li>
+      <li><strong>Deeper lists</strong> inside a row (a nested set of repeated tags) render as their own collapsible mini-table inside the expanded detail, recursively.</li>
+    </ul>
+    <p>
+      If you ever want the unfiltered structure, switch to <strong>Tree view</strong> — it renders the whole document as foldable nodes, preserving every tag, attribute, and text node.
+    </p>
+
+    <h2 id="formats">SOAP, RSS, Atom, POM — it just works</h2>
+    <p>
+      Because detection is based on document shape rather than a fixed schema, the same converter handles the XML dialects people paste most:
+    </p>
+    <ul>
+      <li><strong>SOAP responses</strong> — repeated records inside the envelope body become rows; header metadata stays accessible. See the <a href="/example/soap-response">SOAP response example</a>.</li>
+      <li><strong>RSS and Atom feeds</strong> — each <code>&lt;item&gt;</code> or <code>&lt;entry&gt;</code> becomes a row with title, link, and date columns. Try the <a href="/example/atom-feed">Atom feed example</a>.</li>
+      <li><strong>Maven POM files</strong> — dependencies render as a clean table of group, artifact, and version. See the <a href="/example/pom-xml">pom.xml example</a>.</li>
+    </ul>
+
+    <h2 id="large">Large XML files (9 MB+)</h2>
+    <p>
+      The converter is built for big documents without freezing the tab:
+    </p>
+    <ul>
+      <li><strong>Virtual scrolling</strong> kicks in for large tables — the grid can hold tens of thousands of rows while only ~50 live in the DOM at any moment.</li>
+      <li><strong>The editor goes read-only above a few megabytes</strong> so assigning a huge string to a text area doesn't block the main thread. The data still loads into the table.</li>
+      <li><strong>Lazy tree expansion</strong> builds deep nodes only as you open them.</li>
+    </ul>
+    <div class="callout tip">
+      <strong>Tip:</strong>
+      For documents over 50 MB, expect about a second of busy cursor while <code>DOMParser</code> does its initial work — native parsing is the floor. Once it is parsed, sorting and search stay instant.
+    </div>
+
+    <h2 id="privacy">Is my XML uploaded anywhere?</h2>
+    <p>
+      No. The viewer is a single HTML file with no backend and no upload endpoint. Your XML is parsed and rendered by your browser's own engine — the people running the site cannot see what you paste. Full details are in the <a href="/privacy">privacy policy</a>.
+    </p>
+
+    <p style="text-align:center; margin-top: 48px;">
+      <a class="inline-cta" href="https://prettyjsonxml.com/">Open the viewer and try it →</a>
+    </p>
+
+    <nav class="related" aria-label="Related pages">
+      <strong>Related</strong>
+      <ul>
+        <li><a href="/xml-viewer">XML viewer online</a> — browse any XML as a foldable tree or table</li>
+        <li><a href="/xml-formatter">XML formatter and beautifier</a> — pretty-print or minify XML</li>
+        <li><a href="/soap-viewer">SOAP viewer</a> — view a SOAP response online as a table</li>
+        <li><a href="/">Pretty JSON &amp; XML home</a> — the full viewer</li>
+      </ul>
+    </nav>
+  </article>
+</main>
+<footer>
+  <nav aria-label="Site links">
+    <a href="/">Home</a>·
+    <a href="/guide/view-json-as-table">Guide</a>·
+    <a href="/example/rss-feed">RSS example</a>·
+    <a class="gh" href="https://github.com/aleksandre-mtchedlishvili/prettyjsonxml.com" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>·
+    <a href="/privacy">Privacy</a>·
+    <a href="/terms">Terms</a>·
+    <a href="mailto:aleksandre.mtchedlishvili@gmail.com">Contact</a>
+  </nav>
+  <p>&copy; 2026 Pretty JSON &amp; XML — runs in your browser, free forever.</p>
+</footer>
+</body>
+</html>

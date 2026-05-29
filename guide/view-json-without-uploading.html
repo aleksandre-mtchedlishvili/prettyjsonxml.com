@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON File Viewer, No Upload — Is It Safe? | Pretty JSON</title>
+<meta name="description" content="A JSON file viewer with no upload: your data is parsed in the browser, never sent to a server. Here's why it's safe to paste sensitive JSON.">
+<meta name="keywords" content="json file viewer no upload, is it safe, view json without uploading, private json viewer, offline json viewer, paste sensitive json, client side json viewer">
+<link rel="canonical" href="https://prettyjsonxml.com/guide/view-json-without-uploading">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#7c9cff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c9cff'/%3E%3Ctext x='50' y='68' font-size='52' font-weight='700' fill='white' text-anchor='middle' font-family='-apple-system,BlinkMacSystemFont,sans-serif'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="JSON File Viewer, No Upload — Is It Safe?">
+<meta property="og:description" content="A JSON file viewer with no upload: your data is parsed in the browser, never sent to a server. Safe for sensitive JSON.">
+<meta property="og:url" content="https://prettyjsonxml.com/guide/view-json-without-uploading">
+<meta property="og:image" content="https://prettyjsonxml.com/og.jpg">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JSON File Viewer, No Upload — Is It Safe?">
+<meta name="twitter:description" content="A JSON file viewer with no upload: your data stays in the browser, never sent to a server.">
+<meta name="twitter:image" content="https://prettyjsonxml.com/og.jpg">
+
+<!-- HowTo Schema — mirrors the numbered steps in the body so Google can
+     surface a "how to view JSON without uploading" rich snippet. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to view a JSON file without uploading it anywhere",
+  "description": "Open and read any JSON file privately — parsed entirely in your browser, with no upload, no backend, and no account.",
+  "totalTime": "PT15S",
+  "step": [
+    {
+      "@type": "HowToStep",
+      "position": 1,
+      "name": "Open the viewer",
+      "text": "Go to prettyjsonxml.com. The whole tool is a single HTML page that has already finished loading — from here on, nothing you do touches a server."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 2,
+      "name": "Paste or load your JSON locally",
+      "text": "Paste your JSON into the editor, or click 'Upload a file' to pick a .json file from disk. The browser reads the file from your own machine using the File API; the bytes never leave your computer."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 3,
+      "name": "Confirm it is offline-safe",
+      "text": "Optional but reassuring: open DevTools, switch to the Network tab, then format or view your data. You will see zero outbound requests carrying your JSON. You can even turn off Wi-Fi first and it still works."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 4,
+      "name": "Format, view as a tree, or as a table",
+      "text": "Beautify the JSON, fold it into a tree, or click 'View as Table' to scan records as sortable rows. Every operation runs client-side in your browser's JavaScript engine."
+    }
+  ]
+}
+</script>
+
+<!-- BreadcrumbList — Home > Guides > This page. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://prettyjsonxml.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://prettyjsonxml.com/guide/view-json-as-table"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "View JSON Without Uploading",
+      "item": "https://prettyjsonxml.com/guide/view-json-without-uploading"
+    }
+  ]
+}
+</script>
+
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --bg-elev: #ffffff;
+    --bg-card: #ffffff;
+    --bg-elev-2: #eef1f7;
+    --border: #d8dde8;
+    --border-soft: #e8ecf3;
+    --text: #1a1f2e;
+    --text-dim: #5a6478;
+    --text-muted: #94a0b5;
+    --accent: #3559e0;
+    --accent-2: #0e9f6e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text);
+    font-weight: 600; font-size: 16px;
+  }
+  .brand-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #7c9cff, #c084fc);
+    border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 13px;
+  }
+  .brand-sub { color: var(--text-muted); font-weight: 400; }
+  .cta-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .cta-btn:hover { background: #2a47b8; }
+  .cta-btn:active { transform: translateY(1px); }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 24px 60px; }
+  h1 {
+    margin: 0 0 12px 0;
+    font-size: 36px;
+    letter-spacing: -0.6px;
+    line-height: 1.2;
+  }
+  .lede {
+    font-size: 17px;
+    color: var(--text-dim);
+    margin: 0 0 16px 0;
+  }
+  .updated { color: var(--text-muted); font-size: 13px; margin: 0 0 36px 0; }
+  h2 {
+    margin: 44px 0 14px 0;
+    font-size: 24px;
+    letter-spacing: -0.3px;
+  }
+  h3 {
+    margin: 28px 0 10px 0;
+    font-size: 18px;
+    color: var(--text);
+  }
+  p, ul, li, ol { font-size: 16px; color: var(--text-dim); }
+  p { margin: 0 0 14px 0; }
+  ul, ol { padding-left: 24px; margin: 0 0 14px 0; }
+  li { margin-bottom: 8px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  code {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13.5px;
+    background: var(--bg-elev-2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--text);
+  }
+  pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 14px 0;
+  }
+  pre code { background: transparent; padding: 0; }
+  a { color: var(--accent); }
+  a:hover { text-decoration: underline; }
+  .callout {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    font-size: 15px;
+    color: var(--text-dim);
+  }
+  .callout.tip { border-left-color: var(--accent-2); }
+  .callout strong { display: block; margin-bottom: 4px; color: var(--text); }
+  .inline-cta {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin: 16px 0;
+    transition: background 0.15s;
+  }
+  .inline-cta:hover { background: #2a47b8; text-decoration: none; }
+  .step {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 16px 0;
+  }
+  .step h3 {
+    margin: 0 0 8px 0;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .step-num {
+    width: 26px; height: 26px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 24px 0 32px;
+    font-size: 14px;
+  }
+  .toc strong { display: block; margin-bottom: 8px; }
+  .toc a {
+    display: block;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 3px 0;
+  }
+  .toc a:hover { color: var(--accent); }
+  .related {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 16px 22px;
+    margin: 40px 0 0;
+  }
+  .related strong { display: block; margin-bottom: 10px; color: var(--text); }
+  .related ul { margin: 0; padding-left: 20px; }
+  .related li { margin-bottom: 6px; }
+  footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 24px;
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  footer nav a { color: var(--text-dim); text-decoration: none; margin: 0 8px; }
+  footer nav a:hover { color: var(--accent); text-decoration: underline; }
+  footer nav a.gh { display: inline-flex; align-items: center; gap: 4px; }
+  footer nav a.gh svg { width: 14px; height: 14px; vertical-align: -2px; fill: currentColor; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="../">
+    <span class="brand-icon">{ }</span>
+    <span>Pretty <span class="brand-sub">JSON &amp; XML</span></span>
+  </a>
+  <a class="cta-btn" href="../">Try the viewer →</a>
+</header>
+<main>
+  <article>
+    <h1>JSON File Viewer, No Upload — Is It Safe?</h1>
+    <p class="lede">
+      Short answer: yes. This is a JSON file viewer with no upload step at all. Your file is opened and read by your own browser — there is no backend and nothing to receive your data on the other end. If you've ever hesitated before pasting an access token, a customer record, or a config dump into a random online tool, this page is for you.
+    </p>
+    <p class="updated">A privacy explainer · Updated 29 May 2026</p>
+
+    <nav class="toc" aria-label="On this page">
+      <strong>On this page</strong>
+      <a href="#the-concern">The real concern with online JSON tools</a>
+      <a href="#how-it-works">How a no-upload viewer actually works</a>
+      <a href="#verify">How to verify it yourself in 15 seconds</a>
+      <a href="#sensitive">Is it safe to paste sensitive JSON?</a>
+      <a href="#offline">It even works offline</a>
+      <a href="#faq">Quick FAQ</a>
+    </nav>
+
+    <h2 id="the-concern">The real concern with online JSON tools</h2>
+    <p>
+      Many "online JSON viewer" sites work by sending your text to a server, formatting it there, and sending the result back. That's fine for a throwaway snippet. It is <em>not</em> fine when the JSON contains an API key, a JWT, personal data, or anything covered by a compliance rule. Once your data hits someone else's server, you're trusting their logs, their retention policy, and their security — none of which you can see.
+    </p>
+    <p>
+      The safe alternative is a viewer that never moves your data at all. That's the design philosophy here: the work happens <strong>in your browser</strong>, on your machine, and stops there.
+    </p>
+
+    <h2 id="how-it-works">How a no-upload viewer actually works</h2>
+    <p>
+      When you load <a href="https://prettyjsonxml.com/">prettyjsonxml.com</a>, your browser downloads one self-contained HTML page with its JavaScript. After that, every action is local:
+    </p>
+    <ul>
+      <li><strong>Pasting</strong> drops text straight into an in-page editor. It's a JavaScript string in your tab's memory — it isn't POSTed anywhere.</li>
+      <li><strong>Choosing a file</strong> uses the browser's File API. The page reads the bytes from disk directly into memory. There is no <code>multipart/form-data</code> upload, no temp file on a server.</li>
+      <li><strong>Formatting, tree view, and table view</strong> all run through <code>JSON.parse</code> and rendering code executed by your browser's own engine.</li>
+    </ul>
+    <p>
+      "No upload" isn't a marketing line layered over a hidden backend — there is no backend to upload to. The site is static files behind a CDN. Nothing on the server side is capable of reading your JSON, because your JSON never arrives.
+    </p>
+
+    <h2 id="verify">How to verify it yourself in 15 seconds</h2>
+    <p>
+      Don't take our word for it. Privacy claims are worth exactly nothing if you can't check them, so check them:
+    </p>
+
+    <div class="step">
+      <h3><span class="step-num">1</span> Open your browser's Network tab</h3>
+      <p>
+        Press <code>F12</code> (or right-click → Inspect) and switch to the <strong>Network</strong> tab. This logs every request your browser makes.
+      </p>
+    </div>
+    <div class="step">
+      <h3><span class="step-num">2</span> Paste your JSON and format it</h3>
+      <p>
+        Paste something in and hit Beautify, or click <em>View as Table</em>. Watch the Network panel. You'll see no request carrying your content — the only traffic is anonymous analytics pings that never include your data.
+      </p>
+    </div>
+    <div class="step">
+      <h3><span class="step-num">3</span> Pull the plug</h3>
+      <p>
+        The definitive test: turn off Wi-Fi (or tick "Offline" in DevTools) and use the viewer anyway. It keeps working perfectly. A tool that needs to upload your data couldn't.
+      </p>
+    </div>
+
+    <p style="text-align:center;">
+      <a class="inline-cta" href="../">Open the viewer →</a>
+    </p>
+
+    <h2 id="sensitive">Is it safe to paste sensitive JSON?</h2>
+    <p>
+      For the data itself, yes — it stays in your browser tab and is discarded when you close it. A few honest caveats so you can make your own call:
+    </p>
+    <ul>
+      <li><strong>Analytics are aggregate only.</strong> The site loads privacy-respecting analytics (page views, clicks). They never capture the contents of the editor or viewer, which are explicitly masked. See the <a href="../privacy">privacy policy</a> for specifics.</li>
+      <li><strong>Browser extensions can still read the page.</strong> No website can protect you from an extension you installed that reads page content. For maximum safety with secrets, use a clean or incognito profile.</li>
+      <li><strong>Rotate truly live secrets anyway.</strong> Good hygiene regardless of any tool: if a production credential lands in your clipboard, rotate it when you're done.</li>
+    </ul>
+    <div class="callout tip">
+      <strong>Bottom line</strong>
+      For sensitive JSON, a client-side viewer with no upload is about as safe as it gets online — the data simply never leaves the device you're typing on.
+    </div>
+
+    <h2 id="offline">It even works offline</h2>
+    <p>
+      Because all the logic ships in the page, once it has loaded you can disconnect entirely and keep formatting, exploring, and tabling JSON. That's the clearest proof that nothing is uploaded: an upload-based tool would break the moment the network went away. Inspecting a big export on a locked-down machine? It just works.
+    </p>
+
+    <h2 id="faq">Quick FAQ</h2>
+    <h3>Do you store or log my JSON?</h3>
+    <p>
+      No. We can't — your JSON never reaches a server we control. There's nothing to store and nothing to log.
+    </p>
+    <h3>Is there a file size limit on the "upload"?</h3>
+    <p>
+      Only your machine's memory. Since the file is read locally, there's no upload bandwidth to worry about. Multi-megabyte files load fine; see the guide on viewing a <a href="view-large-json-file">large JSON file</a>.
+    </p>
+    <h3>Can my company's security team approve this?</h3>
+    <p>
+      The fastest approval path is the Network-tab test above: it demonstrates zero data egress in seconds. The source is also open on <a href="https://github.com/aleksandre-mtchedlishvili/prettyjsonxml.com" target="_blank" rel="noopener noreferrer">GitHub</a> if they want to read it.
+    </p>
+    <h3>What about XML, SOAP, or base64 images?</h3>
+    <p>
+      Same no-upload model applies to every format. Try the <a href="../xml-viewer">XML viewer</a> or learn how to <a href="preview-base64-images-in-json">preview base64 images in JSON</a> — all parsed locally.
+    </p>
+
+    <p style="text-align:center; margin-top: 48px;">
+      <a class="inline-cta" href="../">Open the viewer and try it →</a>
+    </p>
+
+    <aside class="related" aria-label="Related pages">
+      <strong>Related</strong>
+      <ul>
+        <li><a href="../">Pretty JSON &amp; XML — the viewer</a></li>
+        <li><a href="view-large-json-file">View a large JSON file</a></li>
+        <li><a href="../json-pretty-print">JSON pretty print</a></li>
+        <li><a href="../xml-viewer">XML viewer online</a></li>
+      </ul>
+    </aside>
+  </article>
+</main>
+<footer>
+  <nav aria-label="Site links">
+    <a href="../">Home</a>·
+    <a href="./view-json-as-table">Guide</a>·
+    <a href="../example/rss-feed">RSS example</a>·
+    <a class="gh" href="https://github.com/aleksandre-mtchedlishvili/prettyjsonxml.com" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>·
+    <a href="../privacy">Privacy</a>·
+    <a href="../terms">Terms</a>·
+    <a href="mailto:aleksandre.mtchedlishvili@gmail.com">Contact</a>
+  </nav>
+  <p>&copy; 2026 Pretty JSON &amp; XML — runs in your browser, free forever.</p>
+</footer>
+</body>
+</html>

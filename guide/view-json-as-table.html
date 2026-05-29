@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>How to View JSON as a Table (Free, Online, No Signup) — Pretty JSON &amp; XML</title>
+<title>How to View JSON as a Table (Free, Online, No Signup)</title>
 <meta name="description" content="Step-by-step guide to viewing any JSON file as a sortable, searchable table in your browser. No signup, no upload, handles 9 MB+ files.">
 <meta name="keywords" content="view json as table, json to table, json viewer table, convert json to table, json array viewer, online json viewer, view json file online">
-<link rel="canonical" href="https://prettyjsonxml.com/guide/view-json-as-table.html">
+<link rel="canonical" href="https://prettyjsonxml.com/guide/view-json-as-table">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#7c9cff">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c9cff'/%3E%3Ctext x='50' y='68' font-size='52' font-weight='700' fill='white' text-anchor='middle' font-family='-apple-system,BlinkMacSystemFont,sans-serif'%3E%7B%7D%3C/text%3E%3C/svg%3E">
 <meta property="og:title" content="How to View JSON as a Table (Free, Online, No Signup)">
 <meta property="og:description" content="Step-by-step guide to viewing any JSON file as a sortable, searchable table — in your browser, no upload required.">
-<meta property="og:url" content="https://prettyjsonxml.com/guide/view-json-as-table.html">
+<meta property="og:url" content="https://prettyjsonxml.com/guide/view-json-as-table">
 <meta property="og:image" content="https://prettyjsonxml.com/og.jpg">
 <meta property="og:type" content="article">
 <meta name="twitter:card" content="summary_large_image">
@@ -40,6 +40,38 @@
     "logo": { "@type": "ImageObject", "url": "https://prettyjsonxml.com/og.jpg" }
   },
   "mainEntityOfPage": { "@type": "WebPage", "@id": "https://prettyjsonxml.com/guide/view-json-as-table.html" }
+}
+</script>
+
+<!-- HowTo Schema — mirrors the three-step workflow described in the body
+     so Google can surface it as a "how to view JSON as a table" rich snippet. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to view JSON as a table online",
+  "description": "Turn any JSON document into a searchable, sortable table in three steps — in your browser, with no signup and no upload to a server.",
+  "totalTime": "PT10S",
+  "step": [
+    {
+      "@type": "HowToStep",
+      "position": 1,
+      "name": "Paste or upload your JSON",
+      "text": "Open prettyjsonxml.com and paste your JSON into the editor, or click the Upload button to load a .json file from your computer. Everything is parsed client-side — nothing is sent to a server."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 2,
+      "name": "Click View as Table",
+      "text": "Click the View as Table button. Each repeated object becomes a row and its shared fields become sortable columns. The viewer auto-picks the most useful columns based on field frequency and naming."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 3,
+      "name": "Sort, search, expand",
+      "text": "Click any column header to sort, type in the search box to filter rows (including nested content), and click a row to expand its full detail. Switch to Tree view any time for the complete document structure."
+    }
+  ]
 }
 </script>
 
@@ -356,7 +388,7 @@
       <li><strong>Array-of-scalars collapse.</strong> A field like <code>tags: ["admin", "active"]</code> becomes a single cell showing <code>admin, active</code> rather than a sub-array. If you click to expand the row, you'll see the array structure clearly.</li>
     </ul>
     <p>
-      For deeply nested structures (a subarray inside each row), the viewer renders that subarray as its own collapsible mini-table inside the expanded detail view.
+      For deeply nested structures (a subarray inside each row), the viewer renders that subarray as its own collapsible mini-table inside the expanded detail view. The same logic works on XML — see this <a href="../example/rss-feed">worked RSS feed example</a>, where each <code>&lt;item&gt;</code> becomes a row and its nested tags become columns.
     </p>
 
     <h2 id="large-files">Tips for large files (9 MB+)</h2>
@@ -371,7 +403,7 @@
     </ul>
     <div class="callout tip">
       <strong>Tip:</strong>
-      For files over 50 MB, expect ~1 second of busy cursor while DOMParser / JSON.parse does its initial work. Native parsing is the floor — even Chrome can't make 50 MB of structured data appear instantly.
+      For files over 50 MB, expect ~1 second of busy cursor while DOMParser / JSON.parse does its initial work. Native parsing is the floor — even Chrome can't make 50 MB of structured data appear instantly. (A real-world stress test: this <a href="../example/rss-feed">multi-megabyte RSS feed</a> loads as a clean table of episodes.)
     </div>
 
     <h2 id="sort-search">Sort, search, expand — power tips</h2>
@@ -409,7 +441,7 @@
       No. The viewer is a single HTML file. There is no backend, no API, no upload endpoint. Your JSON is parsed and rendered by your browser's built-in JavaScript engine — we (the people running the site) cannot see what you paste even if we wanted to.
     </p>
     <p>
-      The site does load three analytics scripts (Google Analytics, Microsoft Clarity, Cloudflare Web Analytics) but those record aggregate behavior (clicks, page views), never the content of your data. The editor and viewer are explicitly masked from session recording. Full details in the <a href="../privacy.html">privacy policy</a>.
+      The site does load three analytics scripts (Google Analytics, Microsoft Clarity, Cloudflare Web Analytics) but those record aggregate behavior (clicks, page views), never the content of your data. The editor and viewer are explicitly masked from session recording. Full details in the <a href="../privacy">privacy policy</a>.
     </p>
 
     <h2 id="faq">Quick FAQ</h2>
@@ -438,11 +470,11 @@
 <footer>
   <nav aria-label="Site links">
     <a href="../">Home</a>·
-    <a href="./view-json-as-table.html">Guide</a>·
-    <a href="../example/rss-feed.html">RSS example</a>·
+    <a href="./view-json-as-table">Guide</a>·
+    <a href="../example/rss-feed">RSS example</a>·
     <a class="gh" href="https://github.com/aleksandre-mtchedlishvili/prettyjsonxml.com" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>·
-    <a href="../privacy.html">Privacy</a>·
-    <a href="../terms.html">Terms</a>·
+    <a href="../privacy">Privacy</a>·
+    <a href="../terms">Terms</a>·
     <a href="mailto:aleksandre.mtchedlishvili@gmail.com">Contact</a>
   </nav>
   <p>&copy; 2026 Pretty JSON &amp; XML — runs in your browser, free forever.</p>

@@ -4,37 +4,118 @@
   Submit this URL in Google Search Console:
   https://prettyjsonxml.com/sitemap.xml
 
-  Update <lastmod> when you ship significant changes — freshness is a ranking
-  signal and crawlers will re-fetch sooner when this date changes.
+  URLs are extensionless to match what the Cloudflare worker serves as 200
+  (requests for *.html 307-redirect to the extensionless path). Update
+  <lastmod> when you ship significant changes.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://prettyjsonxml.com/</loc>
-    <lastmod>2026-05-27</lastmod>
+    <lastmod>2026-05-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
+
+  <!-- Tool landing pages -->
   <url>
-    <loc>https://prettyjsonxml.com/guide/view-json-as-table.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <loc>https://prettyjsonxml.com/xml-viewer</loc>
+    <lastmod>2026-05-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://prettyjsonxml.com/example/rss-feed.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <loc>https://prettyjsonxml.com/xml-formatter</loc>
+    <lastmod>2026-05-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prettyjsonxml.com/xml-to-table</loc>
+    <lastmod>2026-05-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prettyjsonxml.com/json-pretty-print</loc>
+    <lastmod>2026-05-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prettyjsonxml.com/xml-pretty-print</loc>
+    <lastmod>2026-05-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prettyjsonxml.com/soap-viewer</loc>
+    <lastmod>2026-05-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Guides -->
+  <url>
+    <loc>https://prettyjsonxml.com/guide/view-json-as-table</loc>
+    <lastmod>2026-05-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://prettyjsonxml.com/privacy.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <loc>https://prettyjsonxml.com/guide/view-large-json-file</loc>
+    <lastmod>2026-05-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://prettyjsonxml.com/guide/view-json-without-uploading</loc>
+    <lastmod>2026-05-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://prettyjsonxml.com/guide/preview-base64-images-in-json</loc>
+    <lastmod>2026-05-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Worked examples -->
+  <url>
+    <loc>https://prettyjsonxml.com/example/rss-feed</loc>
+    <lastmod>2026-05-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prettyjsonxml.com/example/atom-feed</loc>
+    <lastmod>2026-05-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prettyjsonxml.com/example/soap-response</loc>
+    <lastmod>2026-05-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prettyjsonxml.com/example/pom-xml</loc>
+    <lastmod>2026-05-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Legal -->
+  <url>
+    <loc>https://prettyjsonxml.com/privacy</loc>
+    <lastmod>2026-05-29</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://prettyjsonxml.com/terms.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <loc>https://prettyjsonxml.com/terms</loc>
+    <lastmod>2026-05-29</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

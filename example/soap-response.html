@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>View SOAP Response Example — Pretty JSON &amp; XML</title>
+<meta name="description" content="A real SOAP response rendered as a sortable table. Paste your own SOAP XML to read the Body, faults and repeated rows in your browser — no upload.">
+<meta name="keywords" content="view soap response example, soap response viewer, soap xml example, parse soap response, soap viewer, view soap response online, soap envelope viewer">
+<link rel="canonical" href="https://prettyjsonxml.com/example/soap-response">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#7c9cff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c9cff'/%3E%3Ctext x='50' y='68' font-size='52' font-weight='700' fill='white' text-anchor='middle' font-family='-apple-system,BlinkMacSystemFont,sans-serif'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="View SOAP Response Example — Render as a Table">
+<meta property="og:description" content="A working SOAP response sample you can view as a table or tree, plus a plain-English walkthrough of the Envelope, Header, Body and Fault.">
+<meta property="og:url" content="https://prettyjsonxml.com/example/soap-response">
+<meta property="og:image" content="https://prettyjsonxml.com/og.jpg">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="View SOAP Response Example — Render as a Table">
+<meta name="twitter:description" content="A real SOAP response rendered as a sortable table. Paste your own SOAP XML to read it in your browser.">
+<meta name="twitter:image" content="https://prettyjsonxml.com/og.jpg">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "View SOAP Response Example — Render a SOAP Response as a Table",
+  "description": "A worked example showing a real SOAP response rendered as a sortable table, with a plain-English walkthrough of the Envelope, Header, Body and Fault.",
+  "image": "https://prettyjsonxml.com/og.jpg",
+  "datePublished": "2026-05-29T12:00:00Z",
+  "dateModified": "2026-05-29T12:00:00Z",
+  "author": {
+    "@type": "Person",
+    "name": "Aleksandre Mchedlishvili",
+    "url": "https://prettyjsonxml.com/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Pretty JSON & XML",
+    "logo": { "@type": "ImageObject", "url": "https://prettyjsonxml.com/og.jpg" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://prettyjsonxml.com/example/soap-response" }
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://prettyjsonxml.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Examples",
+      "item": "https://prettyjsonxml.com/example/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "SOAP Response Example",
+      "item": "https://prettyjsonxml.com/example/soap-response"
+    }
+  ]
+}
+</script>
+
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --bg-elev: #ffffff;
+    --bg-card: #ffffff;
+    --bg-elev-2: #eef1f7;
+    --border: #d8dde8;
+    --border-soft: #e8ecf3;
+    --text: #1a1f2e;
+    --text-dim: #5a6478;
+    --text-muted: #94a0b5;
+    --accent: #3559e0;
+    --tag: #c2185b;
+    --attr: #b45309;
+    --attr-val: #047857;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text);
+    font-weight: 600; font-size: 16px;
+  }
+  .brand-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #7c9cff, #c084fc);
+    border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 13px;
+  }
+  .brand-sub { color: var(--text-muted); font-weight: 400; }
+  .cta-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+  }
+  .cta-btn:hover { background: #2a47b8; }
+  main { max-width: 820px; margin: 0 auto; padding: 40px 24px 60px; }
+  h1 {
+    margin: 0 0 10px 0;
+    font-size: 32px;
+    letter-spacing: -0.5px;
+  }
+  .lede { font-size: 16px; color: var(--text-dim); margin: 0 0 32px 0; }
+  h2 {
+    margin: 36px 0 12px 0;
+    font-size: 22px;
+    letter-spacing: -0.3px;
+  }
+  h3 { margin: 22px 0 8px 0; font-size: 16px; }
+  p, ul, li { font-size: 15px; color: var(--text-dim); }
+  p { margin: 0 0 12px 0; }
+  ul { padding-left: 22px; margin: 0 0 12px 0; }
+  li { margin-bottom: 6px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  a { color: var(--accent); }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    background: var(--bg-elev-2);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+  pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 14px 0;
+    max-height: 420px;
+  }
+  pre code { background: transparent; padding: 0; }
+  /* Lightweight XML syntax coloring on the sample */
+  .hl-tag { color: var(--tag); }
+  .hl-attr { color: var(--attr); }
+  .hl-attr-val { color: var(--attr-val); }
+  .hl-punct { color: var(--text-dim); }
+  .hl-comment { color: var(--text-muted); font-style: italic; }
+
+  .actions {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin: 16px 0 32px;
+  }
+  .btn-primary, .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: #2a47b8; text-decoration: none; }
+  .btn-secondary {
+    background: var(--bg-card);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .btn-secondary:hover { background: var(--bg-elev-2); text-decoration: none; }
+
+  .callout {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    font-size: 14px;
+  }
+  .callout strong { display: block; margin-bottom: 4px; }
+
+  .related-examples {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-top: 36px;
+  }
+  .related-examples h3 { margin: 0 0 10px 0; }
+  .related-examples ul { padding-left: 0; list-style: none; }
+  .related-examples li { margin-bottom: 4px; }
+
+  footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 24px;
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  footer nav a { color: var(--text-dim); text-decoration: none; margin: 0 8px; }
+  footer nav a:hover { color: var(--accent); text-decoration: underline; }
+  footer nav a.gh { display: inline-flex; align-items: center; gap: 4px; }
+  footer nav a.gh svg { width: 14px; height: 14px; vertical-align: -2px; fill: currentColor; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="../">
+    <span class="brand-icon">{ }</span>
+    <span>Pretty <span class="brand-sub">JSON &amp; XML</span></span>
+  </a>
+  <a class="cta-btn" href="../">Open the viewer →</a>
+</header>
+<main>
+  <article>
+    <h1>View SOAP Response Example</h1>
+    <p class="lede">
+      A real SOAP response you can view as a sortable table or a foldable tree. Below the sample, every part of the message is explained — the Envelope, the optional Header, the Body, and what a Fault looks like — plus how to use Pretty JSON &amp; XML to read any SOAP response in seconds.
+    </p>
+
+    <div class="actions">
+      <button class="btn-primary" id="loadInViewer" type="button">▦ View this sample as a table</button>
+      <button class="btn-secondary" id="copySample" type="button">📋 Copy sample to clipboard</button>
+    </div>
+
+    <h2>The sample</h2>
+    <p>A typical SOAP 1.1 response from a web service that returns a list of orders. Note the <code>Envelope</code> wrapper, a <code>Header</code> with a correlation ID, and a <code>Body</code> that holds the repeated <code>Order</code> elements:</p>
+    <pre id="sampleBlock"><code id="sampleCode"><span class="hl-comment">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="hl-punct">&lt;</span><span class="hl-tag">soap:Envelope</span> <span class="hl-attr">xmlns:soap</span>=<span class="hl-attr-val">"http://schemas.xmlsoap.org/soap/envelope/"</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;</span><span class="hl-tag">soap:Header</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;</span><span class="hl-tag">CorrelationId</span><span class="hl-punct">&gt;</span>a1b2c3d4-9f10-4e21-8c33-77aabbccddee<span class="hl-punct">&lt;/</span><span class="hl-tag">CorrelationId</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;/</span><span class="hl-tag">soap:Header</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;</span><span class="hl-tag">soap:Body</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;</span><span class="hl-tag">GetOrdersResponse</span> <span class="hl-attr">xmlns</span>=<span class="hl-attr-val">"https://example.com/orders"</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">Order</span><span class="hl-punct">&gt;</span>
+        <span class="hl-punct">&lt;</span><span class="hl-tag">Id</span><span class="hl-punct">&gt;</span>1001<span class="hl-punct">&lt;/</span><span class="hl-tag">Id</span><span class="hl-punct">&gt;</span>
+        <span class="hl-punct">&lt;</span><span class="hl-tag">Customer</span><span class="hl-punct">&gt;</span>Ada Lovelace<span class="hl-punct">&lt;/</span><span class="hl-tag">Customer</span><span class="hl-punct">&gt;</span>
+        <span class="hl-punct">&lt;</span><span class="hl-tag">Total</span><span class="hl-punct">&gt;</span>149.00<span class="hl-punct">&lt;/</span><span class="hl-tag">Total</span><span class="hl-punct">&gt;</span>
+        <span class="hl-punct">&lt;</span><span class="hl-tag">Status</span><span class="hl-punct">&gt;</span>Shipped<span class="hl-punct">&lt;/</span><span class="hl-tag">Status</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;/</span><span class="hl-tag">Order</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">Order</span><span class="hl-punct">&gt;</span>
+        <span class="hl-punct">&lt;</span><span class="hl-tag">Id</span><span class="hl-punct">&gt;</span>1002<span class="hl-punct">&lt;/</span><span class="hl-tag">Id</span><span class="hl-punct">&gt;</span>
+        <span class="hl-punct">&lt;</span><span class="hl-tag">Customer</span><span class="hl-punct">&gt;</span>Alan Turing<span class="hl-punct">&lt;/</span><span class="hl-tag">Customer</span><span class="hl-punct">&gt;</span>
+        <span class="hl-punct">&lt;</span><span class="hl-tag">Total</span><span class="hl-punct">&gt;</span>72.50<span class="hl-punct">&lt;/</span><span class="hl-tag">Total</span><span class="hl-punct">&gt;</span>
+        <span class="hl-punct">&lt;</span><span class="hl-tag">Status</span><span class="hl-punct">&gt;</span>Processing<span class="hl-punct">&lt;/</span><span class="hl-tag">Status</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;/</span><span class="hl-tag">Order</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">Order</span><span class="hl-punct">&gt;</span>
+        <span class="hl-punct">&lt;</span><span class="hl-tag">Id</span><span class="hl-punct">&gt;</span>1003<span class="hl-punct">&lt;/</span><span class="hl-tag">Id</span><span class="hl-punct">&gt;</span>
+        <span class="hl-punct">&lt;</span><span class="hl-tag">Customer</span><span class="hl-punct">&gt;</span>Grace Hopper<span class="hl-punct">&lt;/</span><span class="hl-tag">Customer</span><span class="hl-punct">&gt;</span>
+        <span class="hl-punct">&lt;</span><span class="hl-tag">Total</span><span class="hl-punct">&gt;</span>318.99<span class="hl-punct">&lt;/</span><span class="hl-tag">Total</span><span class="hl-punct">&gt;</span>
+        <span class="hl-punct">&lt;</span><span class="hl-tag">Status</span><span class="hl-punct">&gt;</span>Shipped<span class="hl-punct">&lt;/</span><span class="hl-tag">Status</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;/</span><span class="hl-tag">Order</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;/</span><span class="hl-tag">GetOrdersResponse</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;/</span><span class="hl-tag">soap:Body</span><span class="hl-punct">&gt;</span>
+<span class="hl-punct">&lt;/</span><span class="hl-tag">soap:Envelope</span><span class="hl-punct">&gt;</span></code></pre>
+
+    <div class="callout">
+      <strong>Try it:</strong>
+      Click <em>"View this sample as a table"</em> above. The viewer reaches through the <code>Envelope</code> and <code>Body</code> wrappers, detects <code>&lt;Order&gt;</code> as the repeated element, and renders three rows with Id, Customer, Total, and Status as columns — while the Header's correlation ID stays visible as context.
+    </div>
+
+    <h2>What is a SOAP response?</h2>
+    <p>
+      SOAP (Simple Object Access Protocol) is an XML messaging format used by web services, especially in enterprise, banking, and legacy systems. A SOAP response is always wrapped in a <code>&lt;soap:Envelope&gt;</code>, which contains up to two children: an optional <code>&lt;soap:Header&gt;</code> for metadata, and a required <code>&lt;soap:Body&gt;</code> for the actual payload.
+    </p>
+    <ul>
+      <li><strong>Envelope</strong> — the outermost element that marks the message as SOAP and declares the SOAP namespace</li>
+      <li><strong>Header</strong> — optional metadata such as authentication tokens, correlation IDs, or routing hints</li>
+      <li><strong>Body</strong> — the response payload: the data the service returned, or a Fault if something went wrong</li>
+    </ul>
+
+    <h2>What a SOAP Fault looks like</h2>
+    <p>
+      When a SOAP service hits an error, the Body contains a <code>&lt;soap:Fault&gt;</code> instead of a result. It carries a <code>faultcode</code> (a short machine-readable category), a <code>faultstring</code> (a human-readable message), and sometimes a <code>detail</code> block with extra context:
+    </p>
+    <pre><code><span class="hl-punct">&lt;</span><span class="hl-tag">soap:Body</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;</span><span class="hl-tag">soap:Fault</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;</span><span class="hl-tag">faultcode</span><span class="hl-punct">&gt;</span>soap:Client<span class="hl-punct">&lt;/</span><span class="hl-tag">faultcode</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;</span><span class="hl-tag">faultstring</span><span class="hl-punct">&gt;</span>Unknown order id<span class="hl-punct">&lt;/</span><span class="hl-tag">faultstring</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;/</span><span class="hl-tag">soap:Fault</span><span class="hl-punct">&gt;</span>
+<span class="hl-punct">&lt;/</span><span class="hl-tag">soap:Body</span><span class="hl-punct">&gt;</span></code></pre>
+    <p>
+      Paste a faulting response into the viewer and the Fault fields surface as their own labelled rows, so you can read the code and message without scanning raw XML.
+    </p>
+
+    <h2>Why view a SOAP response as a table?</h2>
+    <p>
+      SOAP responses are notoriously verbose — namespace prefixes on every tag, deep nesting, and wrapper elements that bury the data you actually care about. Reading them as raw XML is slow and error-prone. Reading the repeated records as a table lets you:
+    </p>
+    <ul>
+      <li><strong>Sort by any column</strong> — for example by Total to find the largest order, or by Status to group results</li>
+      <li><strong>Search across every record</strong> at once for a customer name or order id</li>
+      <li><strong>Spot missing or empty fields</strong> instantly — one blank cell in a column is easy to see</li>
+      <li><strong>Compare two responses</strong> from staging and production side by side</li>
+    </ul>
+
+    <h2>How Pretty JSON &amp; XML handles SOAP</h2>
+    <p>
+      SOAP is just XML, so the viewer treats it the same way it treats any feed or document. When you paste a SOAP response, it:
+    </p>
+    <ol>
+      <li>Parses the <code>Envelope</code> and looks past the <code>Header</code> and <code>Body</code> wrappers to find the real payload</li>
+      <li>Detects the repeated element inside the Body (here, <code>&lt;Order&gt;</code>) and renders one row per record</li>
+      <li>Chooses the most useful fields as columns based on frequency and naming — <code>Id</code>, <code>Customer</code>, <code>Total</code>, <code>Status</code></li>
+      <li>Keeps single-value Header fields like the correlation ID visible as context above the table</li>
+    </ol>
+    <p>
+      Click any row to expand the full record, including nested elements, attributes, or namespace-prefixed fields. Everything is parsed locally in your browser — no SOAP payload is ever uploaded to a server.
+    </p>
+
+    <p style="text-align:center;">
+      <a class="cta-btn" href="../" style="display:inline-block; margin: 20px 0;">Open the viewer and paste your own SOAP response →</a>
+    </p>
+
+    <div class="related-examples">
+      <h3>Related</h3>
+      <ul>
+        <li><a href="../soap-viewer">🧼 SOAP viewer — view a SOAP response online</a></li>
+        <li><a href="../xml-to-table">▦ XML to table</a></li>
+        <li><a href="../xml-viewer">📐 XML viewer online</a></li>
+        <li><a href="../">▦ Open the live viewer (home)</a></li>
+      </ul>
+    </div>
+  </article>
+</main>
+<footer>
+  <nav aria-label="Site links">
+    <a href="../">Home</a>·
+    <a href="../guide/view-json-as-table">Guide</a>·
+    <a href="./rss-feed">RSS example</a>·
+    <a class="gh" href="https://github.com/aleksandre-mtchedlishvili/prettyjsonxml.com" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>·
+    <a href="../privacy">Privacy</a>·
+    <a href="../terms">Terms</a>·
+    <a href="mailto:aleksandre.mtchedlishvili@gmail.com">Contact</a>
+  </nav>
+  <p>&copy; 2026 Pretty JSON &amp; XML — runs in your browser, free forever.</p>
+</footer>
+
+<script>
+  // The raw XML (plain text, no markup) that gets copied or sent to the viewer
+  const SAMPLE_SOAP = `<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Header>
+    <CorrelationId>a1b2c3d4-9f10-4e21-8c33-77aabbccddee</CorrelationId>
+  </soap:Header>
+  <soap:Body>
+    <GetOrdersResponse xmlns="https://example.com/orders">
+      <Order>
+        <Id>1001</Id>
+        <Customer>Ada Lovelace</Customer>
+        <Total>149.00</Total>
+        <Status>Shipped</Status>
+      </Order>
+      <Order>
+        <Id>1002</Id>
+        <Customer>Alan Turing</Customer>
+        <Total>72.50</Total>
+        <Status>Processing</Status>
+      </Order>
+      <Order>
+        <Id>1003</Id>
+        <Customer>Grace Hopper</Customer>
+        <Total>318.99</Total>
+        <Status>Shipped</Status>
+      </Order>
+    </GetOrdersResponse>
+  </soap:Body>
+</soap:Envelope>`;
+
+  // Open the viewer with the sample data pre-loaded via sessionStorage. The
+  // main app reads this on load (see "example-sample" handling in index.html).
+  document.getElementById('loadInViewer').addEventListener('click', () => {
+    try {
+      sessionStorage.setItem('pjx_pending_sample', SAMPLE_SOAP);
+      sessionStorage.setItem('pjx_pending_sample_name', 'soap-response-sample.xml');
+    } catch (_) {}
+    window.location.href = '/';
+  });
+
+  document.getElementById('copySample').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(SAMPLE_SOAP);
+      const btn = document.getElementById('copySample');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied';
+      setTimeout(() => { btn.textContent = orig; }, 1500);
+    } catch (err) {
+      alert('Copy failed — your browser may block clipboard access on this page. You can select the sample text manually.');
+    }
+  });
+</script>
+</body>
+</html>

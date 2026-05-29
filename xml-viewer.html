@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XML Viewer Online — Free Table &amp; Tree View | Pretty JSON</title>
+<meta name="description" content="Free online XML viewer. Paste or upload any XML to read it as a sortable table or a foldable tree. No signup, no upload to a server, handles large files.">
+<meta name="keywords" content="xml viewer online, online xml viewer, xml viewer, view xml online, xml table viewer, xml tree viewer, read xml file online">
+<link rel="canonical" href="https://prettyjsonxml.com/xml-viewer">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#7c9cff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c9cff'/%3E%3Ctext x='50' y='68' font-size='52' font-weight='700' fill='white' text-anchor='middle' font-family='-apple-system,BlinkMacSystemFont,sans-serif'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="XML Viewer Online — Free Table &amp; Tree View">
+<meta property="og:description" content="Free online XML viewer. Paste or upload any XML to read it as a sortable table or a foldable tree — in your browser, no upload required.">
+<meta property="og:url" content="https://prettyjsonxml.com/xml-viewer">
+<meta property="og:image" content="https://prettyjsonxml.com/og.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="XML Viewer Online — Free Table &amp; Tree View">
+<meta name="twitter:description" content="Free online XML viewer. Read any XML as a sortable table or a foldable tree, right in your browser.">
+<meta name="twitter:image" content="https://prettyjsonxml.com/og.jpg">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "XML Viewer — Pretty JSON & XML",
+  "alternateName": ["Online XML Viewer", "XML Table Viewer", "XML Tree Viewer"],
+  "description": "Free online XML viewer. Paste or upload any XML document to read it as a sortable, searchable table or a collapsible tree view. Runs entirely in your browser — no signup, no upload to a server.",
+  "url": "https://prettyjsonxml.com/xml-viewer",
+  "image": "https://prettyjsonxml.com/og.jpg",
+  "screenshot": "https://prettyjsonxml.com/og.jpg",
+  "applicationCategory": "DeveloperApplication",
+  "applicationSubCategory": "XML viewer and formatter",
+  "operatingSystem": "Web (any modern browser)",
+  "browserRequirements": "Requires a modern browser (Chrome, Firefox, Safari, Edge).",
+  "softwareVersion": "1.0",
+  "dateModified": "2026-05-29T12:00:00Z",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "author": {
+    "@type": "Person",
+    "name": "Aleksandre Mchedlishvili",
+    "url": "https://prettyjsonxml.com/"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "featureList": [
+    "View XML as a searchable, sortable table",
+    "Foldable tree view for any XML structure",
+    "Auto-detects repeated elements as table rows",
+    "Format / pretty-print and minify XML",
+    "Instant full-text search across rows and fields",
+    "Handles SOAP responses, RSS / Atom feeds, Maven POM, SVG",
+    "Handles large files (9 MB+) with virtual scrolling",
+    "100% client-side — your XML never leaves your browser",
+    "No signup, no ads, no upload to any server"
+  ]
+}
+</script>
+
+<!-- BreadcrumbList Schema — Home > XML Viewer. Gives Google the page's
+     place in the site hierarchy for breadcrumb rich results. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://prettyjsonxml.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "XML Viewer",
+      "item": "https://prettyjsonxml.com/xml-viewer"
+    }
+  ]
+}
+</script>
+
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --bg-elev: #ffffff;
+    --bg-card: #ffffff;
+    --bg-elev-2: #eef1f7;
+    --border: #d8dde8;
+    --border-soft: #e8ecf3;
+    --text: #1a1f2e;
+    --text-dim: #5a6478;
+    --text-muted: #94a0b5;
+    --accent: #3559e0;
+    --accent-2: #0e9f6e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text);
+    font-weight: 600; font-size: 16px;
+  }
+  .brand-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #7c9cff, #c084fc);
+    border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 13px;
+  }
+  .brand-sub { color: var(--text-muted); font-weight: 400; }
+  .cta-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .cta-btn:hover { background: #2a47b8; }
+  .cta-btn:active { transform: translateY(1px); }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 24px 60px; }
+  h1 {
+    margin: 0 0 12px 0;
+    font-size: 36px;
+    letter-spacing: -0.6px;
+    line-height: 1.2;
+  }
+  .lede {
+    font-size: 17px;
+    color: var(--text-dim);
+    margin: 0 0 16px 0;
+  }
+  .updated { color: var(--text-muted); font-size: 13px; margin: 0 0 36px 0; }
+  h2 {
+    margin: 44px 0 14px 0;
+    font-size: 24px;
+    letter-spacing: -0.3px;
+  }
+  h3 {
+    margin: 28px 0 10px 0;
+    font-size: 18px;
+    color: var(--text);
+  }
+  p, ul, li, ol { font-size: 16px; color: var(--text-dim); }
+  p { margin: 0 0 14px 0; }
+  ul, ol { padding-left: 24px; margin: 0 0 14px 0; }
+  li { margin-bottom: 8px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  code {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13.5px;
+    background: var(--bg-elev-2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--text);
+  }
+  pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 14px 0;
+  }
+  pre code { background: transparent; padding: 0; }
+  a { color: var(--accent); }
+  a:hover { text-decoration: underline; }
+  .callout {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    font-size: 15px;
+    color: var(--text-dim);
+  }
+  .callout.tip { border-left-color: var(--accent-2); }
+  .callout strong { display: block; margin-bottom: 4px; color: var(--text); }
+  .inline-cta {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin: 16px 0;
+    transition: background 0.15s;
+  }
+  .inline-cta:hover { background: #2a47b8; text-decoration: none; }
+  .step {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 16px 0;
+  }
+  .step h3 {
+    margin: 0 0 8px 0;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .step-num {
+    width: 26px; height: 26px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 24px 0 32px;
+    font-size: 14px;
+  }
+  .toc strong { display: block; margin-bottom: 8px; }
+  .toc a {
+    display: block;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 3px 0;
+  }
+  .toc a:hover { color: var(--accent); }
+  .related {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 32px 0 8px;
+  }
+  .related strong { display: block; margin-bottom: 10px; color: var(--text); }
+  .related ul { margin: 0; padding-left: 20px; }
+  .related li { margin-bottom: 6px; }
+  footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 24px;
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  footer nav a { color: var(--text-dim); text-decoration: none; margin: 0 8px; }
+  footer nav a:hover { color: var(--accent); text-decoration: underline; }
+  footer nav a.gh { display: inline-flex; align-items: center; gap: 4px; }
+  footer nav a.gh svg { width: 14px; height: 14px; vertical-align: -2px; fill: currentColor; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="./">
+    <span class="brand-icon">{ }</span>
+    <span>Pretty <span class="brand-sub">JSON &amp; XML</span></span>
+  </a>
+  <a class="cta-btn" href="./">Try the viewer →</a>
+</header>
+<main>
+  <article>
+    <h1>XML Viewer Online — Read XML as a Table or a Tree</h1>
+    <p class="lede">
+      A free online XML viewer that does more than re-indent your file. Paste or upload any XML and read it two ways: as a sortable, searchable <strong>table</strong> where repeated elements become rows, or as a foldable <strong>tree</strong> that mirrors the document's exact structure. Everything runs in your browser — nothing is uploaded.
+    </p>
+    <p class="updated">A free tool · Updated 29 May 2026</p>
+
+    <nav class="toc" aria-label="On this page">
+      <strong>On this page</strong>
+      <a href="#why">Why a real XML viewer beats a text box</a>
+      <a href="#table">Table view: XML as rows and columns</a>
+      <a href="#tree">Tree view: the document's true shape</a>
+      <a href="#open">Open the viewer in three steps</a>
+      <a href="#formats">SOAP, RSS, POM, SVG — it all works</a>
+      <a href="#privacy">Where does my XML go?</a>
+    </nav>
+
+    <h2 id="why">Why a real XML viewer beats a text box</h2>
+    <p>
+      Most "XML viewers" just pretty-print: they add line breaks and indentation so the angle brackets line up. That helps a little, but a 2,000-line SOAP envelope or a feed with 300 <code>&lt;item&gt;</code> entries is still a wall of tags you have to read top to bottom. You can't <em>scan</em> it, you can't sort it, and you certainly can't jump to the one record you care about.
+    </p>
+    <p>
+      This viewer gives you two genuinely different lenses on the same document. When your XML is a list of similar things, the table view turns it into rows you can sort and search. When you need the full picture — attributes, namespaces, mixed content, deep nesting — the tree view shows every node exactly as it sits in the file. You pick whichever matches the question you're asking.
+    </p>
+
+    <h2 id="table">Table view: XML as rows and columns</h2>
+    <p>
+      Point the viewer at XML that repeats — a product catalog, an order list, a feed — and it finds the repeating element and lays each one out as a table row. Consider this fragment:
+    </p>
+    <pre><code>&lt;catalog&gt;
+  &lt;book id="bk101"&gt;
+    &lt;author&gt;Gambardella, Matthew&lt;/author&gt;
+    &lt;title&gt;XML Developer's Guide&lt;/title&gt;
+    &lt;price&gt;44.95&lt;/price&gt;
+  &lt;/book&gt;
+  &lt;book id="bk102"&gt;
+    &lt;author&gt;Ralls, Kim&lt;/author&gt;
+    &lt;title&gt;Midnight Rain&lt;/title&gt;
+    &lt;price&gt;5.95&lt;/price&gt;
+  &lt;/book&gt;
+&lt;/catalog&gt;</code></pre>
+    <p>
+      Each <code>&lt;book&gt;</code> becomes a row, and its child tags and attributes — <code>id</code>, <code>author</code>, <code>title</code>, <code>price</code> — become sortable columns. Click a header to sort by price; type in the search box to filter to one author; click a row to expand the full element, including any nested tags that didn't fit as columns. The column picker favours the fields that appear most often and the ones with familiar names, so the useful stuff lands up front automatically.
+    </p>
+
+    <h2 id="tree">Tree view: the document's true shape</h2>
+    <p>
+      Not all XML is tabular. Config files, single SOAP bodies, and deeply nested documents are better read as a hierarchy. Tree view renders your XML as collapsible nodes: every element, attribute, and text value is preserved in order, and you fold sections you don't care about to focus on the ones you do. It's the honest, lossless view — nothing is summarised or hidden. For very large documents, branches expand lazily, so even a multi-megabyte file opens without freezing the tab.
+    </p>
+    <div class="callout tip">
+      <strong>Tip:</strong>
+      Switch between table and tree freely. Use the table to find the row you want, then jump to the tree when you need to inspect every last attribute and namespace on that node.
+    </div>
+
+    <h2 id="open">Open the viewer in three steps</h2>
+    <div class="step">
+      <h3><span class="step-num">1</span> Paste or upload your XML</h3>
+      <p>
+        Open the app and paste your XML into the editor, or click the upload button to load an <code>.xml</code> file from your computer. The file is parsed right there in the browser — it is never sent anywhere.
+      </p>
+    </div>
+    <div class="step">
+      <h3><span class="step-num">2</span> Choose Table or Tree</h3>
+      <p>
+        Hit <strong>View as Table</strong> to get rows and columns, or <strong>View as Tree</strong> for the foldable structure. You can also <strong>Format</strong> the XML to pretty-print it, or <strong>Minify</strong> it back to a single line.
+      </p>
+    </div>
+    <div class="step">
+      <h3><span class="step-num">3</span> Sort, search, expand</h3>
+      <p>
+        Click any column header to sort, type in the search box to filter across every field (including nested content), and click a row or a tree node to expand its full detail.
+      </p>
+    </div>
+
+    <p style="text-align:center;">
+      <a class="inline-cta" href="https://prettyjsonxml.com/">Open the viewer →</a>
+    </p>
+
+    <h2 id="formats">SOAP, RSS, POM, SVG — it all works</h2>
+    <p>
+      XML shows up in a hundred dialects, and this viewer treats them all as plain XML. A SOAP response, an RSS or Atom feed, a Maven <code>pom.xml</code>, an SVG image, or any custom API payload — paste it and the same table-and-tree logic applies. Repeated elements like feed items or response records become rows; envelopes and headers stay readable as a tree. There's no schema to configure and no format to declare first.
+    </p>
+
+    <h2 id="privacy">Where does my XML go?</h2>
+    <p>
+      Nowhere. This is a single static page with no backend and no upload endpoint. Your XML is parsed and rendered entirely by your browser's built-in engine, so the people running the site cannot see what you paste. That makes it safe for the SOAP payloads and internal feeds you'd never want to drop into a random server-side converter.
+    </p>
+
+    <section class="related" aria-label="Related pages">
+      <strong>Related</strong>
+      <ul>
+        <li><a href="./xml-formatter">XML formatter and beautifier</a></li>
+        <li><a href="./xml-to-table">XML to table</a></li>
+        <li><a href="./soap-viewer">SOAP response viewer</a></li>
+        <li><a href="./xml-pretty-print">XML pretty print</a></li>
+        <li><a href="./">Pretty JSON &amp; XML — home</a></li>
+      </ul>
+    </section>
+
+    <p style="text-align:center; margin-top: 32px;">
+      <a class="inline-cta" href="https://prettyjsonxml.com/">Open the viewer and try it →</a>
+    </p>
+  </article>
+</main>
+<footer>
+  <nav aria-label="Site links">
+    <a href="./">Home</a>·
+    <a href="./guide/view-json-as-table">Guide</a>·
+    <a href="./example/rss-feed">RSS example</a>·
+    <a class="gh" href="https://github.com/aleksandre-mtchedlishvili/prettyjsonxml.com" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>·
+    <a href="./privacy">Privacy</a>·
+    <a href="./terms">Terms</a>·
+    <a href="mailto:aleksandre.mtchedlishvili@gmail.com">Contact</a>
+  </nav>
+  <p>&copy; 2026 Pretty JSON &amp; XML — runs in your browser, free forever.</p>
+</footer>
+</body>
+</html>

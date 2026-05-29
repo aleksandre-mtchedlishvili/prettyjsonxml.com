@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Pretty Print — Beautify JSON Online, Free</title>
+<meta name="description" content="Pretty print and beautify JSON online in your browser. Paste or upload, format with clean indentation, then explore it as a sortable table or tree.">
+<meta name="keywords" content="json pretty print, pretty print json, beautify json, json beautifier, format json online, json formatter, json viewer">
+<link rel="canonical" href="https://prettyjsonxml.com/json-pretty-print">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#7c9cff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c9cff'/%3E%3Ctext x='50' y='68' font-size='52' font-weight='700' fill='white' text-anchor='middle' font-family='-apple-system,BlinkMacSystemFont,sans-serif'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="JSON Pretty Print — Beautify JSON Online, Free">
+<meta property="og:description" content="Pretty print and beautify JSON online in your browser. Format with clean indentation, then explore it as a sortable table or foldable tree.">
+<meta property="og:url" content="https://prettyjsonxml.com/json-pretty-print">
+<meta property="og:image" content="https://prettyjsonxml.com/og.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JSON Pretty Print — Beautify JSON Online, Free">
+<meta name="twitter:description" content="Pretty print and beautify JSON online in your browser. Format it cleanly, then explore it as a table or tree.">
+<meta name="twitter:image" content="https://prettyjsonxml.com/og.jpg">
+
+<!-- Schema.org structured data — marks this as a free, client-side web app
+     so Google can surface the JSON pretty-print tool directly. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "JSON Pretty Print — Pretty JSON & XML",
+  "alternateName": ["JSON Beautifier", "JSON Formatter", "Pretty Print JSON"],
+  "description": "Free online JSON pretty printer and beautifier. Paste or upload JSON, format it with clean indentation, then explore it as a sortable table or collapsible tree. 100% in your browser, no signup.",
+  "url": "https://prettyjsonxml.com/json-pretty-print",
+  "image": "https://prettyjsonxml.com/og.jpg",
+  "screenshot": "https://prettyjsonxml.com/og.jpg",
+  "applicationCategory": "DeveloperApplication",
+  "applicationSubCategory": "JSON pretty printer and beautifier",
+  "operatingSystem": "Web (any modern browser)",
+  "browserRequirements": "Requires a modern browser (Chrome, Firefox, Safari, Edge).",
+  "softwareVersion": "1.0",
+  "dateModified": "2026-05-29T12:00:00Z",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "author": {
+    "@type": "Person",
+    "name": "Aleksandre Mchedlishvili",
+    "url": "https://prettyjsonxml.com/"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "featureList": [
+    "Pretty-print / beautify JSON with clean indentation",
+    "Minify JSON back to a single line",
+    "View JSON as a searchable, sortable table",
+    "Collapsible tree view for any structure",
+    "Instant full-text search across rows and fields",
+    "Inline base64 image preview (PNG / JPEG / SVG)",
+    "Live syntax highlighting in the editor",
+    "Handles large files (9 MB+) with virtual scrolling",
+    "100% client-side — your data never leaves your browser",
+    "No signup, no ads, no upload to any server"
+  ]
+}
+</script>
+
+<!-- BreadcrumbList — Home > JSON Pretty Print, so Google shows the
+     breadcrumb trail in search results. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://prettyjsonxml.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "JSON Pretty Print",
+      "item": "https://prettyjsonxml.com/json-pretty-print"
+    }
+  ]
+}
+</script>
+
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --bg-elev: #ffffff;
+    --bg-card: #ffffff;
+    --bg-elev-2: #eef1f7;
+    --border: #d8dde8;
+    --border-soft: #e8ecf3;
+    --text: #1a1f2e;
+    --text-dim: #5a6478;
+    --text-muted: #94a0b5;
+    --accent: #3559e0;
+    --accent-2: #0e9f6e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text);
+    font-weight: 600; font-size: 16px;
+  }
+  .brand-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #7c9cff, #c084fc);
+    border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 13px;
+  }
+  .brand-sub { color: var(--text-muted); font-weight: 400; }
+  .cta-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .cta-btn:hover { background: #2a47b8; }
+  .cta-btn:active { transform: translateY(1px); }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 24px 60px; }
+  h1 {
+    margin: 0 0 12px 0;
+    font-size: 36px;
+    letter-spacing: -0.6px;
+    line-height: 1.2;
+  }
+  .lede {
+    font-size: 17px;
+    color: var(--text-dim);
+    margin: 0 0 16px 0;
+  }
+  .updated { color: var(--text-muted); font-size: 13px; margin: 0 0 36px 0; }
+  h2 {
+    margin: 44px 0 14px 0;
+    font-size: 24px;
+    letter-spacing: -0.3px;
+  }
+  h3 {
+    margin: 28px 0 10px 0;
+    font-size: 18px;
+    color: var(--text);
+  }
+  p, ul, li, ol { font-size: 16px; color: var(--text-dim); }
+  p { margin: 0 0 14px 0; }
+  ul, ol { padding-left: 24px; margin: 0 0 14px 0; }
+  li { margin-bottom: 8px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  code {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13.5px;
+    background: var(--bg-elev-2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--text);
+  }
+  pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 14px 0;
+  }
+  pre code { background: transparent; padding: 0; }
+  a { color: var(--accent); }
+  a:hover { text-decoration: underline; }
+  .callout {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    font-size: 15px;
+    color: var(--text-dim);
+  }
+  .callout.tip { border-left-color: var(--accent-2); }
+  .callout strong { display: block; margin-bottom: 4px; color: var(--text); }
+  .inline-cta {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin: 16px 0;
+    transition: background 0.15s;
+  }
+  .inline-cta:hover { background: #2a47b8; text-decoration: none; }
+  .step {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 16px 0;
+  }
+  .step h3 {
+    margin: 0 0 8px 0;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .step-num {
+    width: 26px; height: 26px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 24px 0 32px;
+    font-size: 14px;
+  }
+  .toc strong { display: block; margin-bottom: 8px; }
+  .toc a {
+    display: block;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 3px 0;
+  }
+  .toc a:hover { color: var(--accent); }
+  .related {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 32px 0 8px;
+  }
+  .related strong { display: block; margin-bottom: 10px; color: var(--text); }
+  .related ul { margin: 0; padding-left: 20px; }
+  .related li { margin-bottom: 6px; }
+  footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 24px;
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  footer nav a { color: var(--text-dim); text-decoration: none; margin: 0 8px; }
+  footer nav a:hover { color: var(--accent); text-decoration: underline; }
+  footer nav a.gh { display: inline-flex; align-items: center; gap: 4px; }
+  footer nav a.gh svg { width: 14px; height: 14px; vertical-align: -2px; fill: currentColor; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">
+    <span class="brand-icon">{ }</span>
+    <span>Pretty <span class="brand-sub">JSON &amp; XML</span></span>
+  </a>
+  <a class="cta-btn" href="/">Try the viewer →</a>
+</header>
+<main>
+  <article>
+    <h1>JSON Pretty Print: Beautify JSON Online, Free</h1>
+    <p class="lede">
+      Minified JSON saves bytes but it's miserable to read — one long line, no line breaks, every brace crammed together. Pretty-printing fixes that: clean indentation, one field per line, structure you can actually follow. Paste your JSON below and beautify it in your browser, then explore it as a table or tree.
+    </p>
+    <p class="updated">A free online tool · Updated 29 May 2026</p>
+
+    <p style="text-align:center;">
+      <a class="inline-cta" href="/">Open the viewer →</a>
+    </p>
+
+    <nav class="toc" aria-label="On this page">
+      <strong>On this page</strong>
+      <a href="#what">What "pretty print" actually means</a>
+      <a href="#how">How to pretty print JSON in 3 steps</a>
+      <a href="#beyond">Beyond formatting: table and tree views</a>
+      <a href="#minify">Pretty print vs. minify</a>
+      <a href="#large">Big files and broken JSON</a>
+      <a href="#privacy">Does my JSON get uploaded?</a>
+    </nav>
+
+    <h2 id="what">What "pretty print" actually means</h2>
+    <p>
+      JSON doesn't care about whitespace. These two documents are identical to a parser:
+    </p>
+    <pre><code>{"id":1,"name":"Alice","roles":["admin","editor"],"active":true}</code></pre>
+    <p>
+      …and the same thing, pretty-printed:
+    </p>
+    <pre><code>{
+  "id": 1,
+  "name": "Alice",
+  "roles": [
+    "admin",
+    "editor"
+  ],
+  "active": true
+}</code></pre>
+    <p>
+      Both are valid. But the second one is for <em>humans</em> — each key sits on its own line, nested arrays and objects are indented, and you can see the shape of the data at a glance. That's all pretty-printing is: re-serializing JSON with consistent indentation and line breaks so it's readable. It doesn't change a single value, just the spacing between them.
+    </p>
+
+    <h2 id="how">How to pretty print JSON in 3 steps</h2>
+
+    <div class="step">
+      <h3><span class="step-num">1</span> Paste or upload your JSON</h3>
+      <p>
+        Open <a href="https://prettyjsonxml.com/">prettyjsonxml.com</a> and drop your JSON into the editor — press <code>Ctrl+V</code> (or <code>Cmd+V</code> on Mac), or click <strong>Upload a file</strong> to load a <code>.json</code> file straight from disk. It can be minified, messy, or hand-typed; the formatter doesn't mind.
+      </p>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">2</span> Click "Format"</h3>
+      <p>
+        Hit the <strong>Format</strong> button. The viewer parses your JSON and re-prints it with two-space indentation, one field per line, and arrays expanded vertically. If the JSON is invalid, you'll get a clear error pointing at where parsing broke — usually a trailing comma or a missing quote.
+      </p>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">3</span> Copy it back, or keep exploring</h3>
+      <p>
+        Select-all and copy to grab the beautified result. Or skip the copy entirely and switch to <strong>Table</strong> or <strong>Tree</strong> view to read the data instead of the text — more on that next.
+      </p>
+    </div>
+
+    <p style="text-align:center;">
+      <a class="inline-cta" href="/">Open the viewer →</a>
+    </p>
+
+    <h2 id="beyond">Beyond formatting: table and tree views</h2>
+    <p>
+      Here's the thing about pretty-printing: it makes JSON <em>readable</em>, but it doesn't make it <em>scannable</em>. A neatly indented 800-line API response is still 800 lines you have to scroll. That's where this tool goes further than a plain beautifier.
+    </p>
+    <h3>Tree view</h3>
+    <p>
+      <strong>Tree view</strong> renders your JSON as a foldable outline — collapse the branches you don't care about, expand the one you do. It's the fastest way to navigate a deeply nested config or a sprawling response without losing your place.
+    </p>
+    <h3>Table view</h3>
+    <p>
+      When your JSON is an array of similar objects (the shape most API responses take), <strong>Table view</strong> turns each object into a row and its shared fields into sortable columns. Click a header to sort, type in the search box to filter, click a row to expand its full detail. You stop reading JSON and start scanning data. There's a full walkthrough in the guide on <a href="/guide/view-large-json-file">viewing large JSON files</a>.
+    </p>
+
+    <h2 id="minify">Pretty print vs. minify</h2>
+    <p>
+      Pretty-printing and minifying are opposites, and you'll want both at different times:
+    </p>
+    <ul>
+      <li><strong>Pretty print</strong> when you're reading, debugging, or reviewing JSON by hand — you want every line break and indent.</li>
+      <li><strong>Minify</strong> when you're shipping JSON over the wire, embedding it in a config, or pasting it somewhere size-sensitive — you want every byte gone.</li>
+    </ul>
+    <p>
+      The viewer does both. Format expands; Minify collapses everything back to a single compact line. Round-trip as many times as you like — the data is identical either way.
+    </p>
+
+    <h2 id="large">Big files and broken JSON</h2>
+    <p>
+      Most online beautifiers choke on anything large or invalid. This one is built for the messy real world:
+    </p>
+    <ul>
+      <li><strong>Large files.</strong> JSON parsing runs off the main thread for bigger documents, and the editor switches to a placeholder above ~5 MB so a 9 MB blob doesn't freeze your tab. The data still loads and formats — see the <a href="/guide/view-large-json-file">large JSON file guide</a> for the details.</li>
+      <li><strong>Invalid JSON.</strong> If your input won't parse, you get a specific error instead of silent failure, so you can find the stray comma fast.</li>
+    </ul>
+    <div class="callout tip">
+      <strong>Tip:</strong>
+      Working with XML or a SOAP envelope instead? The same Format-and-explore workflow applies — try the <a href="/xml-pretty-print">XML pretty printer</a> or the <a href="/soap-viewer">SOAP response viewer</a>.
+    </div>
+
+    <h2 id="privacy">Does my JSON get uploaded?</h2>
+    <p>
+      No. The viewer is a single HTML file with no backend and no upload endpoint. Your JSON is parsed, formatted, and rendered entirely by your browser's JavaScript engine — nothing is sent anywhere. If you're curious about the why and the how, there's a dedicated note on <a href="/guide/view-json-without-uploading">viewing JSON without uploading it</a>.
+    </p>
+
+    <p style="text-align:center; margin-top: 48px;">
+      <a class="inline-cta" href="/">Open the viewer and beautify your JSON →</a>
+    </p>
+
+    <nav class="related" aria-label="Related pages">
+      <strong>Related</strong>
+      <ul>
+        <li><a href="/xml-pretty-print">XML pretty print</a> — beautify and indent XML the same way</li>
+        <li><a href="/xml-to-table">XML to table</a> — turn repeated XML elements into sortable rows</li>
+        <li><a href="/guide/view-large-json-file">View a large JSON file</a> — handle 9 MB+ files without freezing</li>
+        <li><a href="/">Pretty JSON &amp; XML home</a> — the full viewer (JSON + XML, table + tree)</li>
+      </ul>
+    </nav>
+  </article>
+</main>
+<footer>
+  <nav aria-label="Site links">
+    <a href="/">Home</a>·
+    <a href="/guide/view-json-as-table">Guide</a>·
+    <a href="/example/rss-feed">RSS example</a>·
+    <a class="gh" href="https://github.com/aleksandre-mtchedlishvili/prettyjsonxml.com" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>·
+    <a href="/privacy">Privacy</a>·
+    <a href="/terms">Terms</a>·
+    <a href="mailto:aleksandre.mtchedlishvili@gmail.com">Contact</a>
+  </nav>
+  <p>&copy; 2026 Pretty JSON &amp; XML — runs in your browser, free forever.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preview a Base64 Image in JSON — Free, No Upload</title>
+<meta name="description" content="See base64-encoded images embedded in your JSON render as real thumbnails — no decoding, no upload, all in your browser. Paste and preview in seconds.">
+<meta name="keywords" content="base64 image in json, preview base64 image, decode base64 image json, base64 image viewer, json base64 thumbnail, view base64 image online">
+<link rel="canonical" href="https://prettyjsonxml.com/guide/preview-base64-images-in-json">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#7c9cff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c9cff'/%3E%3Ctext x='50' y='68' font-size='52' font-weight='700' fill='white' text-anchor='middle' font-family='-apple-system,BlinkMacSystemFont,sans-serif'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="Preview a Base64 Image in JSON (Free, No Upload)">
+<meta property="og:description" content="See base64-encoded images embedded in your JSON render as real thumbnails — no decoding, no upload, all in your browser.">
+<meta property="og:url" content="https://prettyjsonxml.com/guide/preview-base64-images-in-json">
+<meta property="og:image" content="https://prettyjsonxml.com/og.jpg">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Preview a Base64 Image in JSON (Free, No Upload)">
+<meta name="twitter:description" content="See base64-encoded images embedded in your JSON render as real thumbnails — no decoding, no upload, in your browser.">
+<meta name="twitter:image" content="https://prettyjsonxml.com/og.jpg">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "How to Preview a Base64 Image Embedded in JSON",
+  "description": "See base64-encoded images embedded in your JSON render as real thumbnails — no decoding step, no upload, all in your browser.",
+  "image": "https://prettyjsonxml.com/og.jpg",
+  "datePublished": "2026-05-29T12:00:00Z",
+  "dateModified": "2026-05-29T12:00:00Z",
+  "author": {
+    "@type": "Person",
+    "name": "Aleksandre Mchedlishvili",
+    "url": "https://prettyjsonxml.com/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Pretty JSON & XML",
+    "logo": { "@type": "ImageObject", "url": "https://prettyjsonxml.com/og.jpg" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://prettyjsonxml.com/guide/preview-base64-images-in-json" }
+}
+</script>
+
+<!-- HowTo Schema — mirrors the numbered workflow in the body so Google can
+     surface it as a "how to preview a base64 image in JSON" rich snippet. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to preview a base64 image embedded in JSON",
+  "description": "Render a base64-encoded image hidden inside a JSON value as a real thumbnail in three steps — in your browser, with no decoding step and no upload to a server.",
+  "totalTime": "PT15S",
+  "step": [
+    {
+      "@type": "HowToStep",
+      "position": 1,
+      "name": "Paste or upload your JSON",
+      "text": "Open prettyjsonxml.com and paste the JSON that contains your base64 image string, or click Upload a file to load a .json file. Everything is parsed client-side — the base64 payload never leaves your machine."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 2,
+      "name": "Open Tree view or View as Table",
+      "text": "Switch to Tree view to walk the document, or View as Table if your images live in an array of objects. The viewer scans string values for base64 image signatures as it renders."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 3,
+      "name": "See the inline thumbnail",
+      "text": "Any value the viewer recognises as a base64 image — a data URI, or a long base64 blob in a field like image, avatar, or photo — is rendered inline as a thumbnail. Click it to open the full-size preview."
+    }
+  ]
+}
+</script>
+
+<!-- BreadcrumbList — Home > Guides > this page. Matches the breadcrumb
+     style used across the guide section. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://prettyjsonxml.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://prettyjsonxml.com/guide/view-json-as-table"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Preview a base64 image in JSON",
+      "item": "https://prettyjsonxml.com/guide/preview-base64-images-in-json"
+    }
+  ]
+}
+</script>
+
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --bg-elev: #ffffff;
+    --bg-card: #ffffff;
+    --bg-elev-2: #eef1f7;
+    --border: #d8dde8;
+    --border-soft: #e8ecf3;
+    --text: #1a1f2e;
+    --text-dim: #5a6478;
+    --text-muted: #94a0b5;
+    --accent: #3559e0;
+    --accent-2: #0e9f6e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text);
+    font-weight: 600; font-size: 16px;
+  }
+  .brand-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #7c9cff, #c084fc);
+    border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 13px;
+  }
+  .brand-sub { color: var(--text-muted); font-weight: 400; }
+  .cta-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .cta-btn:hover { background: #2a47b8; }
+  .cta-btn:active { transform: translateY(1px); }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 24px 60px; }
+  h1 {
+    margin: 0 0 12px 0;
+    font-size: 36px;
+    letter-spacing: -0.6px;
+    line-height: 1.2;
+  }
+  .lede {
+    font-size: 17px;
+    color: var(--text-dim);
+    margin: 0 0 16px 0;
+  }
+  .updated { color: var(--text-muted); font-size: 13px; margin: 0 0 36px 0; }
+  h2 {
+    margin: 44px 0 14px 0;
+    font-size: 24px;
+    letter-spacing: -0.3px;
+  }
+  h3 {
+    margin: 28px 0 10px 0;
+    font-size: 18px;
+    color: var(--text);
+  }
+  p, ul, li, ol { font-size: 16px; color: var(--text-dim); }
+  p { margin: 0 0 14px 0; }
+  ul, ol { padding-left: 24px; margin: 0 0 14px 0; }
+  li { margin-bottom: 8px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  code {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13.5px;
+    background: var(--bg-elev-2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--text);
+  }
+  pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 14px 0;
+  }
+  pre code { background: transparent; padding: 0; }
+  a { color: var(--accent); }
+  a:hover { text-decoration: underline; }
+  .callout {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    font-size: 15px;
+    color: var(--text-dim);
+  }
+  .callout.tip { border-left-color: var(--accent-2); }
+  .callout strong { display: block; margin-bottom: 4px; color: var(--text); }
+  .inline-cta {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin: 16px 0;
+    transition: background 0.15s;
+  }
+  .inline-cta:hover { background: #2a47b8; text-decoration: none; }
+  .step {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 16px 0;
+  }
+  .step h3 {
+    margin: 0 0 8px 0;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .step-num {
+    width: 26px; height: 26px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 24px 0 32px;
+    font-size: 14px;
+  }
+  .toc strong { display: block; margin-bottom: 8px; }
+  .toc a {
+    display: block;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 3px 0;
+  }
+  .toc a:hover { color: var(--accent); }
+  .related {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 36px 0 8px;
+    font-size: 15px;
+  }
+  .related strong { display: block; margin-bottom: 8px; color: var(--text); }
+  .related a {
+    display: block;
+    color: var(--accent);
+    text-decoration: none;
+    padding: 3px 0;
+  }
+  .related a:hover { text-decoration: underline; }
+  footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 24px;
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  footer nav a { color: var(--text-dim); text-decoration: none; margin: 0 8px; }
+  footer nav a:hover { color: var(--accent); text-decoration: underline; }
+  footer nav a.gh { display: inline-flex; align-items: center; gap: 4px; }
+  footer nav a.gh svg { width: 14px; height: 14px; vertical-align: -2px; fill: currentColor; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="../">
+    <span class="brand-icon">{ }</span>
+    <span>Pretty <span class="brand-sub">JSON &amp; XML</span></span>
+  </a>
+  <a class="cta-btn" href="https://prettyjsonxml.com/">Open the viewer →</a>
+</header>
+<main>
+  <article>
+    <h1>How to Preview a Base64 Image in JSON</h1>
+    <p class="lede">
+      You open a JSON file and one field is a 40,000-character wall of gibberish: <code>"avatar": "iVBORw0KGgoAAAANSUhEUg..."</code>. That's a base64-encoded image — a real picture stuffed into a text string. Most viewers show you the noise; ours shows you the picture, rendered inline as a thumbnail.
+    </p>
+    <p class="updated">A practical guide · Updated 29 May 2026</p>
+
+    <nav class="toc" aria-label="On this page">
+      <strong>On this page</strong>
+      <a href="#what-is-it">What a base64 image in JSON actually is</a>
+      <a href="#why-preview">Why an inline preview matters</a>
+      <a href="#three-steps">Preview one in three steps</a>
+      <a href="#what-we-detect">What the viewer recognises as an image</a>
+      <a href="#tables">Base64 images inside tables</a>
+      <a href="#privacy">Is the image uploaded anywhere?</a>
+      <a href="#faq">Quick FAQ</a>
+    </nav>
+
+    <h2 id="what-is-it">What a base64 image in JSON actually is</h2>
+    <p>
+      JSON has no binary type, so to ship a picture <em>inside</em> a payload — an avatar, a scanned receipt, a QR code — an API encodes the raw bytes as <strong>base64</strong>: a text-safe run of letters, digits, <code>+</code>, and <code>/</code>. You'll see it as a bare blob or a full <em>data URI</em> with its own MIME type:
+    </p>
+    <pre><code>{
+  "id": 42,
+  "label": "Profile photo",
+  "avatar": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...",
+  "thumb":  "iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAAC..."
+}</code></pre>
+    <p>
+      To a human reading raw JSON, both fields are useless noise. You can't tell if <code>avatar</code> is a logo, a headshot, or a corrupted byte salad — you just trust the key name and move on.
+    </p>
+
+    <h2 id="why-preview">Why an inline preview matters</h2>
+    <p>
+      Here's the part no other JSON viewer we've found bothers to do: <strong>it renders the image</strong>. Instead of copying a 40 KB string out into a separate base64 decoder in another tab, you see the actual picture next to its key. A tedious detour becomes a glance — you can tell instantly whether an avatar's bytes are a valid PNG or an accidental error page, or scan a whole response of generated thumbnails like a contact sheet.
+    </p>
+    <div class="callout tip">
+      <strong>Why it's genuinely unique</strong>
+      Open the same JSON in a typical formatter and the base64 field stays raw text. This viewer treats an image-shaped string as an image — decoding and drawing it inline, with no extra steps.
+    </div>
+
+    <h2 id="three-steps">Preview one in three steps</h2>
+
+    <div class="step">
+      <h3><span class="step-num">1</span> Paste or upload your JSON</h3>
+      <p>
+        Go to <a href="https://prettyjsonxml.com/">prettyjsonxml.com</a> and paste your JSON into the editor, or click <strong>Upload a file</strong> to load a <code>.json</code> file. Parsing happens client-side and the editor goes read-only above ~5 MB, so even an image-heavy payload never freezes the page.
+      </p>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">2</span> Open Tree view (or View as Table)</h3>
+      <p>
+        Click <strong>View as Tree</strong> to walk the document, or <strong>View as Table</strong> if your images live in an array of records. As it renders each value, the viewer inspects strings for an image signature — no setting to toggle, no "decode" button to hunt for.
+      </p>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">3</span> See the thumbnail — click to enlarge</h3>
+      <p>
+        Any value recognised as an image is drawn inline as a thumbnail where the string would sit. Click it for the full-size preview. The base64 text stays available too — expand the node and it's still there to copy.
+      </p>
+    </div>
+
+    <p style="text-align:center;">
+      <a class="inline-cta" href="https://prettyjsonxml.com/">Open the viewer →</a>
+    </p>
+
+    <h2 id="what-we-detect">What the viewer recognises as an image</h2>
+    <p>
+      Detection is deliberately conservative so plain text is never mistaken for a picture. A string renders as an image when it is:
+    </p>
+    <ul>
+      <li><strong>A data URI</strong> — anything starting with <code>data:image/</code> (<code>png</code>, <code>jpeg</code>, <code>gif</code>, <code>webp</code>, <code>svg+xml</code>) followed by <code>;base64,</code> and a payload. The unambiguous case.</li>
+      <li><strong>A bare base64 blob with a known magic header</strong> — long, valid base64 beginning with a recognisable signature (PNG starts with <code>iVBORw0KGgo</code>, JPEG with <code>/9j/</code>) is decoded even without the <code>data:</code> prefix.</li>
+    </ul>
+    <p>
+      Everything else stays as text: a UUID, a JWT, or a sentence of prose fails the signature and length tests, so it's never drawn as a broken thumbnail.
+    </p>
+
+    <h2 id="tables">Base64 images inside tables</h2>
+    <p>
+      Images shine in <strong>table</strong> view. When your JSON is an array of objects — products each with a <code>photo</code>, users each with an <code>avatar</code> — the viewer lays them out as rows, and the image cell shows a thumbnail per row:
+    </p>
+    <pre><code>[
+  { "sku": "A-100", "name": "Mug",    "photo": "data:image/png;base64,iVBORw0KGgo..." },
+  { "sku": "A-101", "name": "Bottle", "photo": "data:image/jpeg;base64,/9j/4AAQ..." }
+]</code></pre>
+    <p>
+      You get a scannable grid — SKU, name, and an actual picture per row instead of two columns of base64 sludge. For how rows and columns are chosen, see the companion guide on <a href="view-json-as-table">how to view JSON as a table</a>.
+    </p>
+
+    <h2 id="privacy">Is the image uploaded anywhere?</h2>
+    <p>
+      No. The viewer is a single HTML file with no backend and no upload endpoint. Your JSON — base64 image bytes included — is decoded and drawn by your browser's own JavaScript engine, and the editor is masked from session-recording analytics, so nothing you paste is ever transmitted or captured. That matters when the embedded images are scanned documents or ID photos. The note on <a href="view-json-without-uploading">whether a no-upload JSON viewer is safe</a> walks through why.
+    </p>
+
+    <h2 id="faq">Quick FAQ</h2>
+    <h3>Does it work without the <code>data:image</code> prefix?</h3>
+    <p>
+      Yes for common formats. A bare PNG or JPEG blob is detected by its magic header and decoded. If a format has no recognisable signature and no <code>data:</code> prefix, it stays as text — there's no reliable way to know it's an image.
+    </p>
+    <h3>Will a giant base64 image slow the page down?</h3>
+    <p>
+      Decoding is cheap and only visible thumbnails are drawn. In tables, virtual scrolling renders only the rows on screen, so thousands of embedded pictures stay smooth — and the original base64 is still there to copy when you expand a field.
+    </p>
+
+    <p style="text-align:center; margin-top: 48px;">
+      <a class="inline-cta" href="https://prettyjsonxml.com/">Open the viewer and try it →</a>
+    </p>
+
+    <nav class="related" aria-label="Related pages">
+      <strong>Related</strong>
+      <a href="../">Pretty JSON &amp; XML — the viewer</a>
+      <a href="../json-pretty-print">JSON pretty print</a>
+      <a href="view-large-json-file">View a large JSON file</a>
+      <a href="view-json-without-uploading">JSON file viewer, no upload — is it safe?</a>
+    </nav>
+  </article>
+</main>
+<footer>
+  <nav aria-label="Site links">
+    <a href="../">Home</a>·
+    <a href="./view-json-as-table">Guide</a>·
+    <a href="../example/rss-feed">RSS example</a>·
+    <a class="gh" href="https://github.com/aleksandre-mtchedlishvili/prettyjsonxml.com" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>·
+    <a href="../privacy">Privacy</a>·
+    <a href="../terms">Terms</a>·
+    <a href="mailto:aleksandre.mtchedlishvili@gmail.com">Contact</a>
+  </nav>
+  <p>&copy; 2026 Pretty JSON &amp; XML — runs in your browser, free forever.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOAP Viewer — View SOAP Response Online as a Table</title>
+<meta name="description" content="Paste a SOAP envelope and read it as a sortable, searchable table. Free online SOAP response viewer for enterprise API debugging. No signup, no upload.">
+<meta name="keywords" content="soap viewer, view soap response online, soap response viewer, soap envelope viewer, soap xml to table, debug soap api, soap message viewer">
+<link rel="canonical" href="https://prettyjsonxml.com/soap-viewer">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#7c9cff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c9cff'/%3E%3Ctext x='50' y='68' font-size='52' font-weight='700' fill='white' text-anchor='middle' font-family='-apple-system,BlinkMacSystemFont,sans-serif'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="SOAP Viewer — View a SOAP Response Online as a Table">
+<meta property="og:description" content="Paste a SOAP envelope and read it as a sortable, searchable table. Free online SOAP response viewer — runs in your browser, no upload required.">
+<meta property="og:url" content="https://prettyjsonxml.com/soap-viewer">
+<meta property="og:image" content="https://prettyjsonxml.com/og.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SOAP Viewer — View a SOAP Response Online as a Table">
+<meta name="twitter:description" content="Paste a SOAP envelope and read it as a sortable, searchable table. Free online SOAP response viewer for enterprise API debugging.">
+<meta name="twitter:image" content="https://prettyjsonxml.com/og.jpg">
+
+<!-- WebApplication schema — tells Google this page is a free, in-browser
+     SOAP viewer tool, matching the WebApplication shape used on the homepage. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "SOAP Viewer — Pretty JSON & XML",
+  "alternateName": ["SOAP Response Viewer", "SOAP Envelope Viewer", "SOAP XML to Table"],
+  "description": "Online SOAP viewer — paste a SOAP envelope or response and read it as a searchable, sortable table or collapsible tree. Parses Header, Body, and Fault. 100% in your browser. Free, no signup.",
+  "url": "https://prettyjsonxml.com/soap-viewer",
+  "image": "https://prettyjsonxml.com/og.jpg",
+  "screenshot": "https://prettyjsonxml.com/og.jpg",
+  "applicationCategory": "DeveloperApplication",
+  "applicationSubCategory": "SOAP response viewer",
+  "operatingSystem": "Web (any modern browser)",
+  "browserRequirements": "Requires a modern browser (Chrome, Firefox, Safari, Edge).",
+  "softwareVersion": "1.0",
+  "dateModified": "2026-05-29T12:00:00Z",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "author": {
+    "@type": "Person",
+    "name": "Aleksandre Mchedlishvili",
+    "url": "https://prettyjsonxml.com/"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "featureList": [
+    "View a SOAP response as a searchable, sortable table",
+    "Auto-detects Envelope, Header, Body, and Fault",
+    "Lifts repeated records out of nested SOAP wrappers into rows",
+    "Collapsible tree view for the full envelope structure",
+    "Format / pretty-print messy single-line SOAP XML",
+    "Instant full-text search across nested fields",
+    "Handles large multi-megabyte SOAP payloads with virtual scrolling",
+    "100% client-side — your SOAP payload never leaves your browser",
+    "No signup, no upload to any server"
+  ]
+}
+</script>
+
+<!-- BreadcrumbList — Home > SOAP Viewer, matching the breadcrumb style used
+     across the site so Google can render the path in search results. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://prettyjsonxml.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "SOAP Viewer",
+      "item": "https://prettyjsonxml.com/soap-viewer"
+    }
+  ]
+}
+</script>
+
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --bg-elev: #ffffff;
+    --bg-card: #ffffff;
+    --bg-elev-2: #eef1f7;
+    --border: #d8dde8;
+    --border-soft: #e8ecf3;
+    --text: #1a1f2e;
+    --text-dim: #5a6478;
+    --text-muted: #94a0b5;
+    --accent: #3559e0;
+    --accent-2: #0e9f6e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text);
+    font-weight: 600; font-size: 16px;
+  }
+  .brand-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #7c9cff, #c084fc);
+    border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 13px;
+  }
+  .brand-sub { color: var(--text-muted); font-weight: 400; }
+  .cta-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .cta-btn:hover { background: #2a47b8; }
+  .cta-btn:active { transform: translateY(1px); }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 24px 60px; }
+  h1 {
+    margin: 0 0 12px 0;
+    font-size: 36px;
+    letter-spacing: -0.6px;
+    line-height: 1.2;
+  }
+  .lede {
+    font-size: 17px;
+    color: var(--text-dim);
+    margin: 0 0 16px 0;
+  }
+  .updated { color: var(--text-muted); font-size: 13px; margin: 0 0 36px 0; }
+  h2 {
+    margin: 44px 0 14px 0;
+    font-size: 24px;
+    letter-spacing: -0.3px;
+  }
+  h3 {
+    margin: 28px 0 10px 0;
+    font-size: 18px;
+    color: var(--text);
+  }
+  p, ul, li, ol { font-size: 16px; color: var(--text-dim); }
+  p { margin: 0 0 14px 0; }
+  ul, ol { padding-left: 24px; margin: 0 0 14px 0; }
+  li { margin-bottom: 8px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  code {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13.5px;
+    background: var(--bg-elev-2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--text);
+  }
+  pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 14px 0;
+  }
+  pre code { background: transparent; padding: 0; }
+  a { color: var(--accent); }
+  a:hover { text-decoration: underline; }
+  .callout {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    font-size: 15px;
+    color: var(--text-dim);
+  }
+  .callout.tip { border-left-color: var(--accent-2); }
+  .callout strong { display: block; margin-bottom: 4px; color: var(--text); }
+  .inline-cta {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin: 16px 0;
+    transition: background 0.15s;
+  }
+  .inline-cta:hover { background: #2a47b8; text-decoration: none; }
+  .step {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 16px 0;
+  }
+  .step h3 {
+    margin: 0 0 8px 0;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .step-num {
+    width: 26px; height: 26px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 24px 0 32px;
+    font-size: 14px;
+  }
+  .toc strong { display: block; margin-bottom: 8px; }
+  .toc a {
+    display: block;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 3px 0;
+  }
+  .toc a:hover { color: var(--accent); }
+  .related {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 32px 0 8px;
+    font-size: 14px;
+  }
+  .related strong { display: block; margin-bottom: 8px; color: var(--text); }
+  .related a {
+    display: block;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 3px 0;
+  }
+  .related a:hover { color: var(--accent); }
+  footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 24px;
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  footer nav a { color: var(--text-dim); text-decoration: none; margin: 0 8px; }
+  footer nav a:hover { color: var(--accent); text-decoration: underline; }
+  footer nav a.gh { display: inline-flex; align-items: center; gap: 4px; }
+  footer nav a.gh svg { width: 14px; height: 14px; vertical-align: -2px; fill: currentColor; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">
+    <span class="brand-icon">{ }</span>
+    <span>Pretty <span class="brand-sub">JSON &amp; XML</span></span>
+  </a>
+  <a class="cta-btn" href="/">Try the viewer →</a>
+</header>
+<main>
+  <article>
+    <h1>SOAP Viewer — Read a SOAP Response as a Table</h1>
+    <p class="lede">
+      SOAP responses are some of the densest XML you will ever debug: namespaced envelopes, wrapper elements three levels deep, and the actual record you care about buried under <code>Envelope &gt; Body &gt; SomeResponse &gt; Result</code>. This SOAP viewer paste your envelope and reads it back as a clean, sortable table — so you can scan the data instead of counting closing tags.
+    </p>
+    <p class="updated">A free in-browser tool · Updated 29 May 2026</p>
+
+    <p style="text-align:center;">
+      <a class="inline-cta" href="/">Open the viewer →</a>
+    </p>
+
+    <nav class="toc" aria-label="On this page">
+      <strong>On this page</strong>
+      <a href="#why">Why a table beats raw SOAP XML</a>
+      <a href="#steps">View a SOAP response in three steps</a>
+      <a href="#envelope">How it handles Envelope, Header, Body &amp; Fault</a>
+      <a href="#enterprise">Built for enterprise SOAP debugging</a>
+      <a href="#privacy">Is my SOAP payload uploaded?</a>
+    </nav>
+
+    <h2 id="why">Why a table beats raw SOAP XML</h2>
+    <p>
+      A typical SOAP response wraps your real payload in layers of envelope ceremony:
+    </p>
+    <pre><code>&lt;soap:Envelope xmlns:soap="..."&gt;
+  &lt;soap:Body&gt;
+    &lt;GetOrdersResponse&gt;
+      &lt;Orders&gt;
+        &lt;Order&gt;&lt;Id&gt;1001&lt;/Id&gt;&lt;Status&gt;SHIPPED&lt;/Status&gt;&lt;/Order&gt;
+        &lt;Order&gt;&lt;Id&gt;1002&lt;/Id&gt;&lt;Status&gt;PENDING&lt;/Status&gt;&lt;/Order&gt;
+      &lt;/Orders&gt;
+    &lt;/GetOrdersResponse&gt;
+  &lt;/soap:Body&gt;
+&lt;/soap:Envelope&gt;</code></pre>
+    <p>
+      Pretty-printing that helps you find a matching tag, but you still read it line by line. The viewer instead walks past the wrapper elements, finds the repeated <code>&lt;Order&gt;</code> records, and turns them into rows:
+    </p>
+    <pre><code>┌──────┬─────────┐
+│ ID   │ STATUS  │
+├──────┼─────────┤
+│ 1001 │ SHIPPED │
+│ 1002 │ PENDING │
+└──────┴─────────┘</code></pre>
+    <p>
+      Now you can sort by status, search for a single order ID across thousands of rows, and click any row to see the full nested detail. The envelope ceremony fades into the background; the data comes forward.
+    </p>
+
+    <h2 id="steps">View a SOAP response in three steps</h2>
+
+    <div class="step">
+      <h3><span class="step-num">1</span> Paste your SOAP envelope</h3>
+      <p>
+        Copy the full response straight out of your SOAP client, browser network tab, or server log — namespaces, headers, and all. Open the <a href="/">viewer</a> and paste it into the editor. There is no "SOAP mode" to pick; the parser recognizes the envelope on its own.
+      </p>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">2</span> Click "View as Table"</h3>
+      <p>
+        Hit <strong>View as Table</strong>. The viewer drills through the <code>Envelope</code> and <code>Body</code> wrappers, finds the repeated record element, and promotes its fields to sortable columns. Single-value sections like the SOAP <code>Header</code> render as a compact details card instead of an empty table.
+      </p>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">3</span> Sort, search &amp; expand</h3>
+      <p>
+        Click a column header to sort. Type in the search box to filter rows — the match is full-text, so it reaches fields that aren't even shown as columns. Click any row to expand the complete record, including deeply nested sub-structures rendered as their own mini-tables.
+      </p>
+    </div>
+
+    <p style="text-align:center;">
+      <a class="inline-cta" href="/">Open the viewer →</a>
+    </p>
+
+    <h2 id="envelope">How it handles Envelope, Header, Body &amp; Fault</h2>
+    <h3>Wrapper lifting</h3>
+    <p>
+      SOAP buries data under predictable wrappers: <code>Envelope</code>, <code>Body</code>, an operation-named response element, then a collection element. The viewer recognizes these single-child wrapper chains and "lifts" the records up, so you land directly on the table rather than clicking through four nested nodes.
+    </p>
+    <h3>Header and metadata</h3>
+    <p>
+      A SOAP <code>Header</code> usually carries auth tokens, correlation IDs, or routing hints — one value each, not a list. Those surface as a clearly labelled details card so they stay visible alongside the body data instead of being dropped as "not tabular".
+    </p>
+    <h3>SOAP Faults</h3>
+    <p>
+      When the response is a <code>&lt;soap:Fault&gt;</code> instead of a happy-path payload, you still see every part — <code>faultcode</code>, <code>faultstring</code>, and any <code>detail</code> block — laid out as readable fields. Debugging a failing call is exactly when raw XML is hardest to read and a structured view helps most.
+    </p>
+
+    <div class="callout tip">
+      <strong>Tip:</strong>
+      Got a single-line, whitespace-stripped envelope from a log? Click <strong>Format</strong> first to pretty-print it, then switch to Table or Tree. For a ready-made walkthrough, see the worked <a href="/example/soap-response">SOAP response example</a>.
+    </div>
+
+    <h2 id="enterprise">Built for enterprise SOAP debugging</h2>
+    <p>
+      SOAP rarely lives in greenfield apps — it lives in banking gateways, ERP integrations, government endpoints, and legacy middleware where the payloads are big and the schemas are gnarly. A few things matter at that scale:
+    </p>
+    <ul>
+      <li><strong>Large payloads stay smooth.</strong> Multi-megabyte responses load with virtual scrolling, so a table of 30,000 records keeps only the visible rows in the DOM. Parsing runs off the main thread to avoid freezing the tab.</li>
+      <li><strong>Nothing leaves your machine.</strong> Auth headers and customer data in a SOAP body are sensitive. This tool never transmits them — see the privacy note below.</li>
+      <li><strong>Tree view for ground truth.</strong> When you need to verify the exact namespace or attribute, switch to <strong>Tree view</strong> for the complete, unflattened envelope.</li>
+    </ul>
+
+    <h2 id="privacy">Is my SOAP payload uploaded?</h2>
+    <p>
+      No. The viewer is a single HTML page with no backend and no upload endpoint. Your SOAP envelope — tokens, headers, body and all — is parsed and rendered entirely by your browser. We cannot see what you paste. That is a hard requirement for anyone debugging production SOAP traffic, and it is the default here.
+    </p>
+
+    <nav class="related" aria-label="Related pages">
+      <strong>Related</strong>
+      <a href="/">Pretty JSON &amp; XML — home</a>
+      <a href="/xml-viewer">XML viewer online</a>
+      <a href="/xml-to-table">XML to table</a>
+      <a href="/example/soap-response">SOAP response example</a>
+    </nav>
+
+    <p style="text-align:center; margin-top: 48px;">
+      <a class="inline-cta" href="/">Open the viewer and paste your SOAP →</a>
+    </p>
+  </article>
+</main>
+<footer>
+  <nav aria-label="Site links">
+    <a href="/">Home</a>·
+    <a href="/guide/view-json-as-table">Guide</a>·
+    <a href="/example/rss-feed">RSS example</a>·
+    <a class="gh" href="https://github.com/aleksandre-mtchedlishvili/prettyjsonxml.com" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>·
+    <a href="/privacy">Privacy</a>·
+    <a href="/terms">Terms</a>·
+    <a href="mailto:aleksandre.mtchedlishvili@gmail.com">Contact</a>
+  </nav>
+  <p>&copy; 2026 Pretty JSON &amp; XML — runs in your browser, free forever.</p>
+</footer>
+</body>
+</html>

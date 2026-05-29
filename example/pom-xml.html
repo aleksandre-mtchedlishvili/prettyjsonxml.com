@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pom.xml Viewer — Read a Maven POM Online | Pretty JSON &amp; XML</title>
+<meta name="description" content="Open a Maven pom.xml in the browser and read dependencies, plugins, and properties as a sortable table or foldable tree. No upload, free, instant.">
+<meta name="keywords" content="pom.xml viewer, maven pom viewer, view pom.xml online, maven dependencies viewer, pom xml example, read pom.xml">
+<link rel="canonical" href="https://prettyjsonxml.com/example/pom-xml">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#7c9cff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c9cff'/%3E%3Ctext x='50' y='68' font-size='52' font-weight='700' fill='white' text-anchor='middle' font-family='-apple-system,BlinkMacSystemFont,sans-serif'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="pom.xml Viewer — Read a Maven POM Online">
+<meta property="og:description" content="Open a Maven pom.xml in the browser and read dependencies, plugins, and properties as a sortable table or foldable tree.">
+<meta property="og:url" content="https://prettyjsonxml.com/example/pom-xml">
+<meta property="og:image" content="https://prettyjsonxml.com/og.jpg">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="pom.xml Viewer — Read a Maven POM Online">
+<meta name="twitter:description" content="Open a Maven pom.xml in the browser and read dependencies, plugins, and properties as a sortable table or foldable tree.">
+<meta name="twitter:image" content="https://prettyjsonxml.com/og.jpg">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "pom.xml Viewer — Read a Maven POM Online",
+  "description": "Open a Maven pom.xml in the browser and read dependencies, plugins, and properties as a sortable table or foldable tree. No upload, free, instant.",
+  "image": "https://prettyjsonxml.com/og.jpg",
+  "datePublished": "2026-05-29T12:00:00Z",
+  "dateModified": "2026-05-29T12:00:00Z",
+  "author": {
+    "@type": "Person",
+    "name": "Aleksandre Mchedlishvili",
+    "url": "https://prettyjsonxml.com/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Pretty JSON & XML",
+    "logo": { "@type": "ImageObject", "url": "https://prettyjsonxml.com/og.jpg" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://prettyjsonxml.com/example/pom-xml" }
+}
+</script>
+
+<!-- BreadcrumbList — Home > Examples > pom.xml viewer, so Google can show the
+     trail in search results and tie this page into the topic cluster. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://prettyjsonxml.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Examples",
+      "item": "https://prettyjsonxml.com/example/rss-feed"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "pom.xml viewer",
+      "item": "https://prettyjsonxml.com/example/pom-xml"
+    }
+  ]
+}
+</script>
+
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --bg-elev: #ffffff;
+    --bg-card: #ffffff;
+    --bg-elev-2: #eef1f7;
+    --border: #d8dde8;
+    --border-soft: #e8ecf3;
+    --text: #1a1f2e;
+    --text-dim: #5a6478;
+    --text-muted: #94a0b5;
+    --accent: #3559e0;
+    --tag: #c2185b;
+    --attr: #b45309;
+    --attr-val: #047857;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text);
+    font-weight: 600; font-size: 16px;
+  }
+  .brand-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #7c9cff, #c084fc);
+    border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 13px;
+  }
+  .brand-sub { color: var(--text-muted); font-weight: 400; }
+  .cta-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+  }
+  .cta-btn:hover { background: #2a47b8; }
+  main { max-width: 820px; margin: 0 auto; padding: 40px 24px 60px; }
+  h1 {
+    margin: 0 0 10px 0;
+    font-size: 32px;
+    letter-spacing: -0.5px;
+  }
+  .lede { font-size: 16px; color: var(--text-dim); margin: 0 0 32px 0; }
+  h2 {
+    margin: 36px 0 12px 0;
+    font-size: 22px;
+    letter-spacing: -0.3px;
+  }
+  h3 { margin: 22px 0 8px 0; font-size: 16px; }
+  p, ul, li { font-size: 15px; color: var(--text-dim); }
+  p { margin: 0 0 12px 0; }
+  ul { padding-left: 22px; margin: 0 0 12px 0; }
+  li { margin-bottom: 6px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  a { color: var(--accent); }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    background: var(--bg-elev-2);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+  pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 14px 0;
+    max-height: 420px;
+  }
+  pre code { background: transparent; padding: 0; }
+  /* Lightweight XML syntax coloring on the sample */
+  .hl-tag { color: var(--tag); }
+  .hl-attr { color: var(--attr); }
+  .hl-attr-val { color: var(--attr-val); }
+  .hl-punct { color: var(--text-dim); }
+  .hl-comment { color: var(--text-muted); font-style: italic; }
+
+  .actions {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin: 16px 0 32px;
+  }
+  .btn-primary, .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: #2a47b8; text-decoration: none; }
+  .btn-secondary {
+    background: var(--bg-card);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .btn-secondary:hover { background: var(--bg-elev-2); text-decoration: none; }
+
+  .callout {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    font-size: 14px;
+  }
+  .callout strong { display: block; margin-bottom: 4px; }
+
+  .related-examples {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-top: 36px;
+  }
+  .related-examples h3 { margin: 0 0 10px 0; }
+  .related-examples ul { padding-left: 0; list-style: none; }
+  .related-examples li { margin-bottom: 4px; }
+
+  footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 24px;
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  footer nav a { color: var(--text-dim); text-decoration: none; margin: 0 8px; }
+  footer nav a:hover { color: var(--accent); text-decoration: underline; }
+  footer nav a.gh { display: inline-flex; align-items: center; gap: 4px; }
+  footer nav a.gh svg { width: 14px; height: 14px; vertical-align: -2px; fill: currentColor; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="../">
+    <span class="brand-icon">{ }</span>
+    <span>Pretty <span class="brand-sub">JSON &amp; XML</span></span>
+  </a>
+  <a class="cta-btn" href="../">Open the viewer →</a>
+</header>
+<main>
+  <article>
+    <h1>pom.xml Viewer</h1>
+    <p class="lede">
+      A Maven <code>pom.xml</code> is just XML — so you can open one in Pretty JSON &amp; XML and read every dependency, plugin, and property as a sortable table or a foldable tree. No Maven install, no upload, no waiting on an IDE to index. Below is a sample POM you can load with one click, plus how the viewer makes a dense build file readable.
+    </p>
+
+    <div class="actions">
+      <button class="btn-primary" id="loadInViewer" type="button">▦ View this sample as a table</button>
+      <button class="btn-secondary" id="copySample" type="button">📋 Copy sample to clipboard</button>
+    </div>
+
+    <h2>The sample</h2>
+    <p>A trimmed but realistic <code>pom.xml</code> — project coordinates, properties, a handful of dependencies, and one build plugin:</p>
+    <pre id="sampleBlock"><code id="sampleCode"><span class="hl-comment">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="hl-punct">&lt;</span><span class="hl-tag">project</span> <span class="hl-attr">xmlns</span>=<span class="hl-attr-val">"http://maven.apache.org/POM/4.0.0"</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;</span><span class="hl-tag">modelVersion</span><span class="hl-punct">&gt;</span>4.0.0<span class="hl-punct">&lt;/</span><span class="hl-tag">modelVersion</span><span class="hl-punct">&gt;</span>
+
+  <span class="hl-punct">&lt;</span><span class="hl-tag">groupId</span><span class="hl-punct">&gt;</span>com.prettyjsonxml<span class="hl-punct">&lt;/</span><span class="hl-tag">groupId</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;</span><span class="hl-tag">artifactId</span><span class="hl-punct">&gt;</span>sample-service<span class="hl-punct">&lt;/</span><span class="hl-tag">artifactId</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;</span><span class="hl-tag">version</span><span class="hl-punct">&gt;</span>1.4.2<span class="hl-punct">&lt;/</span><span class="hl-tag">version</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;</span><span class="hl-tag">packaging</span><span class="hl-punct">&gt;</span>jar<span class="hl-punct">&lt;/</span><span class="hl-tag">packaging</span><span class="hl-punct">&gt;</span>
+
+  <span class="hl-punct">&lt;</span><span class="hl-tag">properties</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;</span><span class="hl-tag">java.version</span><span class="hl-punct">&gt;</span>17<span class="hl-punct">&lt;/</span><span class="hl-tag">java.version</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;</span><span class="hl-tag">project.build.sourceEncoding</span><span class="hl-punct">&gt;</span>UTF-8<span class="hl-punct">&lt;/</span><span class="hl-tag">project.build.sourceEncoding</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;/</span><span class="hl-tag">properties</span><span class="hl-punct">&gt;</span>
+
+  <span class="hl-punct">&lt;</span><span class="hl-tag">dependencies</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;</span><span class="hl-tag">dependency</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">groupId</span><span class="hl-punct">&gt;</span>org.springframework.boot<span class="hl-punct">&lt;/</span><span class="hl-tag">groupId</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">artifactId</span><span class="hl-punct">&gt;</span>spring-boot-starter-web<span class="hl-punct">&lt;/</span><span class="hl-tag">artifactId</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">version</span><span class="hl-punct">&gt;</span>3.2.5<span class="hl-punct">&lt;/</span><span class="hl-tag">version</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;/</span><span class="hl-tag">dependency</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;</span><span class="hl-tag">dependency</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">groupId</span><span class="hl-punct">&gt;</span>org.postgresql<span class="hl-punct">&lt;/</span><span class="hl-tag">groupId</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">artifactId</span><span class="hl-punct">&gt;</span>postgresql<span class="hl-punct">&lt;/</span><span class="hl-tag">artifactId</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">version</span><span class="hl-punct">&gt;</span>42.7.3<span class="hl-punct">&lt;/</span><span class="hl-tag">version</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">scope</span><span class="hl-punct">&gt;</span>runtime<span class="hl-punct">&lt;/</span><span class="hl-tag">scope</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;/</span><span class="hl-tag">dependency</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;</span><span class="hl-tag">dependency</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">groupId</span><span class="hl-punct">&gt;</span>org.junit.jupiter<span class="hl-punct">&lt;/</span><span class="hl-tag">groupId</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">artifactId</span><span class="hl-punct">&gt;</span>junit-jupiter<span class="hl-punct">&lt;/</span><span class="hl-tag">artifactId</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">version</span><span class="hl-punct">&gt;</span>5.10.2<span class="hl-punct">&lt;/</span><span class="hl-tag">version</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">scope</span><span class="hl-punct">&gt;</span>test<span class="hl-punct">&lt;/</span><span class="hl-tag">scope</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;/</span><span class="hl-tag">dependency</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;/</span><span class="hl-tag">dependencies</span><span class="hl-punct">&gt;</span>
+
+  <span class="hl-punct">&lt;</span><span class="hl-tag">build</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;</span><span class="hl-tag">plugins</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;</span><span class="hl-tag">plugin</span><span class="hl-punct">&gt;</span>
+        <span class="hl-punct">&lt;</span><span class="hl-tag">groupId</span><span class="hl-punct">&gt;</span>org.springframework.boot<span class="hl-punct">&lt;/</span><span class="hl-tag">groupId</span><span class="hl-punct">&gt;</span>
+        <span class="hl-punct">&lt;</span><span class="hl-tag">artifactId</span><span class="hl-punct">&gt;</span>spring-boot-maven-plugin<span class="hl-punct">&lt;/</span><span class="hl-tag">artifactId</span><span class="hl-punct">&gt;</span>
+      <span class="hl-punct">&lt;/</span><span class="hl-tag">plugin</span><span class="hl-punct">&gt;</span>
+    <span class="hl-punct">&lt;/</span><span class="hl-tag">plugins</span><span class="hl-punct">&gt;</span>
+  <span class="hl-punct">&lt;/</span><span class="hl-tag">build</span><span class="hl-punct">&gt;</span>
+<span class="hl-punct">&lt;/</span><span class="hl-tag">project</span><span class="hl-punct">&gt;</span></code></pre>
+
+    <div class="callout">
+      <strong>Try it:</strong>
+      Click <em>"View this sample as a table"</em> above. The viewer detects <code>&lt;dependency&gt;</code> as the repeated element and renders one row per dependency, with Group ID, Artifact ID, Version, and Scope as columns — the exact view you want when auditing a build.
+    </div>
+
+    <h2>What is a pom.xml?</h2>
+    <p>
+      <code>pom.xml</code> is the Project Object Model — the single file Apache Maven reads to build a Java project. It declares the project's coordinates (<code>groupId</code>, <code>artifactId</code>, <code>version</code>), the libraries it depends on, the plugins that run during the build, and properties that parameterize the whole thing. One file describes the entire build.
+    </p>
+    <p>
+      The structure is consistent across nearly every Java repository:
+    </p>
+    <ul>
+      <li><strong>Coordinates</strong> — <code>groupId</code>, <code>artifactId</code>, <code>version</code>, and <code>packaging</code> identify the artifact this project produces</li>
+      <li><strong>Properties</strong> — reusable values like <code>java.version</code> or a shared library version, referenced elsewhere as <code>${...}</code></li>
+      <li><strong>Dependencies</strong> — a list of <code>&lt;dependency&gt;</code> blocks, each with its own coordinates and an optional <code>scope</code> (compile, runtime, test, provided)</li>
+      <li><strong>Build / plugins</strong> — the plugins Maven runs through the lifecycle, such as the compiler, Surefire, or the Spring Boot packager</li>
+    </ul>
+
+    <h2>Why view a pom.xml as a table?</h2>
+    <p>
+      A real-world POM can run to hundreds of lines, and the part you usually care about — the dependency list — is buried in repetitive, deeply indented blocks. Scanning that as raw XML is slow and error-prone. As a table, the same data becomes something you can actually reason about:
+    </p>
+    <ul>
+      <li><strong>Sort by Artifact ID</strong> to find a library instantly, or by Scope to separate test-only deps from runtime</li>
+      <li><strong>Search</strong> for a group like <code>org.springframework</code> to see everything from one vendor at once</li>
+      <li><strong>Spot duplicates or missing versions</strong> — an empty Version cell jumps out when the rest of the column is filled</li>
+      <li><strong>Compare two POMs</strong> side by side when reconciling versions across modules</li>
+    </ul>
+
+    <h2>How Pretty JSON &amp; XML handles a POM</h2>
+    <p>
+      When you paste a <code>pom.xml</code>, the viewer:
+    </p>
+    <ol>
+      <li>Parses the XML and finds <code>&lt;dependency&gt;</code> as the repeated element under <code>&lt;dependencies&gt;</code></li>
+      <li>Renders each dependency as a row, picking <code>groupId</code>, <code>artifactId</code>, <code>version</code>, and <code>scope</code> as columns</li>
+      <li>Surfaces the single-value project fields — coordinates, packaging, and properties — above the table as context, so they aren't lost</li>
+      <li>Keeps <code>&lt;build&gt;</code> and its plugins as a foldable subtree you can open when you need it</li>
+    </ol>
+    <p>
+      Click any row to expand the full <code>&lt;dependency&gt;</code> block, including less common fields like <code>&lt;optional&gt;</code>, <code>&lt;type&gt;</code>, or nested <code>&lt;exclusions&gt;</code>. Prefer the raw shape? Switch to Tree view for the whole document with every element foldable.
+    </p>
+
+    <h2>Other build files work too</h2>
+    <p>
+      Anything XML-shaped renders the same way. A parent POM, a multi-module aggregator with a <code>&lt;modules&gt;</code> list, a <code>settings.xml</code>, or an Ivy file all parse cleanly — repeated elements become rows, single values become context. If it is valid XML, you can read it here without leaving the browser.
+    </p>
+
+    <p style="text-align:center;">
+      <a class="cta-btn" href="../" style="display:inline-block; margin: 20px 0;">Open the viewer and paste your own pom.xml →</a>
+    </p>
+
+    <div class="related-examples">
+      <h3>Related</h3>
+      <ul>
+        <li><a href="../xml-viewer">▦ XML viewer online</a></li>
+        <li><a href="../xml-to-table">▦ XML to table</a></li>
+        <li><a href="../xml-formatter">✨ XML formatter and beautifier</a></li>
+        <li><a href="../example/soap-response">📄 View a SOAP response example</a></li>
+        <li><a href="../">🏠 Open the live viewer</a></li>
+      </ul>
+    </div>
+  </article>
+</main>
+<footer>
+  <nav aria-label="Site links">
+    <a href="../">Home</a>·
+    <a href="../guide/view-json-as-table">Guide</a>·
+    <a href="./rss-feed">RSS example</a>·
+    <a class="gh" href="https://github.com/aleksandre-mtchedlishvili/prettyjsonxml.com" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>·
+    <a href="../privacy">Privacy</a>·
+    <a href="../terms">Terms</a>·
+    <a href="mailto:aleksandre.mtchedlishvili@gmail.com">Contact</a>
+  </nav>
+  <p>&copy; 2026 Pretty JSON &amp; XML — runs in your browser, free forever.</p>
+</footer>
+
+<script>
+  // The raw XML (plain text, no markup) that gets copied or sent to the viewer
+  const SAMPLE_POM = `<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.prettyjsonxml</groupId>
+  <artifactId>sample-service</artifactId>
+  <version>1.4.2</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <java.version>17</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <version>3.2.5</version>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>42.7.3</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.10.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>`;
+
+  // Open the viewer with the sample data pre-loaded via sessionStorage. The
+  // main app reads this on load (see "example-sample" handling in index.html).
+  document.getElementById('loadInViewer').addEventListener('click', () => {
+    try {
+      sessionStorage.setItem('pjx_pending_sample', SAMPLE_POM);
+      sessionStorage.setItem('pjx_pending_sample_name', 'pom.xml');
+    } catch (_) {}
+    window.location.href = '/';
+  });
+
+  document.getElementById('copySample').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(SAMPLE_POM);
+      const btn = document.getElementById('copySample');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied';
+      setTimeout(() => { btn.textContent = orig; }, 1500);
+    } catch (err) {
+      alert('Copy failed — your browser may block clipboard access on this page. You can select the sample text manually.');
+    }
+  });
+</script>
+</body>
+</html>

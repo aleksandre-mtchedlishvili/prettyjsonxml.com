@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XML Formatter &amp; Beautifier — Free Online, No Signup</title>
+<meta name="description" content="Format, beautify and minify XML in your browser. Paste messy XML and pretty-print it instantly — no signup, no upload, runs 100% client-side.">
+<meta name="keywords" content="xml formatter, xml beautifier, beautify xml, format xml online, minify xml, pretty print xml, xml formatter online">
+<link rel="canonical" href="https://prettyjsonxml.com/xml-formatter">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#7c9cff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c9cff'/%3E%3Ctext x='50' y='68' font-size='52' font-weight='700' fill='white' text-anchor='middle' font-family='-apple-system,BlinkMacSystemFont,sans-serif'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="XML Formatter &amp; Beautifier — Free Online, No Signup">
+<meta property="og:description" content="Format, beautify and minify XML in your browser. Paste messy XML and pretty-print it instantly — no upload required.">
+<meta property="og:url" content="https://prettyjsonxml.com/xml-formatter">
+<meta property="og:image" content="https://prettyjsonxml.com/og.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="XML Formatter &amp; Beautifier — Free Online, No Signup">
+<meta name="twitter:description" content="Format, beautify and minify XML in your browser. Paste messy XML and pretty-print it instantly.">
+<meta name="twitter:image" content="https://prettyjsonxml.com/og.jpg">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "XML Formatter & Beautifier",
+  "alternateName": ["XML Beautifier", "XML Formatter Online", "XML Pretty Printer", "XML Minifier"],
+  "description": "Free online XML formatter and beautifier. Paste or upload messy XML and pretty-print it instantly with clean indentation, or minify it back to one line. 100% in your browser — no signup, no upload.",
+  "url": "https://prettyjsonxml.com/xml-formatter",
+  "image": "https://prettyjsonxml.com/og.jpg",
+  "screenshot": "https://prettyjsonxml.com/og.jpg",
+  "applicationCategory": "DeveloperApplication",
+  "applicationSubCategory": "XML formatter and beautifier",
+  "operatingSystem": "Web (any modern browser)",
+  "browserRequirements": "Requires a modern browser (Chrome, Firefox, Safari, Edge).",
+  "softwareVersion": "1.0",
+  "dateModified": "2026-05-29T12:00:00Z",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "author": {
+    "@type": "Person",
+    "name": "Aleksandre Mchedlishvili",
+    "url": "https://prettyjsonxml.com/"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "featureList": [
+    "Beautify / pretty-print XML with clean indentation",
+    "Minify XML back to a single compact line",
+    "Live syntax highlighting in the editor",
+    "Instant full-text search across the document",
+    "View formatted XML as a foldable tree",
+    "View repeated XML elements as a sortable table",
+    "Handles large XML files (9 MB+) without freezing",
+    "100% client-side — your XML never leaves your browser",
+    "No signup, no ads, no upload to any server"
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://prettyjsonxml.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "XML Formatter & Beautifier",
+      "item": "https://prettyjsonxml.com/xml-formatter"
+    }
+  ]
+}
+</script>
+
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --bg-elev: #ffffff;
+    --bg-card: #ffffff;
+    --bg-elev-2: #eef1f7;
+    --border: #d8dde8;
+    --border-soft: #e8ecf3;
+    --text: #1a1f2e;
+    --text-dim: #5a6478;
+    --text-muted: #94a0b5;
+    --accent: #3559e0;
+    --accent-2: #0e9f6e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text);
+    font-weight: 600; font-size: 16px;
+  }
+  .brand-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #7c9cff, #c084fc);
+    border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 13px;
+  }
+  .brand-sub { color: var(--text-muted); font-weight: 400; }
+  .cta-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .cta-btn:hover { background: #2a47b8; }
+  .cta-btn:active { transform: translateY(1px); }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 24px 60px; }
+  h1 {
+    margin: 0 0 12px 0;
+    font-size: 36px;
+    letter-spacing: -0.6px;
+    line-height: 1.2;
+  }
+  .lede {
+    font-size: 17px;
+    color: var(--text-dim);
+    margin: 0 0 16px 0;
+  }
+  .updated { color: var(--text-muted); font-size: 13px; margin: 0 0 36px 0; }
+  h2 {
+    margin: 44px 0 14px 0;
+    font-size: 24px;
+    letter-spacing: -0.3px;
+  }
+  h3 {
+    margin: 28px 0 10px 0;
+    font-size: 18px;
+    color: var(--text);
+  }
+  p, ul, li, ol { font-size: 16px; color: var(--text-dim); }
+  p { margin: 0 0 14px 0; }
+  ul, ol { padding-left: 24px; margin: 0 0 14px 0; }
+  li { margin-bottom: 8px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  code {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13.5px;
+    background: var(--bg-elev-2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--text);
+  }
+  pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 14px 0;
+  }
+  pre code { background: transparent; padding: 0; }
+  a { color: var(--accent); }
+  a:hover { text-decoration: underline; }
+  .callout {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    font-size: 15px;
+    color: var(--text-dim);
+  }
+  .callout.tip { border-left-color: var(--accent-2); }
+  .callout strong { display: block; margin-bottom: 4px; color: var(--text); }
+  .inline-cta {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin: 16px 0;
+    transition: background 0.15s;
+  }
+  .inline-cta:hover { background: #2a47b8; text-decoration: none; }
+  .step {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 16px 0;
+  }
+  .step h3 {
+    margin: 0 0 8px 0;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .step-num {
+    width: 26px; height: 26px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 24px 0 32px;
+    font-size: 14px;
+  }
+  .toc strong { display: block; margin-bottom: 8px; }
+  .toc a {
+    display: block;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 3px 0;
+  }
+  .toc a:hover { color: var(--accent); }
+  .related {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-top: 36px;
+  }
+  .related h2 { margin: 0 0 10px 0; font-size: 20px; }
+  .related ul { padding-left: 0; list-style: none; margin: 0; }
+  .related li { margin-bottom: 6px; }
+  footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 24px;
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  footer nav a { color: var(--text-dim); text-decoration: none; margin: 0 8px; }
+  footer nav a:hover { color: var(--accent); text-decoration: underline; }
+  footer nav a.gh { display: inline-flex; align-items: center; gap: 4px; }
+  footer nav a.gh svg { width: 14px; height: 14px; vertical-align: -2px; fill: currentColor; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">
+    <span class="brand-icon">{ }</span>
+    <span>Pretty <span class="brand-sub">JSON &amp; XML</span></span>
+  </a>
+  <a class="cta-btn" href="/">Open the viewer →</a>
+</header>
+<main>
+  <article>
+    <h1>XML Formatter &amp; Beautifier</h1>
+    <p class="lede">
+      Paste a wall of single-line, tab-mangled XML and get clean, properly indented markup back in a single click. This is a free online XML formatter and beautifier that runs entirely in your browser — pretty-print messy XML instantly, or minify it back down when you need it small.
+    </p>
+    <p class="updated">A free browser tool · Updated 29 May 2026</p>
+
+    <nav class="toc" aria-label="On this page">
+      <strong>On this page</strong>
+      <a href="#what">What this XML formatter does</a>
+      <a href="#beautify">Beautify: pretty-print messy XML</a>
+      <a href="#minify">Minify: collapse XML back to one line</a>
+      <a href="#steps">How to format your XML</a>
+      <a href="#private">Why it stays private</a>
+      <a href="#large">Big files and edge cases</a>
+      <a href="#related">Related tools</a>
+    </nav>
+
+    <h2 id="what">What this XML formatter does</h2>
+    <p>
+      XML you copy out of a log line, an API response, or a config dump almost never arrives readable. It comes as one endless line, or with random tabs and ragged indentation that fights you when you try to follow the nesting. A formatter fixes that: it re-lays the same markup with consistent indentation so every opening tag lines up with its close, and the structure becomes something you can actually scan.
+    </p>
+    <p>
+      Two operations cover almost everything you'll want:
+    </p>
+    <ul>
+      <li><strong>Beautify</strong> — take compact or messy XML and re-indent it into a clean, readable tree.</li>
+      <li><strong>Minify</strong> — strip the whitespace back out to ship the smallest possible payload.</li>
+    </ul>
+    <p>
+      Both run client-side. There's no backend doing the work — your browser's own XML engine parses the document and rewrites it, so nothing you paste is sent anywhere.
+    </p>
+
+    <h2 id="beautify">Beautify: pretty-print messy XML</h2>
+    <p>
+      Say you paste this — a perfectly valid SOAP-ish response, but unreadable on one line:
+    </p>
+    <pre><code>&lt;order id="42"&gt;&lt;customer&gt;&lt;name&gt;Alice&lt;/name&gt;&lt;city&gt;Tbilisi&lt;/city&gt;&lt;/customer&gt;&lt;items&gt;&lt;item sku="A1"&gt;Widget&lt;/item&gt;&lt;item sku="B2"&gt;Gadget&lt;/item&gt;&lt;/items&gt;&lt;/order&gt;</code></pre>
+    <p>
+      Click <strong>Beautify</strong> and you get the same document, re-indented so the hierarchy reads top to bottom:
+    </p>
+    <pre><code>&lt;order id="42"&gt;
+  &lt;customer&gt;
+    &lt;name&gt;Alice&lt;/name&gt;
+    &lt;city&gt;Tbilisi&lt;/city&gt;
+  &lt;/customer&gt;
+  &lt;items&gt;
+    &lt;item sku="A1"&gt;Widget&lt;/item&gt;
+    &lt;item sku="B2"&gt;Gadget&lt;/item&gt;
+  &lt;/items&gt;
+&lt;/order&gt;</code></pre>
+    <p>
+      Attributes stay attached to their elements, text content keeps its place, and the indentation is consistent all the way down. The editor also colors tags, attributes, and values as you go, so the shape of the document pops even before you read a single tag name.
+    </p>
+    <p style="text-align:center;">
+      <a class="inline-cta" href="/">Open the viewer →</a>
+    </p>
+
+    <h2 id="minify">Minify: collapse XML back to one line</h2>
+    <p>
+      Formatting is for humans; minifying is for machines. When you're done reading and want to paste the document into a request body, a fixture, or a field that's sensitive to size, click <strong>Minify</strong>. The formatter removes the indentation and the whitespace between tags and hands you back a single compact line — the same markup, just smaller.
+    </p>
+    <p>
+      It's a clean round trip. Beautify to understand a document, edit it comfortably, then minify before you send it. Nothing about the actual data changes — only the whitespace that surrounds it.
+    </p>
+
+    <h2 id="steps">How to format your XML</h2>
+
+    <div class="step">
+      <h3><span class="step-num">1</span> Paste or upload your XML</h3>
+      <p>
+        Open the <a href="/">viewer</a> and paste your XML into the editor with <code>Ctrl+V</code> (or <code>Cmd+V</code> on Mac). Prefer a file? Click the upload button and pick any <code>.xml</code> file. Everything is parsed in your browser — there's no upload to a server.
+      </p>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">2</span> Click Beautify or Minify</h3>
+      <p>
+        In the editor toolbar, hit <strong>Beautify</strong> to pretty-print the document with clean indentation, or <strong>Minify</strong> to collapse it back to one line. Invalid markup is caught up front with a clear message pointing at what broke, so you're never staring at a silent failure.
+      </p>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">3</span> Read, search, or switch views</h3>
+      <p>
+        Once it's formatted, type in the search box to jump to any tag or value, switch to <strong>Tree</strong> view to fold and unfold branches, or use <strong>Table</strong> view when your XML has repeated elements you'd rather scan as rows. Then copy the result back out.
+      </p>
+    </div>
+
+    <h2 id="private">Why it stays private</h2>
+    <p>
+      The whole tool is a single HTML page. There is no API, no upload endpoint, and no account. Your XML is parsed and rewritten by the browser's built-in engine, which means we — the people running the site — can't see what you paste even if we wanted to. That matters when the document is a production payload, an auth response, or anything you'd rather not hand to a random web service.
+    </p>
+    <div class="callout tip">
+      <strong>Tip</strong>
+      Because formatting happens locally, you can keep working on a flaky connection. Once the page has loaded, beautifying and minifying don't touch the network at all.
+    </div>
+
+    <h2 id="large">Big files and edge cases</h2>
+    <p>
+      The formatter is built to handle real-world XML, not just toy snippets:
+    </p>
+    <ul>
+      <li><strong>Large documents.</strong> Multi-megabyte files format without freezing the tab — parsing runs off the main thread so the UI stays responsive.</li>
+      <li><strong>Comments and CDATA.</strong> <code>&lt;!-- comments --&gt;</code> and <code>&lt;![CDATA[ ... ]]&gt;</code> blocks are preserved through a beautify/minify round trip rather than being stripped.</li>
+      <li><strong>Namespaces.</strong> Prefixed tags like <code>soap:Envelope</code> or <code>itunes:author</code> keep their prefixes intact.</li>
+      <li><strong>Broken markup.</strong> If a tag isn't closed or an entity is malformed, you get a specific error instead of garbled output — fix it and re-run.</li>
+    </ul>
+    <p>
+      If your XML happens to be a feed, a SOAP envelope, or a Maven POM, formatting is only the start — the same viewer can render those as a searchable table. Try the worked <a href="/example/atom-feed">Atom feed</a>, <a href="/example/soap-response">SOAP response</a>, or <a href="/example/pom-xml">pom.xml</a> examples to see it.
+    </p>
+
+    <p style="text-align:center; margin-top: 40px;">
+      <a class="inline-cta" href="/">Open the viewer and format your XML →</a>
+    </p>
+
+    <section class="related" id="related" aria-label="Related tools">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/xml-viewer">XML viewer online</a> — browse XML as a tree or table</li>
+        <li><a href="/xml-pretty-print">XML pretty print</a> — the same indentation, explained</li>
+        <li><a href="/xml-to-table">XML to table</a> — turn repeated elements into sortable rows</li>
+        <li><a href="/json-pretty-print">JSON pretty print</a> — the JSON side of the toolkit</li>
+        <li><a href="/">Pretty JSON &amp; XML home</a> — the full viewer</li>
+      </ul>
+    </section>
+  </article>
+</main>
+<footer>
+  <nav aria-label="Site links">
+    <a href="/">Home</a>·
+    <a href="/guide/view-json-as-table">Guide</a>·
+    <a href="/example/rss-feed">RSS example</a>·
+    <a class="gh" href="https://github.com/aleksandre-mtchedlishvili/prettyjsonxml.com" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>·
+    <a href="/privacy">Privacy</a>·
+    <a href="/terms">Terms</a>·
+    <a href="mailto:aleksandre.mtchedlishvili@gmail.com">Contact</a>
+  </nav>
+  <p>&copy; 2026 Pretty JSON &amp; XML — runs in your browser, free forever.</p>
+</footer>
+</body>
+</html>
