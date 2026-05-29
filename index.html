@@ -2264,6 +2264,7 @@ or
         <button class="editor-toolbar-btn primary" id="btnViewAsTable" type="button" disabled title="Render as a beautiful table">▦ View as Table</button>
         <button class="editor-toolbar-btn primary" id="btnViewAsTree" type="button" disabled title="Render as a collapsible tree">🌳 View as Tree</button>
         <div class="editor-toolbar-spacer"></div>
+        <button class="editor-toolbar-btn" id="btnFix" type="button" title="Unescape and repair common JSON/XML mistakes — escaped strings, trailing commas, smart quotes, comments">🔧 Fix</button>
         <button class="editor-toolbar-btn" id="btnFormat" type="button" title="Pretty-print the source (re-indent JSON or XML)">✨ Format</button>
         <button class="editor-toolbar-btn" id="btnMinify" type="button" title="Compress to a single line">⤴ Minify</button>
         <button class="editor-toolbar-btn" id="btnCopy" type="button" title="Copy editor content to clipboard">📋 Copy</button>
@@ -2450,6 +2451,7 @@ or
   const editorStatus = $('#editorStatus');
   const btnFormat = $('#btnFormat');
   const btnMinify = $('#btnMinify');
+  const btnFix = $('#btnFix');
   const btnCopy = $('#btnCopy');
   const btnViewAsTable = $('#btnViewAsTable');
   const btnViewAsTree = $('#btnViewAsTree');
@@ -3063,6 +3065,37 @@ or
     }
   });
 
+  // "Fix" — unescape JSON-string payloads + repair common JSON/XML mistakes,
+  // then pretty-print the (now valid) result. Reuses transformSource for the
+  // final formatting so large JSON still goes through the worker.
+  if (btnFix) btnFix.addEventListener('click', async () => {
+    const inputText = editor.value;
+    if (btnFix.disabled) return;
+    btnFix.disabled = true;
+    try {
+      const fix = repairSource(inputText);
+      track('fix_clicked', { format: fix.format || 'unknown', ok: fix.ok, fixes: fix.changes ? fix.changes.length : 0 });
+      if (!fix.ok) { showToast(fix.error || 'Couldn’t auto-fix this content'); return; }
+      if (editor.value !== inputText) { showToast('Skipped — content changed'); return; }
+      // Pretty-print the repaired text with the existing formatter.
+      let finalText = fix.text;
+      try { const fmt = await transformSource(fix.text, 'format'); if (fmt.ok) finalText = fmt.text; } catch (_) {}
+      if (editor.value !== inputText) { showToast('Skipped — content changed'); return; }
+      editor.value = finalText;
+      updateHighlight(finalText);
+      editor.dispatchEvent(new Event('input', { bubbles: true }));
+      const label = (fix.format || '').toUpperCase();
+      if (fix.already) {
+        showToast(`✓ Already valid ${label} — formatted`);
+      } else {
+        const summary = fix.changes.join(' · ');
+        showToast(`🔧 Fixed ${label}: ${summary.length > 90 ? summary.slice(0, 90) + '…' : summary}`);
+      }
+    } finally {
+      btnFix.disabled = false;
+    }
+  });
+
   if (btnViewAsTable) btnViewAsTable.addEventListener('click', () => { track('view_as_clicked', { view: 'table', source: 'editor_toolbar' }); switchView('table'); });
   if (btnViewAsTree) btnViewAsTree.addEventListener('click', () => { track('view_as_clicked', { view: 'tree', source: 'editor_toolbar' }); switchView('tree'); });
 
@@ -3125,6 +3158,91 @@ or
 
     if (out === null) return { ok: false, error: 'Invalid JSON or XML' };
     return { ok: true, text: out, format: fmt };
+  }
+
+  // ---------- "Fix" — unescape + conservative JSON/XML repair ----------
+  // Decodes JSON-string-escaped payloads (the #1 "valid data looks invalid"
+  // case) and applies a small set of safe, transparent repairs. Transforms run
+  // ONLY on content that does not already parse, so valid input containing
+  // legitimate \" inside strings is never touched. Returns the list of changes
+  // so the UI can tell the user exactly what happened.
+  function jsonUnescape(s) {
+    return s.replace(/\\(u[0-9a-fA-F]{4}|[\s\S])/g, (m, p) => {
+      if (p[0] === 'u') { try { return String.fromCharCode(parseInt(p.slice(1), 16)); } catch (_) { return m; } }
+      const map = { '"': '"', "'": "'", '\\': '\\', '/': '/', b: '\b', f: '\f', n: '\n', r: '\r', t: '\t' };
+      return Object.prototype.hasOwnProperty.call(map, p) ? map[p] : m;
+    });
+  }
+
+  function validateSource(t) {
+    const s = (t || '').trim();
+    if (!s) return { valid: false, format: 'unknown', error: 'Empty' };
+    const looksXml = s.startsWith('<');
+    const looksJson = (s.startsWith('{') || s.startsWith('[')) && !looksXml;
+    if (looksXml) {
+      try {
+        const doc = new DOMParser().parseFromString(s, 'application/xml');
+        const err = doc.querySelector('parsererror');
+        if (err) return { valid: false, format: 'xml', error: 'Invalid XML: ' + (err.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 90) };
+        return { valid: true, format: 'xml' };
+      } catch (e) { return { valid: false, format: 'xml', error: 'Invalid XML' }; }
+    }
+    try { JSON.parse(s); return { valid: true, format: 'json' }; }
+    catch (e) { return { valid: false, format: looksJson ? 'json' : 'unknown', error: 'Invalid JSON: ' + e.message }; }
+  }
+
+  function repairSource(raw) {
+    let s = (raw || '').replace(/^﻿/, '').trim();
+    if (!s) return { ok: false, error: 'Editor is empty' };
+
+    // Already valid? Leave the content untouched — caller just re-formats it.
+    const v0 = validateSource(s);
+    if (v0.valid) return { ok: true, text: s, format: v0.format, changes: [], already: true };
+
+    const changes = [];
+
+    // 1. Unescape JSON-string escapes (\" , \r\n , \t , \uXXXX). Safe here
+    //    because we only reach this branch when the content is NOT valid.
+    if (/\\(["'\\/nrtbf]|u[0-9a-fA-F]{4})/.test(s)) {
+      const u = jsonUnescape(s).trim();
+      if (u && u !== s) { s = u; changes.push('Unescaped \\" and \\n sequences'); }
+    }
+
+    // 2. Strip a single pair of wrapping quotes (a quoted-string payload).
+    if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+      const inner = s.slice(1, -1).trim();
+      if (inner) { s = inner; changes.push('Removed wrapping quotes'); }
+    }
+
+    if (s.startsWith('<')) {
+      // ---- XML repairs ----
+      const lt = s.indexOf('<');
+      if (lt > 0) { s = s.slice(lt); changes.push('Removed text before first <'); }
+      const amp = s.replace(/&(?!(?:amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)/g, '&amp;');
+      if (amp !== s) { s = amp; changes.push('Escaped bare & characters'); }
+    } else {
+      // ---- safe JSON repairs (invalid input only) ----
+      const smart = s.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
+      if (smart !== s) { s = smart; changes.push('Replaced “smart” quotes'); }
+      const noComments = s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:"'\\])\/\/[^\n\r]*/g, '$1');
+      if (noComments !== s) { s = noComments; changes.push('Removed comments'); }
+      const noTrailing = s.replace(/,(\s*[}\]])/g, '$1');
+      if (noTrailing !== s) { s = noTrailing; changes.push('Removed trailing commas'); }
+
+      // ---- aggressive JSON repairs: kept only if they fully validate ----
+      if (!validateSource(s).valid) {
+        const agg = s
+          .replace(/\bNone\b/g, 'null').replace(/\bTrue\b/g, 'true').replace(/\bFalse\b/g, 'false')
+          .replace(/([{,]\s*)'([^'\\]*)'(\s*:)/g, '$1"$2"$3')
+          .replace(/(:\s*)'([^'\\]*)'(\s*[},\]])/g, '$1"$2"$3')
+          .replace(/([{,]\s*)([A-Za-z_$][\w$]*)(\s*:)/g, '$1"$2"$3');
+        if (validateSource(agg).valid) { s = agg; changes.push('Repaired quotes / keys / literals'); }
+      }
+    }
+
+    const fin = validateSource(s);
+    if (fin.valid) return { ok: true, text: s, format: fin.format, changes };
+    return { ok: false, error: fin.error || 'Could not auto-fix', changes };
   }
 
   // Pretty-print XML using DOM serialization with indentation
