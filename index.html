@@ -681,7 +681,7 @@
     padding: 10px 22px;
     background: var(--bg-elev);
     border-bottom: 1px solid var(--border);
-    display: flex;
+    display: none;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
@@ -764,6 +764,52 @@
     animation: pulse-hint 1s ease-in-out 2;
     border-radius: 5px;
   }
+
+  /* ===== Version-tabs row (top chrome) =====
+     Each loaded doc + each Format/Minify/Fix is a tab here so you can flip
+     between versions to compare. Both this row and the view-tabs row appear
+     only once there's data (body.has-data) so the empty state stays clean. */
+  .work-bar { display: none; }
+  body.has-data .work-bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 8px 22px; background: var(--bg-elev);
+    border-bottom: 1px solid var(--border-soft);
+  }
+  body.has-data .context-toolbar { display: flex; }
+  .work-bar-spacer { flex: 1 1 auto; }
+  .ver-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .ver-tabs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+  .ver-tab {
+    display: inline-flex; align-items: center; gap: 7px; max-width: 220px;
+    background: var(--bg-elev-2); color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 8px 6px 12px; font: inherit; font-size: 12.5px; font-weight: 500;
+    cursor: pointer; transition: all 0.12s;
+  }
+  .ver-tab:hover { color: var(--text); border-color: var(--accent); }
+  .ver-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .ver-tab-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ver-tab-close {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 4px; font-size: 13px; line-height: 1;
+    opacity: 0.55; flex: 0 0 auto;
+  }
+  .ver-tab-close:hover { opacity: 1; background: rgba(0,0,0,0.18); }
+  .ver-tab.active .ver-tab-close:hover { background: rgba(255,255,255,0.28); }
+  .ver-new {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; font-size: 16px; line-height: 1;
+    background: var(--bg-elev-2); color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.12s;
+  }
+  .ver-new:hover { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+  /* Once data is loaded, the onboarding blurb + upload card collapse so the
+     Source view is just tabs + editor/tree split. Upload stays reachable via
+     the "Load file" button in the view-tabs row, drag-drop, or paste. */
+  body.has-data .landing-intro,
+  body.has-data .landing-actions,
+  body.has-data .landing-or { display: none; }
   .btn {
     background: var(--bg-elev-2);
     color: var(--text);
@@ -991,11 +1037,8 @@
   .editor-shell { position: relative; }
   .editor-highlight {
     position: absolute;
-    top: 0; left: 0; right: 0;
-    /* Match textarea sizing so the overlay doesn't extend into the toolbar */
-    height: calc(100vh - 380px);
-    min-height: 240px;
-    max-height: 580px;
+    top: 0; left: 0; right: 0; bottom: 0;
+    box-sizing: border-box;
     margin: 0;
     padding: 16px 20px;
     font-family: 'JetBrains Mono', 'Fira Code', Consolas, ui-monospace, monospace;
@@ -1034,15 +1077,14 @@
        stays just inside the fold on common viewports, and not clipped by the
        site footer (added later than this rule, hence the 50 px bump from
        the original 330 baseline). */
-    height: calc(100vh - 380px);
-    min-height: 240px;
-    max-height: 580px;
+    height: 100%;
+    box-sizing: border-box;
     background: transparent;
     color: transparent;        /* text is shown by the highlight overlay */
     caret-color: var(--text);  /* but caret stays visible */
     border: none;
     outline: none;
-    resize: vertical;
+    resize: none;
     padding: 16px 20px;
     font-family: 'JetBrains Mono', 'Fira Code', Consolas, ui-monospace, monospace;
     font-size: 13px;
@@ -1061,17 +1103,15 @@
   /* Fallback for browsers that don't support color: transparent + caret-color */
   .editor::selection { background: rgba(124, 156, 255, 0.3); color: var(--text); }
   .editor-toolbar {
+    /* Status pill only now — floats at the editor's bottom-left so the
+       textarea fills the whole pane with no leftover toolbar strip. */
+    position: absolute;
+    left: 10px; bottom: 8px;
+    z-index: 4;
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 10px;
-    border-top: 1px solid var(--border-soft);
-    background: var(--bg-elev-2);
-    /* The syntax-highlight overlay covers the whole editor-shell (inset: 0).
-       Without a stacking context here, scrolled highlight text would bleed
-       behind the buttons. Lift the toolbar above the overlay. */
-    position: relative;
-    z-index: 3;
+    pointer-events: none;
   }
   .editor-toolbar-spacer { flex: 1; }
   .editor-toolbar-btn {
@@ -2132,6 +2172,33 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
   /* ---- Split view: editor (left) + live tree preview (right) ---- */
+  /* ---- Top action bar (sits above the editor / live-tree split) ----
+     Replaces the old crowded bottom toolbar. Uses the SAME break-out width as
+     the split so the two line up. Three groups, left→right: session
+     (New / History), transform (Format / Minify / Fix / Copy), and the
+     view tabs (Tree / View-as-Table) pushed to the right edge. */
+  .tool-bar {
+    --sw: min(1640px, calc(100vw - 48px));
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    width: var(--sw);
+    margin: 0 calc((100% - var(--sw)) / 2) 12px;
+    padding: 8px 10px;
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+  }
+  .tool-group { display: flex; align-items: center; gap: 6px; }
+  .tool-sep { width: 1px; align-self: stretch; min-height: 22px; background: var(--border); margin: 0 2px; }
+  .tool-spacer { flex: 1 1 auto; }
+  /* Chunkier than the old 12px buttons so they read as real, tappable controls. */
+  .tool-bar .editor-toolbar-btn { padding: 7px 12px; font-size: 13px; }
+  .tool-bar .view-tabs .editor-toolbar-btn { font-weight: 600; }
+  .tool-bar .view-tabs .editor-toolbar-btn.primary { padding: 7px 16px; }
+  @media (max-width: 760px) {
+    .tool-sep, .tool-spacer { display: none; }
+    .tool-bar { gap: 6px; justify-content: flex-start; }
+  }
+
   .editor-split {
     /* Break out of .landing's 920px max-width so the tool uses the screen.
        Capped at 1640px with ~24px gutters; symmetric calc margins center it
@@ -2148,9 +2215,9 @@
      Height tracks the editor (textarea calc(100vh-380px) + ~55px toolbar/border). */
   .editor-split > .editor-shell,
   .editor-split > .split-preview {
-    height: calc(100vh - 325px);
-    min-height: 295px;
-    max-height: 635px;
+    height: calc(100vh - 250px);
+    min-height: 300px;
+    max-height: 720px;
   }
   .split-preview {
     flex: 1 1 50%; min-width: 0;
@@ -2189,8 +2256,9 @@
   .editor-history > summary::marker { content: ""; }
   .history-menu {
     position: absolute;
-    bottom: calc(100% + 6px);
-    right: 0;
+    top: calc(100% + 6px);
+    left: 0;
+    right: auto;
     width: 330px; max-width: 84vw;
     background: var(--bg-elev, #fff);
     border: 1px solid var(--border, #d8dde8);
@@ -2250,7 +2318,21 @@
      they affect (rather than floating in the top header).
      Expand/Collapse and Load/Paste are hidden — sections collapse on click,
      and Load/Paste live in the Source tab where they belong. -->
-<div class="context-toolbar hidden" id="contextToolbar">
+<!-- Version-tabs row — each loaded doc + each Format/Minify/Fix opens a tab
+     here so you can flip between versions to compare. Shown once there's data
+     (body.has-data). Transform actions live on the right of this row. -->
+<div class="work-bar" id="workBar">
+  <div class="ver-tabs" id="verTabs" role="tablist" aria-label="Open documents and versions"></div>
+  <div class="work-bar-spacer"></div>
+  <div class="ver-actions">
+    <button class="editor-toolbar-btn" id="btnFormat" type="button" title="Pretty-print the source (re-indent JSON or XML) — opens as a new version tab">✨ Format</button>
+    <button class="editor-toolbar-btn" id="btnMinify" type="button" title="Compress to a single line — opens as a new version tab">⤴ Minify</button>
+    <button class="editor-toolbar-btn" id="btnFix" type="button" title="Unescape and repair common JSON/XML mistakes — opens as a new version tab">🔧 Fix</button>
+    <button class="editor-toolbar-btn" id="btnCopy" type="button" title="Copy the current version to clipboard">📋 Copy</button>
+  </div>
+</div>
+<!-- View-tabs row — Source / Table / Tree for the active version. -->
+<div class="context-toolbar" id="contextToolbar">
   <div class="view-toggle">
     <button id="viewSource" class="active">📝 Source</button>
     <button id="viewTable">▦ Table</button>
@@ -2264,7 +2346,7 @@
   <button class="btn" id="expandBtn" disabled hidden>⊕ Expand</button>
   <button class="btn" id="collapseBtn" disabled hidden>⊖ Collapse</button>
   <div class="context-toolbar-spacer"></div>
-  <button class="btn" id="loadBtn" hidden>📂 Load file</button>
+  <button class="btn" id="loadBtn">📂 Load file</button>
   <button class="btn" id="pasteBtn" hidden title="Paste from clipboard (Ctrl+V)">📋 Paste</button>
 </div>
 <div class="path-bar hidden" id="pathBar" data-clarity-mask="true"></div>
@@ -2337,27 +2419,6 @@ or
         </button>
       </div>
       <div class="editor-toolbar">
-        <!-- Primary view actions come FIRST — the whole point of the tool is to
-             render the pasted data. After parse-success, these are the buttons
-             we want the user's eye drawn to. Format/Minify/Copy are side tools
-             that live on the right edge. -->
-        <button class="editor-toolbar-btn primary" id="btnViewAsTable" type="button" disabled title="Render as a beautiful table">▦ View as Table</button>
-        <button class="editor-toolbar-btn primary" id="btnViewAsTree" type="button" disabled title="Render as a collapsible tree">🌳 View as Tree</button>
-        <div class="editor-toolbar-spacer"></div>
-        <details class="editor-history" id="historyPopover">
-          <summary class="editor-toolbar-btn" title="Recent inputs from this session — click one to restore and compare">🕘 History</summary>
-          <div class="history-menu" role="menu" aria-label="Recent inputs this session">
-            <div class="history-menu-head">Recent · this session</div>
-            <div class="history-empty" id="historyEmpty">Nothing yet. Load, Format, Minify, or Fix data and each version gets snapshotted here so you can restore and compare.</div>
-            <div class="history-list" id="historyList"></div>
-            <button type="button" class="history-clear hidden" id="historyClearBtn">Clear history</button>
-          </div>
-        </details>
-        <button class="editor-toolbar-btn" id="btnClear" type="button" title="Clear the editor and start fresh (your history is kept)">🧹 Clear</button>
-        <button class="editor-toolbar-btn" id="btnFix" type="button" title="Unescape and repair common JSON/XML mistakes — escaped strings, trailing commas, smart quotes, comments">🔧 Fix</button>
-        <button class="editor-toolbar-btn" id="btnFormat" type="button" title="Pretty-print the source (re-indent JSON or XML)">✨ Format</button>
-        <button class="editor-toolbar-btn" id="btnMinify" type="button" title="Compress to a single line">⤴ Minify</button>
-        <button class="editor-toolbar-btn" id="btnCopy" type="button" title="Copy editor content to clipboard">📋 Copy</button>
         <div class="editor-status" id="editorStatus" aria-live="polite"></div>
       </div>
     </div>
@@ -2614,11 +2675,17 @@ or
   const viewTableBtn = $('#viewTable');
   const viewTreeBtn = $('#viewTree');
   const viewSourceBtn = $('#viewSource');
+  const verTabs = $('#verTabs');
+  const searchWrap = search ? search.closest('.search-wrap') : null;
 
   let currentFileName = '';
   let currentDoc = null;
   let currentJson = null;  // original parsed JSON value (null when source is XML)
-  let historyStack = [];   // in-memory session snapshots for the History dropdown
+  let historyStack = [];   // in-memory session snapshots (legacy; superseded by version tabs)
+  let versions = [];       // version tabs: each {id,label,text,format}
+  let activeVer = -1;      // index of the active version tab (-1 = none yet)
+  let verSeq = 0;          // monotonic id source
+  let verAutoNum = 0;      // counter for numbered fallback labels (Tab 1, Tab 2…)
   let currentSource = ''; // raw text the user pasted/loaded
   let editorOutOfSync = false; // true when currentSource differs from editor.value
                                 // (avoids re-setting a multi-MB textarea every time
@@ -2776,8 +2843,9 @@ or
     if (btnViewAsTable) btnViewAsTable.classList.remove('pulse-data-loaded');
     if (btnViewAsTree) btnViewAsTree.classList.remove('pulse-data-loaded');
     viewerRoot.innerHTML = '';
-    // Roll back to clean landing
-    if (contextToolbar) contextToolbar.classList.add('hidden');
+    // Roll back to clean landing — also drop all version tabs.
+    versions = []; activeVer = -1; verSeq = 0; verAutoNum = 0;
+    if (typeof renderVerTabs === 'function') renderVerTabs();
     if (pathBar) pathBar.classList.add('hidden');
     if (landingFeatures) landingFeatures.classList.remove('hidden');
     if (landingSupports) landingSupports.classList.remove('hidden');
@@ -2848,6 +2916,150 @@ or
   });
   renderHistory(); // initialize empty state
 
+  // ---------- Version tabs ----------
+  // Each loaded document and each Format / Minify / Fix result is a "version"
+  // tab so the user can flip between them to compare. The ACTIVE version's text
+  // always lives in the editor; switching tabs swaps editor.value and re-parses
+  // through the normal pipeline. Session-only — nothing persisted or uploaded.
+  function verUniqueLabel(base) {
+    base = (base || 'Doc').toString().trim() || 'Doc';
+    if (!versions.some(v => v.label === base)) return base;
+    let n = 2;
+    while (versions.some(v => v.label === base + ' ' + n)) n++;
+    return base + ' ' + n;
+  }
+  function renderVerTabs() {
+    if (!verTabs) return;
+    verTabs.innerHTML = '';
+    versions.forEach((v, i) => {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'ver-tab' + (i === activeVer ? ' active' : '');
+      tab.title = v.label + (v.format ? ' · ' + ('' + v.format).toUpperCase() : '');
+      const name = document.createElement('span');
+      name.className = 'ver-tab-name';
+      name.textContent = v.label;
+      tab.appendChild(name);
+      const close = document.createElement('span');
+      close.className = 'ver-tab-close';
+      close.setAttribute('role', 'button');
+      close.setAttribute('aria-label', 'Close ' + v.label);
+      close.textContent = '×';
+      close.addEventListener('click', (e) => { e.stopPropagation(); closeVer(i); });
+      tab.appendChild(close);
+      tab.addEventListener('click', () => switchVer(i));
+      verTabs.appendChild(tab);
+    });
+    const plus = document.createElement('button');
+    plus.type = 'button';
+    plus.className = 'ver-new';
+    plus.title = 'New document';
+    plus.setAttribute('aria-label', 'New document');
+    plus.textContent = '＋';
+    plus.addEventListener('click', newVer);
+    verTabs.appendChild(plus);
+  }
+  function saveActiveVer() {
+    // Persist the editor text back into the active version. Guard against
+    // clobbering a big-file version (editor intentionally empty) with ''.
+    if (activeVer >= 0 && versions[activeVer] && editor) {
+      if (editor.value || !versions[activeVer].text) versions[activeVer].text = editor.value;
+    }
+  }
+  function loadActiveVer() {
+    const v = versions[activeVer];
+    if (!v || !editor) return;
+    editor.value = v.text;
+    if (typeof updateHighlight === 'function') updateHighlight(v.text);
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  function switchVer(i) {
+    if (i === activeVer || !versions[i]) return;
+    saveActiveVer();
+    activeVer = i;
+    renderVerTabs();
+    // Stay in whatever view the user is in (Source/Table/Tree) — loadActiveVer
+    // dispatches input, which re-parses and re-renders the current view.
+    loadActiveVer();
+    track('version_switch', { label: versions[i].label });
+  }
+  function newVer() {
+    saveActiveVer();
+    versions.push({ id: ++verSeq, label: verUniqueLabel('Untitled'), text: '', format: '' });
+    activeVer = versions.length - 1;
+    renderVerTabs();
+    if (editor) {
+      editor.value = '';
+      if (typeof updateHighlight === 'function') updateHighlight('');
+      editor.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    switchView('source');
+    setTimeout(() => editor && editor.focus(), 10);
+    track('version_new', {});
+  }
+  function closeVer(i) {
+    if (!versions[i]) return;
+    versions.splice(i, 1);
+    if (versions.length === 0) { resetApp(); return; }
+    if (i < activeVer) activeVer--;
+    if (activeVer > versions.length - 1) activeVer = versions.length - 1;
+    if (activeVer < 0) activeVer = 0;
+    renderVerTabs();
+    loadActiveVer();
+  }
+  // Push a derived version (Format / Minify / Fix output) and make it active.
+  // prevText is written back into the version we were on so it stays intact.
+  function commitVersion(prevText, newText, label, format) {
+    if (activeVer >= 0 && versions[activeVer]) versions[activeVer].text = prevText;
+    versions.push({ id: ++verSeq, label: verUniqueLabel(label), text: newText, format: (format || '') });
+    activeVer = versions.length - 1;
+    renderVerTabs();
+  }
+  // Derive a friendly tab label from the parsed content:
+  // uploaded filename → JSON root key (or "array") → XML root tag → null.
+  function deriveVerLabel() {
+    // Real uploaded file (not the synthetic "(pasted)" name) → use the filename.
+    if (currentFileName && !/^\(pasted\)/i.test(currentFileName)) {
+      const base = currentFileName.replace(/\.(json|xml|txt|svg|html?)$/i, '').trim();
+      if (base) return base.slice(0, 28);
+    }
+    // JSON → the root key (when there's one obvious container), else the first
+    // key whose value is itself a structure (the "main" payload), else "array".
+    if (currentJson && typeof currentJson === 'object') {
+      if (Array.isArray(currentJson)) return 'array';
+      const keys = Object.keys(currentJson);
+      if (keys.length === 1) return String(keys[0]).slice(0, 28);
+      if (keys.length > 1) {
+        const main = keys.find(k => currentJson[k] && typeof currentJson[k] === 'object') || keys[0];
+        return String(main).slice(0, 28);
+      }
+    }
+    // XML → the root element's tag name (namespace prefix stripped).
+    if (currentDoc && currentDoc.documentElement) {
+      const tag = String(currentDoc.documentElement.tagName || currentDoc.documentElement.nodeName || '').replace(/^.*:/, '');
+      if (tag && tag !== 'parsererror') return tag.slice(0, 28);
+    }
+    return null; // nothing meaningful → caller uses a numbered fallback
+  }
+  // Lazily create the first version the moment valid data first appears.
+  function ensureInitialVersion() {
+    if (activeVer !== -1) return;
+    const src = (editor && editor.value.trim()) ? editor.value : (currentSource || '');
+    if (!src.trim()) return;
+    const label = deriveVerLabel() || ('Tab ' + (++verAutoNum));
+    versions.push({ id: ++verSeq, label: verUniqueLabel(label), text: src, format: '' });
+    activeVer = 0;
+    renderVerTabs();
+  }
+  // When a blank "Untitled" tab gets real data, rename it from the content once.
+  function labelActiveFromData() {
+    if (activeVer < 0 || !versions[activeVer]) return;
+    if (!/^Untitled( \d+)?$/.test(versions[activeVer].label)) return;
+    const derived = deriveVerLabel();
+    if (derived) { versions[activeVer].label = verUniqueLabel(derived); renderVerTabs(); }
+  }
+  renderVerTabs(); // initialize (empty → only ＋, hidden until body.has-data)
+
   // ---------- View switching ----------
   viewTableBtn.addEventListener('click', () => { track('view_switched', { view: 'table', source: 'context_toolbar' }); switchView('table'); });
   viewTreeBtn.addEventListener('click', () => { track('view_switched', { view: 'tree', source: 'context_toolbar' }); switchView('tree'); });
@@ -2867,11 +3079,10 @@ or
       // Show landing (which contains the editor)
       landing.classList.remove('hidden');
       viewerRoot.classList.add('hidden');
-      // Hide context toolbar AND path-bar in Source view — the editor has its
-      // own status pill so the path-bar would be redundant, and in Source we
-      // never call render() (which is what populates path-bar text), so an
-      // unhidden empty bar would just waste vertical space above the editor.
-      if (contextToolbar) contextToolbar.classList.add('hidden');
+      // The view-tabs row (context toolbar) stays visible in Source now — it's
+      // how you switch to Table/Tree. Just hide its search (only useful in
+      // Table/Tree) and the path-bar (populated by render(), which Source skips).
+      if (searchWrap) searchWrap.style.display = 'none';
       if (pathBar) pathBar.classList.add('hidden');
       // Only copy currentSource → editor when they're known to differ AND
       // the content is small enough that assigning to textarea.value won't
@@ -2914,10 +3125,9 @@ or
       }
       setTimeout(() => editor?.focus(), 10);
     } else if (currentDoc) {
-      // Show context toolbar AND path-bar in Table/Tree — that's where view
-      // tools belong and where the path-bar's "X elements · depth Y" info
-      // is populated by render() / updateStats().
-      if (contextToolbar) contextToolbar.classList.remove('hidden');
+      // Table/Tree — reveal search + path-bar ("X elements · depth Y", set by
+      // render() / updateStats()).
+      if (searchWrap) searchWrap.style.display = '';
       if (pathBar) pathBar.classList.remove('hidden');
       render();
     }
@@ -3199,7 +3409,7 @@ or
         editor.value = result.text;
         updateHighlight(result.text);
         editor.dispatchEvent(new Event('input', { bubbles: true }));
-        pushHistory(result.text, result.format, 'Formatted');
+        commitVersion(inputText, result.text, 'Formatted', result.format);
         showToast(`✨ Formatted as ${result.format}`);
       } else {
         showToast(result.error || 'Cannot format — invalid content');
@@ -3224,7 +3434,7 @@ or
         editor.value = result.text;
         updateHighlight(result.text);
         editor.dispatchEvent(new Event('input', { bubbles: true }));
-        pushHistory(result.text, result.format, 'Minified');
+        commitVersion(inputText, result.text, 'Minified', result.format);
         showToast(`⤴ Minified as ${result.format}`);
       } else {
         showToast(result.error || 'Cannot minify — invalid content');
@@ -3253,7 +3463,7 @@ or
       editor.value = finalText;
       updateHighlight(finalText);
       editor.dispatchEvent(new Event('input', { bubbles: true }));
-      pushHistory(finalText, fix.format, 'Fixed');
+      commitVersion(inputText, finalText, 'Fixed', fix.format);
       const label = (fix.format || '').toUpperCase();
       if (fix.already) {
         showToast(`✓ Already valid ${label} — formatted`);
@@ -3806,6 +4016,10 @@ or
   // (editing), auto-switch them to Table so they see results immediately.
   // Otherwise just re-render the current view.
   function afterParse() {
+    // First valid parse of a fresh editor → open the initial version tab;
+    // and if a blank "Untitled" tab just got data, name it from the content.
+    ensureInitialVersion();
+    labelActiveFromData();
     // New document — invalidate view caches and clear viewerRoot
     viewCache = { table: null, tree: null };
     viewStatsCache = { table: null, tree: null };
