@@ -2070,6 +2070,16 @@
     padding-left: 10px;
   }
   .node.collapsed > .node-children { display: none; }
+  /* "{ } JSON" / "</> XML" pill shown on a string value that is itself parseable
+     — click the row to expand the embedded structure inline. */
+  .embed-badge {
+    display: inline-block; margin-left: 8px; vertical-align: middle;
+    font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 8px;
+    background: rgba(124, 156, 255, 0.14); color: var(--accent);
+    border: 1px solid rgba(124, 156, 255, 0.3); cursor: pointer; user-select: none;
+  }
+  .embed-node > .node-content { cursor: pointer; }
+  .embed-node > .node-content:hover .embed-badge { background: var(--accent); color: #fff; border-color: var(--accent); }
   .toggle {
     display: inline-block;
     width: 14px;
@@ -6813,6 +6823,24 @@ or
     maybeRenderImagePreview(text, '', div);
   }
 
+  // Detect a string value that is itself JSON or XML, so the tree can offer to
+  // expand it inline. Cheap leading-char gate first; full parse only then.
+  function detectEmbeddedStructure(str) {
+    if (typeof str !== 'string') return null;
+    const s = str.trim();
+    if (s.length < 2 || s.length > 2000000) return null;
+    const c = s[0];
+    if (c === '{' || c === '[') {
+      try { const v = JSON.parse(str); if (v && typeof v === 'object') return { kind: 'json', value: v }; } catch (_) {}
+    } else if (c === '<' && /<[a-zA-Z!?/]/.test(s)) {
+      try {
+        const doc = new DOMParser().parseFromString(str, 'text/xml');
+        if (doc && doc.documentElement && !doc.querySelector('parsererror')) return { kind: 'xml', doc: doc };
+      } catch (_) {}
+    }
+    return null;
+  }
+
   // ---------- JSON-native Tree view ----------
   // Renders a JSON value with native syntax: { }, [ ], "key": value
   // Each object/array gets a foldable triangle (reuses .node/.collapsed/.toggle).
@@ -6831,6 +6859,43 @@ or
     // Primitives: leaf node
     if (!isObject && !isArray) {
       stats.elements++;
+      // Embedded JSON/XML inside a string value → render a foldable node that
+      // lazily parses + shows the nested structure inline (non-destructive).
+      const embed = (typeof value === 'string') ? detectEmbeddedStructure(value) : null;
+      if (embed) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'node collapsed embed-node';
+        const head = document.createElement('span');
+        head.className = 'node-content';
+        const preview = String(value).replace(/\s+/g, ' ').trim();
+        const short = preview.length > 60 ? preview.slice(0, 60) + '…' : preview;
+        const badge = embed.kind === 'xml' ? '&lt;/&gt; XML' : '{ } JSON';
+        head.innerHTML = `<span class="toggle"></span>${keyHtml}<span class="hl-str">"${escapeHtml(short)}"</span>`
+          + `<span class="embed-badge" title="Embedded ${embed.kind.toUpperCase()} — click to expand inline">${badge}</span>`
+          + `${trailingComma ? '<span class="punct">,</span>' : ''}`;
+        wrapper.appendChild(head);
+        const childContainer = document.createElement('div');
+        childContainer.className = 'node-children';
+        wrapper.appendChild(childContainer);
+        let built = false;
+        head.addEventListener('click', () => {
+          if (window.getSelection().toString().length > 0) return;
+          wrapper.classList.toggle('collapsed');
+          if (!built) {
+            built = true;
+            try {
+              if (embed.kind === 'json') renderTreeJsonValue(embed.value, childContainer, depth + 1, undefined, false);
+              else if (embed.doc && embed.doc.documentElement) renderTreeElement(embed.doc.documentElement, childContainer, depth + 1);
+            } catch (_) {
+              const er = document.createElement('div'); er.className = 'node leaf';
+              er.innerHTML = '<span class="node-content"><span class="toggle"></span><span class="text-muted">⚠ couldn’t parse embedded content</span></span>';
+              childContainer.appendChild(er);
+            }
+          }
+        });
+        parent.appendChild(wrapper);
+        return;
+      }
       const div = document.createElement('div');
       div.className = 'node leaf';
       const c = document.createElement('span');
