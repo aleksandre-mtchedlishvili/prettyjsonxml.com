@@ -3521,7 +3521,6 @@ or
         editor.value = result.text;
         updateHighlight(result.text);
         editor.dispatchEvent(new Event('input', { bubbles: true }));
-        commitVersion(inputText, result.text, 'Beautified', result.format);
         showToast(`✨ Beautified as ${result.format}`);
       } else {
         showToast(result.error || 'Cannot format — invalid content');
@@ -3546,7 +3545,6 @@ or
         editor.value = result.text;
         updateHighlight(result.text);
         editor.dispatchEvent(new Event('input', { bubbles: true }));
-        commitVersion(inputText, result.text, 'Minified', result.format);
         showToast(`⤴ Minified as ${result.format}`);
       } else {
         showToast(result.error || 'Cannot minify — invalid content');
@@ -3575,7 +3573,6 @@ or
       editor.value = finalText;
       updateHighlight(finalText);
       editor.dispatchEvent(new Event('input', { bubbles: true }));
-      commitVersion(inputText, finalText, 'Fixed', fix.format);
       const label = (fix.format || '').toUpperCase();
       if (fix.already) {
         showToast(`✓ Already valid ${label} — formatted`);
