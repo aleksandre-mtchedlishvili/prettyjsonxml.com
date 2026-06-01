@@ -2491,6 +2491,7 @@ or
       <button class="editor-toolbar-btn" id="btnFormat" type="button" title="Beautify — pretty-print the source (re-indent JSON or XML); opens as a new version tab">✨ Beautify</button>
       <button class="editor-toolbar-btn" id="btnMinify" type="button" title="Compress to a single line — opens as a new version tab">⤴ Minify</button>
       <button class="editor-toolbar-btn" id="btnFix" type="button" title="Unescape and repair common JSON/XML mistakes — opens as a new version tab">🔧 Fix</button>
+      <button class="editor-toolbar-btn" id="btnDecode" type="button" title="Expand embedded JSON strings into real structure and reveal \uXXXX Unicode as readable text — opens as a new version tab">🔓 Decode</button>
       <button class="editor-toolbar-btn" id="btnCopy" type="button" title="Copy the current version to clipboard">📋 Copy</button>
     </div>
     <aside class="split-preview" id="splitPreview" aria-label="Live tree preview">
@@ -2687,6 +2688,7 @@ or
   const btnFormat = $('#btnFormat');
   const btnMinify = $('#btnMinify');
   const btnFix = $('#btnFix');
+  const btnDecode = $('#btnDecode');
   const btnCopy = $('#btnCopy');
   const splitPreview = $('#splitPreview');
   const splitPreviewBody = $('#splitPreviewBody');
@@ -3574,6 +3576,52 @@ or
     } finally {
       btnFix.disabled = false;
     }
+  });
+
+  // ---------- Decode ----------
+  // Recursively parse string values that are themselves JSON (e.g. an API's
+  // `additionalParamsJson` blob) into real nested objects. JSON.parse also turns
+  // \uXXXX escapes (e.g. Georgian ნ → ქ) into readable text — so this both
+  // STRUCTURES embedded JSON and DECODES Unicode in one pass. Opens a new tab.
+  function deepDecodeJson(value, depth, ctx) {
+    depth = depth || 0;
+    if (depth > 12) return value;
+    if (typeof value === 'string') {
+      const s = value.trim();
+      if (s.length > 1 && (s[0] === '{' || s[0] === '[')) {
+        try {
+          const inner = JSON.parse(value);
+          if (inner && typeof inner === 'object') { if (ctx) ctx.count++; return deepDecodeJson(inner, depth + 1, ctx); }
+        } catch (_) {}
+      }
+      return value;
+    }
+    if (Array.isArray(value)) return value.map(v => deepDecodeJson(v, depth + 1, ctx));
+    if (value && typeof value === 'object') {
+      const out = {};
+      for (const k of Object.keys(value)) out[k] = deepDecodeJson(value[k], depth + 1, ctx);
+      return out;
+    }
+    return value;
+  }
+  if (btnDecode) btnDecode.addEventListener('click', () => {
+    const inputText = editor.value;
+    if (btnDecode.disabled) return;
+    const trimmed = (inputText || '').trim();
+    if (!trimmed) { showToast('Nothing to decode'); return; }
+    let parsed;
+    try { parsed = JSON.parse(trimmed); }
+    catch (e) { showToast('🔓 Decode needs valid JSON — it expands embedded JSON strings'); return; }
+    const ctx = { count: 0 };
+    const text = JSON.stringify(deepDecodeJson(parsed, 0, ctx), null, 2);
+    track('decode_clicked', { embedded: ctx.count });
+    if (ctx.count === 0) { showToast('Nothing to decode — no embedded JSON strings found'); return; }
+    if (editor.value !== inputText) { showToast('Skipped — content changed'); return; }
+    editor.value = text;
+    updateHighlight(text);
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    commitVersion(inputText, text, 'Decoded', 'json');
+    showToast('🔓 Decoded — expanded ' + ctx.count + ' embedded JSON block' + (ctx.count === 1 ? '' : 's') + ' + revealed Unicode');
   });
 
   if (btnViewAsTable) btnViewAsTable.addEventListener('click', () => { track('view_as_clicked', { view: 'table', source: 'editor_toolbar' }); switchView('table'); });
