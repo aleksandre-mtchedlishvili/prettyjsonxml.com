@@ -2131,6 +2131,57 @@
     z-index: 1100;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+  /* ---- Split view: editor (left) + live tree preview (right) ---- */
+  .editor-split {
+    /* Break out of .landing's 920px max-width so the tool uses the screen.
+       Capped at 1640px with ~24px gutters; symmetric calc margins center it
+       without triggering a horizontal scrollbar. */
+    --sw: min(1640px, calc(100vw - 48px));
+    display: flex; gap: 14px; align-items: stretch;
+    width: var(--sw);
+    margin-left: calc((100% - var(--sw)) / 2);
+    margin-right: calc((100% - var(--sw)) / 2);
+  }
+  .editor-split > .editor-shell { flex: 1 1 50%; min-width: 0; }
+  /* Both panes share one bounded height so the tree scrolls *inside* its pane
+     instead of growing the page and stranding the editor toolbar mid-column.
+     Height tracks the editor (textarea calc(100vh-380px) + ~55px toolbar/border). */
+  .editor-split > .editor-shell,
+  .editor-split > .split-preview {
+    height: calc(100vh - 325px);
+    min-height: 295px;
+    max-height: 635px;
+  }
+  .split-preview {
+    flex: 1 1 50%; min-width: 0;
+    display: flex; flex-direction: column;
+    background: var(--bg-elev, #fff);
+    border: 1px solid var(--border, #d8dde8);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .split-preview-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border-soft, #e8ecf3);
+    font-size: 13px; font-weight: 600; color: var(--text-dim, #5a6478);
+    flex: 0 0 auto;
+  }
+  .split-preview-hint { margin-left: auto; font-weight: 400; font-size: 11px; color: var(--text-muted, #94a0b5); }
+  .split-preview-body { flex: 1 1 auto; overflow: auto; padding: 8px 10px; }
+  .split-preview-body .tree-view { margin: 0; }
+  .split-preview-empty {
+    height: 100%; min-height: 200px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    color: var(--text-muted, #94a0b5); padding: 24px; gap: 10px;
+  }
+  .split-preview-empty .spe-icon { font-size: 30px; opacity: 0.85; }
+  .split-preview-empty p { margin: 0; font-size: 14px; max-width: 260px; line-height: 1.5; }
+  .split-preview-error { padding: 16px 18px; color: #c62828; font-size: 13px; line-height: 1.5; }
+  @media (max-width: 900px) {
+    .editor-split { flex-direction: column; }
+    .split-preview { min-height: 340px; }
+  }
 </style>
 </head>
 <body>
@@ -2211,6 +2262,7 @@
       </button>
     </div>
     <div class="landing-or" aria-hidden="true"><span>or paste below</span></div>
+    <div class="editor-split" id="editorSplit">
     <div class="editor-shell" id="editorShell">
       <pre class="editor-highlight" id="editorHighlight" aria-hidden="true" data-clarity-mask="true"><code></code></pre>
       <textarea
@@ -2270,6 +2322,19 @@ or
         <button class="editor-toolbar-btn" id="btnCopy" type="button" title="Copy editor content to clipboard">📋 Copy</button>
         <div class="editor-status" id="editorStatus" aria-live="polite"></div>
       </div>
+    </div>
+    <aside class="split-preview" id="splitPreview" aria-label="Live tree preview">
+      <div class="split-preview-head">
+        <span class="split-preview-title">🌳 Tree</span>
+        <span class="split-preview-hint" id="splitPreviewHint"></span>
+      </div>
+      <div class="split-preview-body" id="splitPreviewBody">
+        <div class="split-preview-empty">
+          <div class="spe-icon" aria-hidden="true">👈</div>
+          <p>Paste or upload JSON or XML on the left to see it here as a live, foldable tree.</p>
+        </div>
+      </div>
+    </aside>
     </div>
     <ul class="landing-features" aria-label="Features">
       <li><strong>🔒 Private</strong> — your data never leaves the browser</li>
@@ -2453,6 +2518,9 @@ or
   const btnMinify = $('#btnMinify');
   const btnFix = $('#btnFix');
   const btnCopy = $('#btnCopy');
+  const splitPreview = $('#splitPreview');
+  const splitPreviewBody = $('#splitPreviewBody');
+  const splitPreviewHint = $('#splitPreviewHint');
   const btnViewAsTable = $('#btnViewAsTable');
   const btnViewAsTree = $('#btnViewAsTree');
   const editorHighlight = $('#editorHighlight');
@@ -3310,6 +3378,7 @@ or
       editorStatus.className = 'editor-status';
       editorStatus.textContent = '';
       editorShell.classList.remove('valid', 'invalid');
+      if (currentView === 'source') showSplitEmpty();
       return;
     }
     if (trimmed.length < 2) return;
@@ -3367,6 +3436,7 @@ or
       if (looksLikeJson && !looksLikeXml) msg = 'Invalid JSON';
       else if (looksLikeXml && !looksLikeJson) msg = 'Invalid XML';
       editorStatus.textContent = msg;
+      if (currentView === 'source') showSplitError(msg);
       // Disable the View buttons so the user can't click through to a stale
       // render of the previously valid data. They re-enable on next success
       // (afterParse).
@@ -3703,6 +3773,9 @@ or
     // disruptive. They'll click Table/Tree when they're ready.
     if (currentView !== 'source') {
       render();
+    } else {
+      // Split (source) view: refresh the live tree preview on the right pane.
+      renderSplitTree();
     }
 
     // Finalize editor status pill + fire one-time data_loaded analytics.
@@ -6064,7 +6137,7 @@ or
   // because the savings don't justify the indirection.
   let TREE_LAZY_DEPTH = Infinity;
 
-  function renderTree(doc) {
+  function renderTree(doc, target) {
     const totalElements = doc.getElementsByTagName('*').length + 1;
     // Lazy beyond depth 2 for large docs: root + its immediate children visible,
     // deeper levels deferred until expand.
@@ -6082,7 +6155,30 @@ or
       renderTreeNode(doc.documentElement, tree, 1);
     }
     wrap.appendChild(tree);
-    viewerRoot.appendChild(wrap);
+    (target || viewerRoot).appendChild(wrap);
+  }
+
+  // ---------- Split-view live tree preview (editor left / tree right) ----------
+  function renderSplitTree() {
+    if (!splitPreviewBody) return;
+    splitPreviewBody.innerHTML = '';
+    if (!currentDoc) { showSplitEmpty(); return; }
+    try {
+      renderTree(currentDoc, splitPreviewBody);
+      if (splitPreviewHint) splitPreviewHint.textContent = 'live preview';
+    } catch (e) {
+      showSplitError('Could not render tree: ' + ((e && e.message) || e));
+    }
+  }
+  function showSplitEmpty() {
+    if (!splitPreviewBody) return;
+    if (splitPreviewHint) splitPreviewHint.textContent = '';
+    splitPreviewBody.innerHTML = '<div class="split-preview-empty"><div class="spe-icon" aria-hidden="true">👈</div><p>Paste or upload JSON or XML on the left to see it here as a live, foldable tree.</p></div>';
+  }
+  function showSplitError(msg) {
+    if (!splitPreviewBody) return;
+    if (splitPreviewHint) splitPreviewHint.textContent = 'invalid';
+    splitPreviewBody.innerHTML = '<div class="split-preview-error">⚠ ' + escapeHtml(msg) + '</div>';
   }
 
   function countStats(node, depth) {
