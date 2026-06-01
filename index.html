@@ -2364,7 +2364,6 @@
     <span class="header-tagline-sub">Searchable, sortable table · collapsible tree · format &amp; minify · inline base64 images · 100% in your browser.</span>
   </div>
   <div class="header-actions">
-    <button class="btn header-upload" id="headerUpload" type="button" title="Upload an XML or JSON file">📂 Upload</button>
     <!-- Feedback popover. Uses native <details>/<summary> so it toggles
          without any JS, then offers 3 preset mailto links so incoming
          email is already triaged by category. -->
@@ -2743,7 +2742,6 @@ or
   const landingSupports = document.querySelector('.landing-supports');
   const landingSupport = document.querySelector('.landing-support');
   const landingLoadFile = $('#landingLoadFile');
-  const headerUpload = $('#headerUpload');
   const fileInput = $('#file');
   const loadBtn = $('#loadBtn');
   const search = $('#search');
@@ -2961,6 +2959,39 @@ or
     showToast('Reset');
   }
 
+  // Wipe the *live document* (parsed data, raw source, big-file overlay, rendered
+  // views, search) WITHOUT touching the version tabs or the has-data state. Used
+  // when opening a fresh ＋ tab so it starts genuinely empty — even if the previous
+  // tab held a big file whose content lives in currentSource (the editor is left
+  // blank for big files), which would otherwise bleed into the new tab.
+  function clearDocState() {
+    currentDoc = null;
+    currentJson = null;
+    currentSource = '';
+    currentFileName = '';
+    editorOutOfSync = false;
+    viewCache = { table: null, tree: null };
+    viewStatsCache = { table: null, tree: null };
+    stats = { elements: 0, nodes: 0, depth: 0, images: 0 };
+    if (editorHighlightCode) editorHighlightCode.innerHTML = '';
+    if (search) { search.value = ''; search.disabled = true; }
+    if (searchCount) searchCount.classList.add('hidden');
+    if (expandBtn) expandBtn.disabled = true;
+    if (collapseBtn) collapseBtn.disabled = true;
+    if (viewTableBtn) viewTableBtn.disabled = true;
+    if (viewTreeBtn) viewTreeBtn.disabled = true;
+    if (btnViewAsTable) btnViewAsTable.disabled = true;
+    if (btnViewAsTree) btnViewAsTree.disabled = true;
+    if (btnGoTable) btnGoTable.disabled = true;
+    if (viewerRoot) viewerRoot.innerHTML = '';
+    if (pathBar) pathBar.classList.add('hidden');
+    if (editorShell) editorShell.classList.remove('valid', 'invalid');
+    if (editorStatus) { editorStatus.className = 'editor-status'; editorStatus.textContent = ''; }
+    if (editor) editor.placeholder = DEFAULT_EDITOR_PLACEHOLDER;
+    if (typeof hideLoadedOverlay === 'function') hideLoadedOverlay();
+    if (typeof showSplitEmpty === 'function') showSplitEmpty();
+  }
+
   // ---------- Session history (in-memory snapshots) ----------
   // Snapshots each deliberate "processing" (load / Format / Minify / Fix) so
   // users can restore a previous version and compare. Session-only — nothing
@@ -3068,6 +3099,26 @@ or
   function loadActiveVer() {
     const v = versions[activeVer];
     if (!v || !editor) return;
+    // Big version: keep the editor blank (assigning a multi-MB string to a
+    // textarea freezes the tab for hundreds of ms) and restore the loaded-overlay,
+    // then parse straight from the stored text — mirrors loadFile()'s skipEditor
+    // branch so switching back to a big-file tab behaves like the first load.
+    const EDITOR_SKIP_MB = 5;
+    if (v.text && v.text.length > EDITOR_SKIP_MB * 1024 * 1024) {
+      editor.value = '';
+      if (typeof updateHighlight === 'function') updateHighlight('');
+      currentSource = v.text;
+      currentFileName = v.name || currentFileName || '';
+      editorOutOfSync = true;
+      const mb = (v.text.length / 1024 / 1024).toFixed(1);
+      editor.placeholder = `📂 ${mb} MB loaded — editor disabled for performance.\n\nUse the ▦ Table button on the right to explore the data.`;
+      if (typeof showLoadedOverlay === 'function') {
+        showLoadedOverlay({ icon: '📂', title: `${mb} MB loaded`, subtitle: v.name || v.label });
+      }
+      refreshDocContent();
+      setTimeout(() => parseContent(v.text, v.name || currentFileName || (v.label || '')), 0);
+      return;
+    }
     editor.value = v.text;
     if (typeof updateHighlight === 'function') updateHighlight(v.text);
     editor.dispatchEvent(new Event('input', { bubbles: true }));
@@ -3084,15 +3135,19 @@ or
   }
   function newVer() {
     saveActiveVer();
-    versions.push({ id: ++verSeq, label: verUniqueLabel('Untitled'), text: '', format: '' });
+    versions.push({ id: ++verSeq, label: verUniqueLabel('Untitled'), text: '', format: '', name: '' });
     activeVer = versions.length - 1;
     renderVerTabs();
+    // Start the new tab genuinely empty. Clearing the editor alone isn't enough:
+    // a big file lives in currentSource (the editor is intentionally blank for it),
+    // so without wiping the live doc, switchView() below would re-show its overlay
+    // and the onboarding/upload card would stay hidden ("data moved to new tab").
+    clearDocState();
     if (editor) {
       editor.value = '';
-      if (typeof hideLoadedOverlay === 'function') hideLoadedOverlay();
       if (typeof updateHighlight === 'function') updateHighlight('');
-      editor.dispatchEvent(new Event('input', { bubbles: true }));
     }
+    refreshDocContent();
     switchView('source');
     setTimeout(() => editor && editor.focus(), 10);
     track('version_new', {});
@@ -3147,7 +3202,7 @@ or
     const src = (editor && editor.value.trim()) ? editor.value : (currentSource || '');
     if (!src.trim()) return;
     const label = deriveVerLabel() || ('Tab ' + (++verAutoNum));
-    versions.push({ id: ++verSeq, label: verUniqueLabel(label), text: src, format: '' });
+    versions.push({ id: ++verSeq, label: verUniqueLabel(label), text: src, format: '', name: currentFileName || '' });
     activeVer = 0;
     renderVerTabs();
   }
@@ -3244,9 +3299,6 @@ or
   // ---------- File loading ----------
   loadBtn.addEventListener('click', () => fileInput.click());
   if (landingLoadFile) landingLoadFile.addEventListener('click', (e) => { e.preventDefault(); fileInput.click(); });
-  // Persistent header Upload — always available, so uploading is never "gone"
-  // after a file is loaded (it no longer relies on the landing card being visible).
-  if (headerUpload) headerUpload.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', (e) => {
     if (e.target.files[0]) loadFile(e.target.files[0]);
     // Reset the input value AFTER reading the file. Without this, selecting
