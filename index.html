@@ -2182,6 +2182,34 @@
     .editor-split { flex-direction: column; }
     .split-preview { min-height: 340px; }
   }
+  /* ---- Editor toolbar: History dropdown + Clear ---- */
+  .editor-history { position: relative; display: inline-block; }
+  .editor-history > summary { list-style: none; }
+  .editor-history > summary::-webkit-details-marker { display: none; }
+  .editor-history > summary::marker { content: ""; }
+  .history-menu {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    right: 0;
+    width: 330px; max-width: 84vw;
+    background: var(--bg-elev, #fff);
+    border: 1px solid var(--border, #d8dde8);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+    padding: 6px;
+    z-index: 50;
+    max-height: 56vh; overflow-y: auto;
+    text-align: left;
+  }
+  .history-menu-head { font-size: 10.5px; font-weight: 700; color: var(--text-muted,#94a0b5); text-transform: uppercase; letter-spacing: .05em; padding: 6px 8px 4px; }
+  .history-empty { font-size: 12.5px; color: var(--text-muted,#94a0b5); padding: 6px 8px 10px; line-height: 1.5; }
+  .history-item { display: block; width: 100%; text-align: left; background: transparent; border: none; border-radius: 7px; padding: 8px 10px; cursor: pointer; font: inherit; color: var(--text,#1a1f2e); }
+  .history-item:hover { background: var(--bg-elev-2, #eef1f7); }
+  .history-item .hi-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .history-item .hi-badge { background: var(--bg-elev-2,#eef1f7); border-radius: 4px; padding: 1px 6px; font-size: 10.5px; color: var(--text-dim,#5a6478); }
+  .history-item .hi-preview { display: block; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11.5px; color: var(--text-muted,#94a0b5); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .history-clear { display: block; width: 100%; text-align: center; margin-top: 4px; background: transparent; border: none; border-top: 1px solid var(--border-soft,#e8ecf3); padding: 8px; cursor: pointer; font-size: 12px; color: var(--text-dim,#5a6478); }
+  .history-clear:hover { color: #c62828; }
 </style>
 </head>
 <body>
@@ -2316,6 +2344,16 @@ or
         <button class="editor-toolbar-btn primary" id="btnViewAsTable" type="button" disabled title="Render as a beautiful table">▦ View as Table</button>
         <button class="editor-toolbar-btn primary" id="btnViewAsTree" type="button" disabled title="Render as a collapsible tree">🌳 View as Tree</button>
         <div class="editor-toolbar-spacer"></div>
+        <details class="editor-history" id="historyPopover">
+          <summary class="editor-toolbar-btn" title="Recent inputs from this session — click one to restore and compare">🕘 History</summary>
+          <div class="history-menu" role="menu" aria-label="Recent inputs this session">
+            <div class="history-menu-head">Recent · this session</div>
+            <div class="history-empty" id="historyEmpty">Nothing yet. Load, Format, Minify, or Fix data and each version gets snapshotted here so you can restore and compare.</div>
+            <div class="history-list" id="historyList"></div>
+            <button type="button" class="history-clear hidden" id="historyClearBtn">Clear history</button>
+          </div>
+        </details>
+        <button class="editor-toolbar-btn" id="btnClear" type="button" title="Clear the editor and start fresh (your history is kept)">🧹 Clear</button>
         <button class="editor-toolbar-btn" id="btnFix" type="button" title="Unescape and repair common JSON/XML mistakes — escaped strings, trailing commas, smart quotes, comments">🔧 Fix</button>
         <button class="editor-toolbar-btn" id="btnFormat" type="button" title="Pretty-print the source (re-indent JSON or XML)">✨ Format</button>
         <button class="editor-toolbar-btn" id="btnMinify" type="button" title="Compress to a single line">⤴ Minify</button>
@@ -2521,6 +2559,11 @@ or
   const splitPreview = $('#splitPreview');
   const splitPreviewBody = $('#splitPreviewBody');
   const splitPreviewHint = $('#splitPreviewHint');
+  const btnClear = $('#btnClear');
+  const historyPopover = $('#historyPopover');
+  const historyList = $('#historyList');
+  const historyEmpty = $('#historyEmpty');
+  const historyClearBtn = $('#historyClearBtn');
   const btnViewAsTable = $('#btnViewAsTable');
   const btnViewAsTree = $('#btnViewAsTree');
   const editorHighlight = $('#editorHighlight');
@@ -2575,6 +2618,7 @@ or
   let currentFileName = '';
   let currentDoc = null;
   let currentJson = null;  // original parsed JSON value (null when source is XML)
+  let historyStack = [];   // in-memory session snapshots for the History dropdown
   let currentSource = ''; // raw text the user pasted/loaded
   let editorOutOfSync = false; // true when currentSource differs from editor.value
                                 // (avoids re-setting a multi-MB textarea every time
@@ -2745,9 +2789,64 @@ or
     // editor returns to its pristine "ready for input" look.
     if (editor) editor.placeholder = DEFAULT_EDITOR_PLACEHOLDER;
     hideLoadedOverlay();
+    if (typeof showSplitEmpty === 'function') showSplitEmpty();
     switchView('source');
     showToast('Reset');
   }
+
+  // ---------- Session history (in-memory snapshots) ----------
+  // Snapshots each deliberate "processing" (load / Format / Minify / Fix) so
+  // users can restore a previous version and compare. Session-only — nothing
+  // is persisted to disk or sent anywhere.
+  function pushHistory(text, format, action) {
+    if (!text) return;
+    if (text.length > 2_000_000) return; // bound memory — skip very large snapshots
+    if (historyStack[0] && historyStack[0].text === text) return; // dedupe consecutive
+    historyStack.unshift({ text, format: ((format || '') + '').toUpperCase() || '?', action: action || 'Snapshot', size: text.length });
+    if (historyStack.length > 8) historyStack.length = 8;
+    renderHistory();
+  }
+  function renderHistory() {
+    if (!historyList) return;
+    historyList.innerHTML = '';
+    const has = historyStack.length > 0;
+    if (historyEmpty) historyEmpty.classList.toggle('hidden', has);
+    if (historyClearBtn) historyClearBtn.classList.toggle('hidden', !has);
+    historyStack.forEach((e, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'history-item';
+      const sizeKb = (e.size / 1024).toFixed(e.size < 10240 ? 1 : 0);
+      const preview = e.text.replace(/\s+/g, ' ').trim().slice(0, 64);
+      const act = i === 0 ? '<strong>' + escapeHtml(e.action) + '</strong>' : escapeHtml(e.action);
+      b.innerHTML = '<span class="hi-meta">' + act +
+        '<span class="hi-badge">' + escapeHtml(e.format) + '</span>' +
+        '<span class="hi-badge">' + sizeKb + ' KB</span>' +
+        (i === 0 ? '<span class="hi-badge">latest</span>' : '') +
+        '</span><span class="hi-preview">' + escapeHtml(preview) + '</span>';
+      b.addEventListener('click', () => restoreHistory(i));
+      historyList.appendChild(b);
+    });
+  }
+  function restoreHistory(i) {
+    const e = historyStack[i];
+    if (!e || !editor) return;
+    editor.value = e.text;
+    if (typeof updateHighlight === 'function') updateHighlight(e.text);
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    if (historyPopover) historyPopover.open = false;
+    if (currentView !== 'source') switchView('source');
+    track('history_restore', { action: e.action, format: e.format });
+    showToast('↩ Restored: ' + e.action);
+  }
+  if (btnClear) btnClear.addEventListener('click', () => { track('clear_clicked', {}); resetApp(); if (editor) editor.focus(); });
+  if (historyClearBtn) historyClearBtn.addEventListener('click', () => { historyStack = []; renderHistory(); track('history_cleared', {}); });
+  // Close the History popover on outside click (mirrors the feedback popover).
+  document.addEventListener('click', (e) => {
+    if (!historyPopover || !historyPopover.open) return;
+    if (!historyPopover.contains(e.target)) historyPopover.open = false;
+  });
+  renderHistory(); // initialize empty state
 
   // ---------- View switching ----------
   viewTableBtn.addEventListener('click', () => { track('view_switched', { view: 'table', source: 'context_toolbar' }); switchView('table'); });
@@ -3100,6 +3199,7 @@ or
         editor.value = result.text;
         updateHighlight(result.text);
         editor.dispatchEvent(new Event('input', { bubbles: true }));
+        pushHistory(result.text, result.format, 'Formatted');
         showToast(`✨ Formatted as ${result.format}`);
       } else {
         showToast(result.error || 'Cannot format — invalid content');
@@ -3124,6 +3224,7 @@ or
         editor.value = result.text;
         updateHighlight(result.text);
         editor.dispatchEvent(new Event('input', { bubbles: true }));
+        pushHistory(result.text, result.format, 'Minified');
         showToast(`⤴ Minified as ${result.format}`);
       } else {
         showToast(result.error || 'Cannot minify — invalid content');
@@ -3152,6 +3253,7 @@ or
       editor.value = finalText;
       updateHighlight(finalText);
       editor.dispatchEvent(new Event('input', { bubbles: true }));
+      pushHistory(finalText, fix.format, 'Fixed');
       const label = (fix.format || '').toUpperCase();
       if (fix.already) {
         showToast(`✓ Already valid ${label} — formatted`);
