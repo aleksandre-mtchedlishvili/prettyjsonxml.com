@@ -6879,10 +6879,16 @@ or
         const saved = stats;
         stats = { elements: 0, nodes: 0, depth: 0, images: 0 };
         try {
-          if (embed.kind === 'json') renderTreeJsonValue(embed.value, childContainer, 0, undefined, false);
-          else if (embed.doc && embed.doc.documentElement) renderTreeElement(embed.doc.documentElement, childContainer, 0);
+          // Render the embedded structure in the TABLE's own style (nested cards /
+          // sub-tables) so it matches the surrounding table, not the Tree view.
+          const el = (embed.kind === 'json') ? jsonToXmlDoc(embed.value).documentElement : embed.doc.documentElement;
+          const rendered = renderNestedStructure(el, '');
+          // JSON's synthetic <root>/<array> wrapper title is noise — drop it so it
+          // reads as a clean card; XML keeps its real root tag as the section title.
+          if (embed.kind === 'json') { const t = rendered.querySelector(':scope > .section-nested-title'); if (t) t.remove(); }
+          childContainer.appendChild(rendered);
         } catch (_) {
-          childContainer.innerHTML = '<div class="node leaf"><span class="node-content text-muted">⚠ couldn’t parse embedded content</span></div>';
+          childContainer.textContent = '⚠ couldn’t render embedded content';
         } finally { stats = saved; }
       }
     });
