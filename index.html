@@ -3627,11 +3627,12 @@ or
     track('decode_clicked', { embedded: ctx.count });
     if (ctx.count === 0) { showToast('Nothing to decode — no embedded JSON strings found'); return; }
     if (editor.value !== inputText) { showToast('Skipped — content changed'); return; }
+    // Apply in place (no auto-created tab) — Decode is a one-shot reveal, not a
+    // version to compare, so it just updates the current document.
     editor.value = text;
     updateHighlight(text);
     editor.dispatchEvent(new Event('input', { bubbles: true }));
-    commitVersion(inputText, text, 'Decoded', 'json');
-    showToast('🔓 Decoded — expanded ' + ctx.count + ' embedded JSON block' + (ctx.count === 1 ? '' : 's') + ' + revealed Unicode');
+    showToast('🔓 Decoded in place — expanded ' + ctx.count + ' embedded JSON block' + (ctx.count === 1 ? '' : 's') + ' + revealed Unicode');
   });
 
   if (btnViewAsTable) btnViewAsTable.addEventListener('click', () => { track('view_as_clicked', { view: 'table', source: 'editor_toolbar' }); switchView('table'); });
