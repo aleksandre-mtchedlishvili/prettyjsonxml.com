@@ -765,6 +765,9 @@
   .search-wrap { display: none; }
   body.full-view #btnBackSource { display: inline-flex; }
   body.full-view .search-wrap { display: block; }
+  /* "Load file" button removed — uploading is the big Upload card (which returns
+     on a blank ＋ tab) plus drag-drop anywhere, so there's one consistent control. */
+  #loadBtn { display: none; }
 
   /* Briefly pulse view buttons after first successful parse to draw the eye */
   @keyframes pulse-hint {
@@ -786,7 +789,9 @@
     padding: 8px 22px; background: var(--bg-elev);
     border-bottom: 1px solid var(--border-soft);
   }
-  body.has-data .context-toolbar { display: flex; }
+  /* The view-row (context toolbar) is full-view chrome only now — it holds
+     "← Source" + Search. In Source view it would be empty, so it's hidden there. */
+  body.full-view .context-toolbar { display: flex; }
   .work-bar-spacer { flex: 1 1 auto; }
   .ver-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .ver-tabs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
@@ -818,9 +823,9 @@
   /* Once data is loaded, the onboarding blurb + upload card collapse so the
      Source view is just tabs + editor/tree split. Upload stays reachable via
      the "Load file" button in the view-tabs row, drag-drop, or paste. */
-  body.has-data .landing-intro,
-  body.has-data .landing-actions,
-  body.has-data .landing-or { display: none; }
+  body.doc-has-content .landing-intro,
+  body.doc-has-content .landing-actions,
+  body.doc-has-content .landing-or { display: none; }
   .btn {
     background: var(--bg-elev-2);
     color: var(--text);
@@ -2796,10 +2801,22 @@ or
     // Body class drives the View-buttons emphasis (chunkier + steady pulse)
     // — defined in CSS as body.has-loaded-overlay .editor-toolbar-btn.primary
     document.body.classList.add('has-loaded-overlay');
+    refreshDocContent();
   }
   function hideLoadedOverlay() {
     if (editorLoadedOverlay) editorLoadedOverlay.classList.add('hidden');
     document.body.classList.remove('has-loaded-overlay');
+    refreshDocContent();
+  }
+  // The onboarding (tagline + big Upload card + "or paste below") shows whenever
+  // the CURRENT doc is blank, and hides once it has content — typed/pasted text
+  // OR a loaded big-file overlay. Driven by the doc-has-content body class, so
+  // a fresh blank tab (＋) brings the Upload card back: one consistent control,
+  // no swap to a separate "Load file" button.
+  function refreshDocContent() {
+    const overlayShown = !!(editorLoadedOverlay && !editorLoadedOverlay.classList.contains('hidden'));
+    const hasContent = !!(editor && editor.value.trim()) || overlayShown;
+    document.body.classList.toggle('doc-has-content', hasContent);
   }
 
   // "Load into editor anyway" — escape hatch for power users who really
@@ -3023,6 +3040,7 @@ or
     renderVerTabs();
     if (editor) {
       editor.value = '';
+      if (typeof hideLoadedOverlay === 'function') hideLoadedOverlay();
       if (typeof updateHighlight === 'function') updateHighlight('');
       editor.dispatchEvent(new Event('input', { bubbles: true }));
     }
@@ -3214,6 +3232,7 @@ or
   if (editor) {
     editor.addEventListener('input', () => {
       const text = editor.value;
+      refreshDocContent();
       // Quick visual feedback while typing
       editorShell.classList.remove('valid', 'invalid');
       editorStatus.className = 'editor-status';
@@ -4096,6 +4115,7 @@ or
     // so the editor-toolbar View buttons get the chunky / prominent
     // treatment. Idempotent if already on.
     document.body.classList.add('has-data');
+    refreshDocContent();
 
     // Briefly pulse the editor-toolbar View buttons after EVERY parse
     // (not just the first). 2.5 s halo to draw the eye to "click me to
