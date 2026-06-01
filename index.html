@@ -758,6 +758,13 @@
      "▦ Table" button (Source) and "← Source" button (Table). The toggle
      elements stay in the DOM (hidden) so the view-switch JS still resolves. */
   .view-toggle { display: none; }
+  /* "← Source" + Search are full-view (Table/Tree) chrome ONLY. Hidden by
+     default (Source / empty) and revealed by the body.full-view class set in
+     switchView — so they never leak into Source view, even after an upload. */
+  #btnBackSource { display: none; }
+  .search-wrap { display: none; }
+  body.full-view #btnBackSource { display: inline-flex; }
+  body.full-view .search-wrap { display: block; }
 
   /* Briefly pulse view buttons after first successful parse to draw the eye */
   @keyframes pulse-hint {
@@ -2426,8 +2433,8 @@ or
         <div class="loaded-title" id="loadedTitle">File loaded</div>
         <div class="loaded-subtitle" id="loadedSubtitle"></div>
         <div class="loaded-hint">
-          <span class="loaded-arrow" aria-hidden="true">↓</span>
-          <span>Click <strong>View as Table</strong> or <strong>View as Tree</strong> below to explore the data.</span>
+          <span class="loaded-arrow" aria-hidden="true">→</span>
+          <span>Click <strong>▦ Table</strong> on the right to explore the data as a sortable table.</span>
         </div>
         <button class="loaded-escape-btn" id="loadedEscapeBtn" type="button" title="Load this content into the editor textarea — may freeze the tab briefly for large files">
           Load into editor anyway
@@ -3103,6 +3110,11 @@ or
       return;
     }
     currentView = v;
+    // Full-view (Table/Tree) chrome — the "← Source" button and Search — is
+    // shown via this body class, NOT inline styles, so it's correct even when a
+    // flow finalizes through afterParse instead of switchView (e.g. an upload).
+    // Default (no class) = Source, which is the safe resting state.
+    document.body.classList.toggle('full-view', v !== 'source');
     viewTableBtn.classList.toggle('active', v === 'table');
     viewTreeBtn.classList.toggle('active', v === 'tree');
     viewSourceBtn.classList.toggle('active', v === 'source');
@@ -3113,8 +3125,6 @@ or
       // The view-tabs row (context toolbar) stays visible in Source now — it's
       // how you switch to Table/Tree. Just hide its search (only useful in
       // Table/Tree) and the path-bar (populated by render(), which Source skips).
-      if (searchWrap) searchWrap.style.display = 'none';
-      if (btnBackSource) btnBackSource.style.display = 'none';
       if (pathBar) pathBar.classList.add('hidden');
       // Only copy currentSource → editor when they're known to differ AND
       // the content is small enough that assigning to textarea.value won't
@@ -3137,7 +3147,7 @@ or
           editorStatus.textContent = `✓ Loaded · ${sizeMB.toFixed(1)} MB · editor read-only for perf`;
           // Make sure the placeholder is set in case it was cleared
           if (!editor.placeholder || !editor.placeholder.includes('disabled')) {
-            editor.placeholder = `📄 ${sizeMB.toFixed(1)} MB loaded — editor disabled for performance.\n\nUse View as Table or View as Tree above to explore the data.`;
+            editor.placeholder = `📄 ${sizeMB.toFixed(1)} MB loaded — editor disabled for performance.\n\nUse the ▦ Table button on the right to explore the data.`;
           }
           // Re-show the loaded overlay when coming back to Source from Table/
           // Tree. Without this, switching away and back leaves the textarea
@@ -3159,8 +3169,6 @@ or
     } else if (currentDoc) {
       // Table/Tree — reveal search + path-bar ("X elements · depth Y", set by
       // render() / updateStats()).
-      if (searchWrap) searchWrap.style.display = '';
-      if (btnBackSource) btnBackSource.style.display = '';
       if (pathBar) pathBar.classList.remove('hidden');
       render();
     }
@@ -3867,7 +3875,7 @@ or
         // Also clear the syntax overlay — otherwise an earlier small paste
         // would keep showing colored text underneath the new placeholder.
         if (typeof updateHighlight === 'function') updateHighlight('');
-        editor.placeholder = `📋 ${(sizeMB).toFixed(1)} MB pasted — editor disabled for performance.\n\nUse View as Table or View as Tree above to explore the data.`;
+        editor.placeholder = `📋 ${(sizeMB).toFixed(1)} MB pasted — editor disabled for performance.\n\nUse the ▦ Table button on the right to explore the data.`;
         editorOutOfSync = true;
         showLoadedOverlay({
           icon: '📋',
@@ -3925,7 +3933,7 @@ or
           // holds that colored text — without clearing it, the new big-file
           // placeholder would visibly overlap the old colored XML.
           if (typeof updateHighlight === 'function') updateHighlight('');
-          editor.placeholder = `📂 ${file.name} loaded (${(file.size/1024/1024).toFixed(1)} MB) — editor disabled for performance.\n\nUse View as Table or View as Tree above to explore the data.`;
+          editor.placeholder = `📂 ${file.name} loaded (${(file.size/1024/1024).toFixed(1)} MB) — editor disabled for performance.\n\nUse the ▦ Table button on the right to explore the data.`;
           editorOutOfSync = true; // currentSource has data, editor is empty
           // Show the prominent loaded-state overlay (gray placeholders are
           // too subtle a confirmation for a 9 MB file just loaded).
