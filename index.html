@@ -5157,7 +5157,13 @@ or
         scalarFields.forEach(s => {
           const row = document.createElement('div');
           row.className = 'detail-kv';
-          row.innerHTML = `<div class="detail-kv-key">${escapeHtml(humanize(s.tag))}</div><div class="detail-kv-val">${escapeHtml(s.val)}</div>`;
+          const kEl = document.createElement('div'); kEl.className = 'detail-kv-key'; kEl.textContent = humanize(s.tag);
+          const vEl = document.createElement('div'); vEl.className = 'detail-kv-val';
+          const sval = (s.val == null ? '' : String(s.val));
+          // Embedded JSON/XML string → foldable inline structure; else plain text.
+          if (detectEmbeddedStructure(sval.trim())) appendEmbedNode(vEl, sval.trim());
+          else vEl.textContent = sval;
+          row.appendChild(kEl); row.appendChild(vEl);
           grid.appendChild(row);
         });
         return grid;
@@ -6215,6 +6221,10 @@ or
         a.textContent = trimmed;
         a.style.color = 'var(--accent)';
         vEl.appendChild(a);
+      } else if (detectEmbeddedStructure(trimmed)) {
+        // Embedded JSON/XML string → foldable inline structure (combines the
+        // JSON + XML renderers right inside the table's detail panel).
+        appendEmbedNode(vEl, trimmed);
       } else if (trimmed.length > 80 || trimmed.includes('\n')) {
         vEl.classList.add('long');
         vEl.textContent = trimmed;
@@ -6839,6 +6849,46 @@ or
       } catch (_) {}
     }
     return null;
+  }
+
+  // Build a foldable "embed node" ({ } JSON / </> XML badge) for a string value
+  // that is itself JSON or XML, and append it to `parent`. Clicking lazily renders
+  // the parsed structure inline via the matching renderer — so the table's detail
+  // areas reuse BOTH the JSON and XML tree renderers. Stats are saved/restored so
+  // the embedded render doesn't corrupt the document's element/depth counts.
+  function appendEmbedNode(parent, value) {
+    const embed = detectEmbeddedStructure(value);
+    if (!embed) { parent.textContent = value; return; }
+    const wrapper = document.createElement('div');
+    wrapper.className = 'node collapsed embed-node';
+    const head = document.createElement('span');
+    head.className = 'node-content';
+    const preview = String(value).replace(/\s+/g, ' ').trim();
+    const short = preview.length > 60 ? preview.slice(0, 60) + '…' : preview;
+    const badge = embed.kind === 'xml' ? '&lt;/&gt; XML' : '{ } JSON';
+    head.innerHTML = `<span class="toggle"></span><span class="hl-str">"${escapeHtml(short)}"</span>`
+      + `<span class="embed-badge" title="Embedded ${embed.kind.toUpperCase()} — click to expand inline">${badge}</span>`;
+    wrapper.appendChild(head);
+    const childContainer = document.createElement('div');
+    childContainer.className = 'node-children';
+    wrapper.appendChild(childContainer);
+    let built = false;
+    head.addEventListener('click', () => {
+      if (window.getSelection().toString().length > 0) return;
+      wrapper.classList.toggle('collapsed');
+      if (!built) {
+        built = true;
+        const saved = stats;
+        stats = { elements: 0, nodes: 0, depth: 0, images: 0 };
+        try {
+          if (embed.kind === 'json') renderTreeJsonValue(embed.value, childContainer, 0, undefined, false);
+          else if (embed.doc && embed.doc.documentElement) renderTreeElement(embed.doc.documentElement, childContainer, 0);
+        } catch (_) {
+          childContainer.innerHTML = '<div class="node leaf"><span class="node-content text-muted">⚠ couldn’t parse embedded content</span></div>';
+        } finally { stats = saved; }
+      }
+    });
+    parent.appendChild(wrapper);
   }
 
   // ---------- JSON-native Tree view ----------
