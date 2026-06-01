@@ -754,6 +754,9 @@
     color: white;
   }
   .view-toggle button:not(.active):hover { color: var(--text); }
+  /* Tree view tab removed — the Source view already shows a live tree in the
+     right pane, so a separate full-width Tree view is redundant. */
+  #viewTree { display: none; }
 
   /* Briefly pulse view buttons after first successful parse to draw the eye */
   @keyframes pulse-hint {
@@ -2219,6 +2222,22 @@
     min-height: 300px;
     max-height: 720px;
   }
+  /* Experiment: Format / Minify / Fix / Copy live in the gap BETWEEN the two
+     panes, vertically centered — acting on the editor (left) → tree (right). */
+  .split-actions {
+    flex: 0 0 auto;
+    align-self: stretch;
+    display: flex; flex-direction: column; justify-content: flex-start; gap: 8px;
+    padding-top: 14px;
+  }
+  .split-actions .editor-toolbar-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    min-width: 104px; padding: 9px 14px; font-size: 13px;
+  }
+  body:not(.has-data) .split-actions { display: none; }
+  @media (max-width: 900px) {
+    .split-actions { flex-direction: row; flex-wrap: wrap; justify-content: center; align-self: auto; }
+  }
   .split-preview {
     flex: 1 1 50%; min-width: 0;
     display: flex; flex-direction: column;
@@ -2323,13 +2342,6 @@
      (body.has-data). Transform actions live on the right of this row. -->
 <div class="work-bar" id="workBar">
   <div class="ver-tabs" id="verTabs" role="tablist" aria-label="Open documents and versions"></div>
-  <div class="work-bar-spacer"></div>
-  <div class="ver-actions">
-    <button class="editor-toolbar-btn" id="btnFormat" type="button" title="Pretty-print the source (re-indent JSON or XML) — opens as a new version tab">✨ Format</button>
-    <button class="editor-toolbar-btn" id="btnMinify" type="button" title="Compress to a single line — opens as a new version tab">⤴ Minify</button>
-    <button class="editor-toolbar-btn" id="btnFix" type="button" title="Unescape and repair common JSON/XML mistakes — opens as a new version tab">🔧 Fix</button>
-    <button class="editor-toolbar-btn" id="btnCopy" type="button" title="Copy the current version to clipboard">📋 Copy</button>
-  </div>
 </div>
 <!-- View-tabs row — Source / Table / Tree for the active version. -->
 <div class="context-toolbar" id="contextToolbar">
@@ -2421,6 +2433,12 @@ or
       <div class="editor-toolbar">
         <div class="editor-status" id="editorStatus" aria-live="polite"></div>
       </div>
+    </div>
+    <div class="split-actions" role="toolbar" aria-label="Transform actions">
+      <button class="editor-toolbar-btn" id="btnFormat" type="button" title="Beautify — pretty-print the source (re-indent JSON or XML); opens as a new version tab">✨ Beautify</button>
+      <button class="editor-toolbar-btn" id="btnMinify" type="button" title="Compress to a single line — opens as a new version tab">⤴ Minify</button>
+      <button class="editor-toolbar-btn" id="btnFix" type="button" title="Unescape and repair common JSON/XML mistakes — opens as a new version tab">🔧 Fix</button>
+      <button class="editor-toolbar-btn" id="btnCopy" type="button" title="Copy the current version to clipboard">📋 Copy</button>
     </div>
     <aside class="split-preview" id="splitPreview" aria-label="Live tree preview">
       <div class="split-preview-head">
@@ -3409,8 +3427,8 @@ or
         editor.value = result.text;
         updateHighlight(result.text);
         editor.dispatchEvent(new Event('input', { bubbles: true }));
-        commitVersion(inputText, result.text, 'Formatted', result.format);
-        showToast(`✨ Formatted as ${result.format}`);
+        commitVersion(inputText, result.text, 'Beautified', result.format);
+        showToast(`✨ Beautified as ${result.format}`);
       } else {
         showToast(result.error || 'Cannot format — invalid content');
       }
