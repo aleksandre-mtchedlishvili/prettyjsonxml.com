@@ -806,8 +806,9 @@
     border-bottom: 1px solid var(--border-soft);
   }
   /* The view-row (context toolbar) is full-view chrome only now — it holds
-     "← Source" + Search. In Source view it would be empty, so it's hidden there. */
-  body.full-view .context-toolbar { display: flex; }
+     "← Source" + Search, centered. In Source view it would be empty → hidden. */
+  body.full-view .context-toolbar { display: flex; justify-content: center; }
+  body.full-view .context-toolbar-spacer { display: none; }
   .work-bar-spacer { flex: 1 1 auto; }
   .ver-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .ver-tabs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
