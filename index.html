@@ -385,6 +385,22 @@
     gap: 14px;
     flex-wrap: wrap;
   }
+  /* Tagline + feature line moved INTO the header (center) so they stop eating
+     vertical space in the landing. flex:1 makes it fill the gap between the
+     brand (left) and the actions (right). Trims down on narrower screens. */
+  .header-tagline {
+    flex: 1 1 auto; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; line-height: 1.25; padding: 0 12px;
+  }
+  .header-tagline-main { font-size: 13px; font-weight: 600; color: var(--text); }
+  .header-tagline-sub {
+    font-size: 11px; color: var(--text-dim);
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .header-upload { white-space: nowrap; }
+  @media (max-width: 1180px) { .header-tagline-sub { display: none; } }
+  @media (max-width: 880px)  { .header-tagline { display: none; } }
   /* ============================================================
      Big-file loaded overlay. Replaces the empty textarea visually
      when content >5 MB is loaded — gives the user a strong, unmissable
@@ -2321,7 +2337,12 @@
       <span>Pretty <span class="title-sub">JSON &amp; XML</span></span>
     </a>
   </h1>
+  <div class="header-tagline" aria-hidden="true">
+    <span class="header-tagline-main">Paste or Upload — see your data beautifully.</span>
+    <span class="header-tagline-sub">Searchable, sortable table · collapsible tree · format &amp; minify · inline base64 images · 100% in your browser.</span>
+  </div>
   <div class="header-actions">
+    <button class="btn header-upload" id="headerUpload" type="button" title="Upload an XML or JSON file">📂 Upload</button>
     <!-- Feedback popover. Uses native <details>/<summary> so it toggles
          without any JS, then offers 3 preset mailto links so incoming
          email is already triaged by category. -->
@@ -2379,10 +2400,6 @@
 <div class="path-bar hidden" id="pathBar" data-clarity-mask="true"></div>
 <main id="main">
   <section class="landing" id="landing" aria-label="Paste or drop XML or JSON">
-    <div class="landing-intro">
-      <h2 class="landing-tagline">Paste or Upload — see your data beautifully.</h2>
-      <p class="landing-sub">Searchable, sortable <strong>table</strong> · collapsible <strong>tree</strong> · <strong>format</strong> &amp; <strong>minify</strong> · inline base64 images · <strong>100% in your browser</strong>.</p>
-    </div>
     <div class="landing-actions">
       <button class="upload-btn" id="landingLoadFile" type="button" aria-label="Upload XML or JSON file">
         <span class="upload-btn-icon" aria-hidden="true">
@@ -2695,6 +2712,7 @@ or
   const landingSupports = document.querySelector('.landing-supports');
   const landingSupport = document.querySelector('.landing-support');
   const landingLoadFile = $('#landingLoadFile');
+  const headerUpload = $('#headerUpload');
   const fileInput = $('#file');
   const loadBtn = $('#loadBtn');
   const search = $('#search');
@@ -3195,6 +3213,9 @@ or
   // ---------- File loading ----------
   loadBtn.addEventListener('click', () => fileInput.click());
   if (landingLoadFile) landingLoadFile.addEventListener('click', (e) => { e.preventDefault(); fileInput.click(); });
+  // Persistent header Upload — always available, so uploading is never "gone"
+  // after a file is loaded (it no longer relies on the landing card being visible).
+  if (headerUpload) headerUpload.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', (e) => {
     if (e.target.files[0]) loadFile(e.target.files[0]);
     // Reset the input value AFTER reading the file. Without this, selecting
