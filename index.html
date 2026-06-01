@@ -805,10 +805,21 @@
     padding: 8px 22px; background: var(--bg-elev);
     border-bottom: 1px solid var(--border-soft);
   }
-  /* The view-row (context toolbar) is full-view chrome only now — it holds
-     "← Source" + Search, centered. In Source view it would be empty → hidden. */
-  body.full-view .context-toolbar { display: flex; justify-content: center; }
-  body.full-view .context-toolbar-spacer { display: none; }
+  /* In full (Table) view the tabs row becomes a 3-column grid so the view
+     controls (← Source + Search) sit CENTERED, version tabs on the left, and an
+     empty 1fr column on the right balances the centering. When tabs grow they
+     wrap to a new line within their own column — they "move down" — while the
+     centered controls stay put (aligned to the top). */
+  body.full-view .work-bar {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: start;
+  }
+  .work-bar-controls { display: none; }
+  body.full-view .work-bar-controls {
+    display: flex; align-items: center; gap: 10px; justify-content: center;
+  }
+  /* Context toolbar is now only a hidden DOM holder for the view-switch +
+     expand/collapse elements (so their JS still resolves). Visible controls
+     moved into the tabs row, so it stays hidden (base .context-toolbar = none). */
   .work-bar-spacer { flex: 1 1 auto; }
   .ver-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .ver-tabs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
@@ -2378,19 +2389,26 @@
      (body.has-data). Transform actions live on the right of this row. -->
 <div class="work-bar" id="workBar">
   <div class="ver-tabs" id="verTabs" role="tablist" aria-label="Open documents and versions"></div>
+  <!-- View controls live INSIDE the tabs row (full-view only), centered — so
+       they don't cost a whole extra toolbar row. When tabs get numerous they
+       wrap to a new line below, leaving these in place. -->
+  <div class="work-bar-controls">
+    <button class="btn" id="btnBackSource" type="button" title="Back to the editor">← Source</button>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input id="search" class="search-input" type="text" placeholder="Search..." disabled>
+      <span id="searchCount" class="search-count hidden"></span>
+    </div>
+  </div>
 </div>
 <!-- View-tabs row — Source / Table / Tree for the active version. -->
+<!-- Legacy holder: kept in the DOM (hidden) so view-switch + expand/collapse
+     JS still resolves. The visible controls now live in the version-tabs row. -->
 <div class="context-toolbar" id="contextToolbar">
-  <button class="btn" id="btnBackSource" type="button" title="Back to the editor">← Source</button>
   <div class="view-toggle">
     <button id="viewSource" class="active">📝 Source</button>
     <button id="viewTable">▦ Table</button>
     <button id="viewTree">🌳 Tree</button>
-  </div>
-  <div class="search-wrap">
-    <span class="search-icon">⌕</span>
-    <input id="search" class="search-input" type="text" placeholder="Search..." disabled>
-    <span id="searchCount" class="search-count hidden"></span>
   </div>
   <button class="btn" id="expandBtn" disabled hidden>⊕ Expand</button>
   <button class="btn" id="collapseBtn" disabled hidden>⊖ Collapse</button>
