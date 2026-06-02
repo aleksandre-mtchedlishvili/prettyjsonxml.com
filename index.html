@@ -451,6 +451,13 @@
     word-break: break-all;
     max-width: 80%;
   }
+  .editor-loaded-overlay .loaded-note {
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: #b45309;
+    max-width: 80%;
+  }
+  [data-theme="dark"] .editor-loaded-overlay .loaded-note { color: #fbbf24; }
   .editor-loaded-overlay .loaded-hint {
     margin-top: 14px;
     padding: 10px 18px;
@@ -857,6 +864,11 @@
     transition: all 0.12s;
   }
   .ver-clear:hover { color: var(--danger, #dc2626); border-color: var(--danger, #dc2626); background: var(--bg-elev-2); }
+  /* "Session-only" marker — a small amber dot on tabs that won't be remembered
+     across reloads (too large, or over the ~3 MB storage budget). The tab's
+     tooltip explains why; the dot is just the at-a-glance cue. */
+  .ver-tab-ephemeral-dot { margin-left: 5px; color: #f59e0b; font-size: 15px; line-height: 1; cursor: help; }
+  .ver-tab.active .ver-tab-ephemeral-dot { color: #fde68a; }
 
   /* Once data is loaded, the onboarding blurb + upload card collapse so the
      Source view is just tabs + editor/tree split. Upload stays reachable via
@@ -2492,6 +2504,7 @@ or
         <div class="loaded-icon" aria-hidden="true">📂</div>
         <div class="loaded-title" id="loadedTitle">File loaded</div>
         <div class="loaded-subtitle" id="loadedSubtitle"></div>
+        <div class="loaded-note">Heads up: too large to save for your next visit — this tab is session-only.</div>
         <div class="loaded-hint">
           <span class="loaded-arrow" aria-hidden="true">→</span>
           <span>Click <strong>▦ Table</strong> on the right to explore the data as a sortable table.</span>
@@ -3089,23 +3102,38 @@ or
   const PERSIST_MAX_TABS = 20;
   let persistTimer = null;
   let persistDisabled = false;
-  function buildSessionPayload() {
-    if (typeof saveActiveVer === 'function') saveActiveVer(); // sync editor → active tab
-    const kept = [];
+  // Decide which tabs fit the persistence budget — the SINGLE source of truth for
+  // both saving and the "won't be remembered" tab marker, so they can't disagree.
+  // Blank tabs are ignored (nothing to lose); an over-size tab is dropped ('big');
+  // once the total budget or the tab-count cap is hit, the current and all later
+  // non-blank tabs are dropped ('budget' / 'count').
+  function persistPlan() {
+    const kept = new Set();
+    const dropped = new Map(); // version id -> reason: 'big' | 'budget' | 'count'
     let total = 0;
+    let stop = null;
     for (const v of versions) {
       const text = v.text || '';
-      if (!text.trim()) continue;                        // skip blank tabs
-      if (text.length > PERSIST_MAX_TAB_BYTES) continue; // skip big/heavy tabs
-      if (total + text.length > PERSIST_MAX_TOTAL_BYTES) break;
+      if (!text.trim()) continue;
+      if (stop) { dropped.set(v.id, stop); continue; }
+      if (text.length > PERSIST_MAX_TAB_BYTES) { dropped.set(v.id, 'big'); continue; }
+      if (total + text.length > PERSIST_MAX_TOTAL_BYTES) { dropped.set(v.id, 'budget'); stop = 'budget'; continue; }
       total += text.length;
-      kept.push({ id: v.id, label: v.label, format: v.format || '', name: v.name || '', text });
-      if (kept.length >= PERSIST_MAX_TABS) break;
+      kept.add(v.id);
+      if (kept.size >= PERSIST_MAX_TABS) stop = 'count';
     }
+    return { kept, dropped };
+  }
+  function buildSessionPayload() {
+    if (typeof saveActiveVer === 'function') saveActiveVer(); // sync editor → active tab
+    const { kept } = persistPlan();
+    const keptVersions = versions
+      .filter(v => kept.has(v.id))
+      .map(v => ({ id: v.id, label: v.label, format: v.format || '', name: v.name || '', text: v.text }));
     const activeId = versions[activeVer] && versions[activeVer].id;
-    let activeIdx = kept.findIndex(v => v.id === activeId);
-    if (activeIdx < 0) activeIdx = kept.length ? kept.length - 1 : 0;
-    return { v: 1, activeVer: activeIdx, versions: kept };
+    let activeIdx = keptVersions.findIndex(v => v.id === activeId);
+    if (activeIdx < 0) activeIdx = keptVersions.length ? keptVersions.length - 1 : 0;
+    return { v: 1, activeVer: activeIdx, versions: keptVersions };
   }
   function saveSession() {
     if (persistDisabled) return;
@@ -3171,15 +3199,29 @@ or
   function renderVerTabs() {
     if (!verTabs) return;
     verTabs.innerHTML = '';
+    const plan = persistPlan(); // which tabs will / won't be remembered across reloads
     versions.forEach((v, i) => {
       const tab = document.createElement('button');
       tab.type = 'button';
-      tab.className = 'ver-tab' + (i === activeVer ? ' active' : '');
-      tab.title = v.label + (v.format ? ' · ' + ('' + v.format).toUpperCase() : '');
+      const dropReason = plan.dropped.get(v.id); // undefined ⇒ this tab WILL be saved
+      const why = dropReason === 'big' ? 'won’t be saved for next visit — too large'
+        : dropReason === 'budget' ? 'won’t be saved for next visit — open tabs exceed the ~3 MB limit'
+        : dropReason === 'count' ? 'won’t be saved for next visit — too many tabs (max 20 remembered)'
+        : '';
+      tab.className = 'ver-tab' + (i === activeVer ? ' active' : '') + (dropReason ? ' ver-tab-ephemeral' : '');
+      tab.title = v.label + (v.format ? ' · ' + ('' + v.format).toUpperCase() : '') + (why ? ' · ' + why : '');
       const name = document.createElement('span');
       name.className = 'ver-tab-name';
       name.textContent = v.label;
       tab.appendChild(name);
+      if (dropReason) {
+        const mark = document.createElement('span');
+        mark.className = 'ver-tab-ephemeral-dot';
+        mark.setAttribute('aria-label', 'session only — ' + why);
+        mark.title = why;
+        mark.textContent = '•';
+        tab.appendChild(mark);
+      }
       const close = document.createElement('span');
       close.className = 'ver-tab-close';
       close.setAttribute('role', 'button');
