@@ -847,6 +847,16 @@
     border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.12s;
   }
   .ver-new:hover { color: #fff; background: var(--accent); border-color: var(--accent); }
+  /* Clear-all — a quiet, secondary action set apart from the tabs + ＋, so it
+     reads as "forget everything", not as another tab. */
+  .ver-clear {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-left: 8px; padding: 0 10px; height: 30px; font-size: 12px; line-height: 1;
+    background: transparent; color: var(--text-dim);
+    border: 1px solid transparent; border-radius: 8px; cursor: pointer; white-space: nowrap;
+    transition: all 0.12s;
+  }
+  .ver-clear:hover { color: var(--danger, #dc2626); border-color: var(--danger, #dc2626); background: var(--bg-elev-2); }
 
   /* Once data is loaded, the onboarding blurb + upload card collapse so the
      Source view is just tabs + editor/tree split. Upload stays reachable via
@@ -2909,7 +2919,11 @@ or
       if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
       e.preventDefault();
       track('brand_clicked');
-      resetApp();
+      // Non-destructive "home": the logo never clears tabs or the saved session
+      // (that's what 🗑 Clear all is for). Just return to the editor + scroll up.
+      if (typeof switchView === 'function') switchView('source');
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { window.scrollTo(0, 0); }
+      if (editor) editor.focus();
     });
   }
 
@@ -2918,6 +2932,7 @@ or
     currentJson = null;
     currentSource = '';
     window.__dataLoadedTracked = false; // allow tracking next load
+    if (typeof clearSession === 'function') clearSession(); // forget the persisted session
     currentFileName = '';
     editorOutOfSync = false;
     viewCache = { table: null, tree: null };
@@ -3058,6 +3073,101 @@ or
     while (versions.some(v => v.label === base + ' ' + n)) n++;
     return base + ' ' + n;
   }
+
+  // ---------- Session persistence (localStorage) ----------
+  // "On by default": remember open tabs across reloads / revisits, with a Clear
+  // control (🗑 in the tab strip; the brand-link reset also wipes it). Guardrails
+  // so it can never bloat storage or freeze/crash the page:
+  //   • big files (skipEditor) and any tab over PERSIST_MAX_TAB_BYTES are skipped
+  //   • total payload capped at PERSIST_MAX_TOTAL_BYTES (oldest tabs dropped first)
+  //   • at most PERSIST_MAX_TABS tabs; blank tabs aren't stored
+  //   • writes debounced + wrapped in try/catch (QuotaExceeded → trim & retry, else
+  //     disable for the session — it never throws into the UI)
+  const PERSIST_KEY = 'pjx_session_v1';
+  const PERSIST_MAX_TAB_BYTES = 512 * 1024;        // ~512 KB per tab
+  const PERSIST_MAX_TOTAL_BYTES = 3 * 1024 * 1024; // ~3 MB total (well under the ~5 MB quota)
+  const PERSIST_MAX_TABS = 20;
+  let persistTimer = null;
+  let persistDisabled = false;
+  function buildSessionPayload() {
+    if (typeof saveActiveVer === 'function') saveActiveVer(); // sync editor → active tab
+    const kept = [];
+    let total = 0;
+    for (const v of versions) {
+      const text = v.text || '';
+      if (!text.trim()) continue;                        // skip blank tabs
+      if (text.length > PERSIST_MAX_TAB_BYTES) continue; // skip big/heavy tabs
+      if (total + text.length > PERSIST_MAX_TOTAL_BYTES) break;
+      total += text.length;
+      kept.push({ id: v.id, label: v.label, format: v.format || '', name: v.name || '', text });
+      if (kept.length >= PERSIST_MAX_TABS) break;
+    }
+    const activeId = versions[activeVer] && versions[activeVer].id;
+    let activeIdx = kept.findIndex(v => v.id === activeId);
+    if (activeIdx < 0) activeIdx = kept.length ? kept.length - 1 : 0;
+    return { v: 1, activeVer: activeIdx, versions: kept };
+  }
+  function saveSession() {
+    if (persistDisabled) return;
+    let payload;
+    try {
+      if (!versions.length) { localStorage.removeItem(PERSIST_KEY); return; }
+      payload = buildSessionPayload();
+      if (!payload.versions.length) { localStorage.removeItem(PERSIST_KEY); return; }
+      localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
+    } catch (e) {
+      // Most likely QuotaExceededError — keep just the active tab and retry once.
+      try {
+        const a = payload && payload.versions[payload.activeVer];
+        localStorage.setItem(PERSIST_KEY, JSON.stringify({ v: 1, activeVer: 0, versions: a ? [a] : [] }));
+      } catch (_) {
+        persistDisabled = true;                          // give up silently for this session
+        try { localStorage.removeItem(PERSIST_KEY); } catch (__) {}
+      }
+    }
+  }
+  function scheduleSave() {
+    if (persistDisabled) return;
+    clearTimeout(persistTimer);
+    persistTimer = setTimeout(saveSession, 800);
+  }
+  function clearSession() {
+    try { localStorage.removeItem(PERSIST_KEY); } catch (_) {}
+  }
+  function loadSession() {
+    try {
+      const raw = localStorage.getItem(PERSIST_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data || !Array.isArray(data.versions)) return null;
+      const out = data.versions
+        .filter(v => v && typeof v.text === 'string' && typeof v.label === 'string' && v.text.trim())
+        .map(v => ({ id: 0, label: String(v.label).slice(0, 40), format: typeof v.format === 'string' ? v.format : '', name: typeof v.name === 'string' ? v.name : '', text: v.text }));
+      if (!out.length) return null;
+      let active = Number.isInteger(data.activeVer) ? data.activeVer : 0;
+      if (active < 0 || active >= out.length) active = 0;
+      return { versions: out, activeVer: active };
+    } catch (_) { return null; }
+  }
+  function restoreSession() {
+    const saved = loadSession();
+    if (!saved) return false;
+    versions = saved.versions;
+    verSeq = 0;
+    versions.forEach(v => { v.id = ++verSeq; });          // fresh, collision-free ids
+    activeVer = saved.activeVer;
+    // Don't let a new ＋ tab reuse an existing "Tab N" number.
+    verAutoNum = versions.reduce((mx, v) => { const m = /^Tab (\d+)$/.exec(v.label || ''); return m ? Math.max(mx, +m[1]) : mx; }, 0);
+    document.body.classList.add('has-data');              // show the tab strip immediately
+    renderVerTabs();
+    loadActiveVer();                                      // loads + parses the active tab
+    track('session_restored', { tabs: versions.length });
+    return true;
+  }
+  // Flush any pending save when the page is being unloaded (covers edits typed in
+  // the last debounce window before a refresh/close).
+  window.addEventListener('beforeunload', () => { try { if (!persistDisabled) saveSession(); } catch (_) {} });
+
   function renderVerTabs() {
     if (!verTabs) return;
     verTabs.innerHTML = '';
@@ -3088,6 +3198,24 @@ or
     plus.textContent = '＋';
     plus.addEventListener('click', newVer);
     verTabs.appendChild(plus);
+    // Clear-all — closes every tab and forgets the saved session (with a confirm,
+    // since tabs now persist across reloads). Only shown when there are tabs.
+    if (versions.length) {
+      const clearAll = document.createElement('button');
+      clearAll.type = 'button';
+      clearAll.className = 'ver-clear';
+      clearAll.title = 'Close all tabs and clear the saved session';
+      clearAll.textContent = '🗑 Clear all';
+      clearAll.addEventListener('click', () => {
+        const n = versions.length;
+        if (window.confirm(`Clear all ${n} tab${n > 1 ? 's' : ''} and forget the saved session?`)) {
+          track('session_cleared', { tabs: n });
+          resetApp(); // resetApp() also wipes the saved session via clearSession()
+        }
+      });
+      verTabs.appendChild(clearAll);
+    }
+    if (typeof scheduleSave === 'function') scheduleSave();
   }
   function saveActiveVer() {
     // Persist the editor text back into the active version. Guard against
@@ -3345,6 +3473,7 @@ or
       updateHighlight(text);
       clearTimeout(editorTimer);
       editorTimer = setTimeout(() => tryRenderEditor(text), 350);
+      if (typeof scheduleSave === 'function') scheduleSave();
     });
     // Sync overlay scroll with textarea scroll (so they don't drift)
     editor.addEventListener('scroll', () => {
@@ -3384,6 +3513,9 @@ or
             if (pendingName) currentFileName = pendingName;
           }
         }, 50);
+      } else {
+        // No example handoff → restore the previous session's tabs (if any saved).
+        setTimeout(() => { try { if (typeof restoreSession === 'function') restoreSession(); } catch (_) {} }, 0);
       }
     } catch (_) {}
   }
