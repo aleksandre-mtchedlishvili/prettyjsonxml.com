@@ -778,10 +778,10 @@
   }
   .view-toggle button:not(.active):hover { color: var(--text); }
   /* The Source/Table view-toggle is removed — navigation now lives on the
-     "▦ Table" button (Source) and "← Source" button (Table). The toggle
+     "▦ Table" button (Source) and "← Back" button (Table). The toggle
      elements stay in the DOM (hidden) so the view-switch JS still resolves. */
   .view-toggle { display: none; }
-  /* "← Source" + Search are full-view (Table/Tree) chrome ONLY. Hidden by
+  /* "← Back" + Search are full-view (Table/Tree) chrome ONLY. Hidden by
      default (Source / empty) and revealed by the body.full-view class set in
      switchView — so they never leak into Source view, even after an upload. */
   #btnBackSource { display: none; }
@@ -813,7 +813,7 @@
     border-bottom: 1px solid var(--border-soft);
   }
   /* In full (Table) view the tabs row becomes a 3-column grid so the view
-     controls (← Source + Search) sit CENTERED, version tabs on the left, and an
+     controls (← Back + Search) sit CENTERED, version tabs on the left, and an
      empty 1fr column on the right balances the centering. When tabs grow they
      wrap to a new line within their own column — they "move down" — while the
      centered controls stay put (aligned to the top). */
@@ -2424,7 +2424,7 @@
        they don't cost a whole extra toolbar row. When tabs get numerous they
        wrap to a new line below, leaving these in place. -->
   <div class="work-bar-controls">
-    <button class="btn" id="btnBackSource" type="button" title="Back to the editor">← Source</button>
+    <button class="btn" id="btnBackSource" type="button" title="Back to the editor">← Back</button>
     <div class="search-wrap">
       <span class="search-icon">⌕</span>
       <input id="search" class="search-input" type="text" placeholder="Search..." disabled>
@@ -2783,7 +2783,7 @@ or
   const verTabs = $('#verTabs');
   const searchWrap = search ? search.closest('.search-wrap') : null;
   const btnGoTable = $('#btnGoTable');     // "▦ Table" in the split strip → full table
-  const btnBackSource = $('#btnBackSource'); // "← Source" in the table toolbar → editor
+  const btnBackSource = $('#btnBackSource'); // "← Back" in the table toolbar → editor
 
   let currentFileName = '';
   let currentDoc = null;
@@ -3390,7 +3390,7 @@ or
   viewTreeBtn.addEventListener('click', () => { track('view_switched', { view: 'tree', source: 'context_toolbar' }); switchView('tree'); });
   viewSourceBtn.addEventListener('click', () => { track('view_switched', { view: 'source', source: 'context_toolbar' }); switchView('source'); });
   // New navigation buttons (the Source/Table tab toggle is gone): "▦ Table" in
-  // the split strip jumps to the full table; "← Source" in the table toolbar
+  // the split strip jumps to the full table; "← Back" in the table toolbar
   // returns to the editor.
   if (btnGoTable) btnGoTable.addEventListener('click', () => { track('view_switched', { view: 'table', source: 'split_button' }); switchView('table'); });
   if (btnBackSource) btnBackSource.addEventListener('click', () => { track('view_switched', { view: 'source', source: 'back_button' }); switchView('source'); });
@@ -3402,7 +3402,7 @@ or
       return;
     }
     currentView = v;
-    // Full-view (Table/Tree) chrome — the "← Source" button and Search — is
+    // Full-view (Table/Tree) chrome — the "← Back" button and Search — is
     // shown via this body class, NOT inline styles, so it's correct even when a
     // flow finalizes through afterParse instead of switchView (e.g. an upload).
     // Default (no class) = Source, which is the safe resting state.
