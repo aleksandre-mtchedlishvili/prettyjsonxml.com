@@ -1,6 +1,11 @@
 # Claude Code session data
 .claude/
 
+# Node tooling — sharp was installed once to generate favicons/OG image
+# (see _research/gen-favicons.js); not a project dependency (no package.json)
+# and never deployed. Reinstall with `npm i sharp` only if regenerating images.
+node_modules/
+
 # Large XML test fixture — kept locally for manual perf testing, not versioned
 response_*.xml
 
