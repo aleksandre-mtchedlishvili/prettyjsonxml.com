@@ -1213,6 +1213,13 @@
     padding: 4px 7px; border-radius: 6px;
   }
   .editor-find-btn:hover { background: var(--bg, #f0f3f8); color: var(--accent, #6366f1); }
+  /* Preview-side find bar reuses the editor-find-bar look, but sits below the
+     preview header (which already has the Full-width button at the top-right). */
+  .preview-find-bar { top: 44px; right: 12px; }
+  /* Preview matches wrap REAL (visible) text, so keep the text colour and just
+     add a highlight background — unlike the editor layer which is transparent. */
+  mark.preview-find-hit { background: rgba(255, 208, 0, 0.55); border-radius: 2px; padding: 0 1px; }
+  mark.preview-find-hit-current { background: rgba(255, 132, 0, 0.9); box-shadow: 0 0 0 1px rgba(196, 90, 0, 0.9); }
   .editor-toolbar {
     /* Status pill only now — floats at the editor's bottom-left so the
        textarea fills the whole pane with no leftover toolbar strip. */
@@ -2367,6 +2374,7 @@
     border: 1px solid var(--border, #d8dde8);
     border-radius: 12px;
     overflow: hidden;
+    position: relative; /* anchors the preview find bar */
   }
   .split-preview-head {
     display: flex; align-items: center; gap: 8px;
@@ -2614,6 +2622,15 @@ or
         <span class="split-preview-title">🌳 Tree</span>
         <span class="split-preview-hint" id="splitPreviewHint"></span>
         <button class="split-preview-expand" id="splitPreviewExpand" type="button" aria-pressed="false" title="Expand the tree to the full width (hide the editor)">⤢ Full width</button>
+      </div>
+      <!-- Find-in-tree bar (Ctrl+F when the pointer is over this pane). -->
+      <div class="editor-find-bar preview-find-bar" id="previewFindBar" role="search">
+        <span class="editor-find-icon" aria-hidden="true">⌕</span>
+        <input id="previewFindInput" class="editor-find-input" type="text" placeholder="Find in tree…" aria-label="Find in tree" spellcheck="false" autocomplete="off">
+        <span id="previewFindCount" class="editor-find-count" aria-live="polite"></span>
+        <button id="previewFindPrev" class="editor-find-btn" type="button" title="Previous match (Shift+Enter)" aria-label="Previous match">↑</button>
+        <button id="previewFindNext" class="editor-find-btn" type="button" title="Next match (Enter)" aria-label="Next match">↓</button>
+        <button id="previewFindClose" class="editor-find-btn" type="button" title="Close (Esc)" aria-label="Close find">✕</button>
       </div>
       <div class="split-preview-body" id="splitPreviewBody">
         <div class="split-preview-empty">
@@ -3060,6 +3077,7 @@ or
     if (search) { search.value = ''; search.disabled = true; }
     if (searchCount) searchCount.classList.add('hidden');
     if (findApi) findApi.close();
+    if (previewFindApi) previewFindApi.close();
     expandBtn.disabled = true;
     collapseBtn.disabled = true;
     viewTableBtn.disabled = true;
@@ -3111,6 +3129,7 @@ or
     if (search) { search.value = ''; search.disabled = true; }
     if (searchCount) searchCount.classList.add('hidden');
     if (findApi) findApi.close();
+    if (previewFindApi) previewFindApi.close();
     if (expandBtn) expandBtn.disabled = true;
     if (collapseBtn) collapseBtn.disabled = true;
     if (viewTableBtn) viewTableBtn.disabled = true;
@@ -3517,7 +3536,10 @@ or
     // flow finalizes through afterParse instead of switchView (e.g. an upload).
     // Default (no class) = Source, which is the safe resting state.
     document.body.classList.toggle('full-view', v !== 'source');
-    if (findApi && v !== 'source') findApi.close(); // editor find is a Source-view tool
+    if (v !== 'source') { // find bars are Source-view tools
+      if (findApi) findApi.close();
+      if (previewFindApi) previewFindApi.close();
+    }
     viewTableBtn.classList.toggle('active', v === 'table');
     viewTreeBtn.classList.toggle('active', v === 'tree');
     viewSourceBtn.classList.toggle('active', v === 'source');
@@ -3624,9 +3646,10 @@ or
   });
 
   // ---------- Editor (the primary input surface) ----------
-  // Assigned by setupEditorFind() below; null until then so handlers wired
-  // before it (input/scroll) can guard with a simple truthy check (no TDZ).
-  let findApi = null;
+  // Assigned by setupEditorFind() / setupPreviewFind() below; null until then so
+  // handlers wired before them can guard with a simple truthy check (no TDZ).
+  let findApi = null;        // editor (left) find
+  let previewFindApi = null; // tree preview (right) find
   // Auto-render after the user pastes or types, debounced
   let editorTimer;
   if (editor) {
@@ -7081,6 +7104,7 @@ or
     try {
       renderTree(currentDoc, splitPreviewBody);
       if (splitPreviewHint) splitPreviewHint.textContent = 'live preview';
+      if (previewFindApi) previewFindApi.refresh(); // re-highlight after re-render
     } catch (e) {
       showSplitError('Could not render tree: ' + ((e && e.message) || e));
     }
@@ -7994,21 +8018,149 @@ or
     if (nextBtn) nextBtn.addEventListener('click', () => { go(1); input.focus(); });
     if (closeBtn) closeBtn.addEventListener('click', () => { close(); editor.focus(); });
 
+    // Track whether the pointer is over the editor pane (used by the Ctrl+F router).
+    let overEditor = false;
+    const shell = editor.closest('.editor-shell');
+    if (shell) {
+      shell.addEventListener('mouseenter', () => { overEditor = true; });
+      shell.addEventListener('mouseleave', () => { overEditor = false; });
+    }
+
     findApi = {
-      // Returns true (and prevents default) when it claims the Ctrl+F.
-      maybeOpen(e) {
-        if (document.body.classList.contains('full-view')) return false;
-        const inEditor = document.activeElement === editor;
-        const inBar = bar.contains(document.activeElement);
-        if (!inEditor && !inBar) return false;
-        if (e) e.preventDefault();
-        open();
-        return true;
-      },
+      open, close,
+      isOpen() { return state.open; },
+      // Bar-only (NOT the textarea) so the Ctrl+F router lets pointer-hover over
+      // the preview win even while the editor textarea holds focus.
+      ownsFocus() { return bar.contains(document.activeElement); },
+      isMouseOver() { return overEditor; },
       onEdit() { if (state.open) run({ keepIndex: true }); },
       syncScroll() { if (state.open) syncScroll(); },
-      close() { close(); },
+    };
+  })();
+
+  // ---------- Find in the live tree preview (Ctrl+F when the pointer is over it) ----------
+  // The tree preview isn't focusable (no caret), so Ctrl+F routes here by HOVER.
+  // Matches are found by walking the rendered text nodes and wrapping them in
+  // <mark>; only currently-rendered nodes are searched (collapsed / lazily-loaded
+  // branches aren't) — the same limitation as the browser's native find.
+  (function setupPreviewFind() {
+    const pane = $('#splitPreview');
+    const body = $('#splitPreviewBody');
+    const bar = $('#previewFindBar');
+    const input = $('#previewFindInput');
+    const countEl = $('#previewFindCount');
+    const prevBtn = $('#previewFindPrev');
+    const nextBtn = $('#previewFindNext');
+    const closeBtn = $('#previewFindClose');
+    if (!pane || !body || !bar || !input) return;
+
+    const state = { open: false, query: '', marks: [], index: 0 };
+    let over = false, debounce;
+    pane.addEventListener('mouseenter', () => { over = true; });
+    pane.addEventListener('mouseleave', () => { over = false; });
+
+    function clearMarks() {
+      body.querySelectorAll('mark.preview-find-hit').forEach(h => {
+        const p = h.parentNode; if (!p) return;
+        p.replaceChild(document.createTextNode(h.textContent), h); p.normalize();
+      });
+      state.marks = [];
+    }
+
+    function buildMarks(q) {
+      const needle = q.toLowerCase();
+      const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, {
+        acceptNode(n) {
+          if (!n.nodeValue || n.nodeValue.toLowerCase().indexOf(needle) === -1) return NodeFilter.FILTER_REJECT;
+          const t = n.parentElement && n.parentElement.tagName;
+          if (t === 'SCRIPT' || t === 'STYLE' || t === 'MARK') return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+      const targets = []; let node;
+      while ((node = walker.nextNode())) targets.push(node);
+      const marks = [];
+      targets.forEach(textNode => {
+        const txt = textNode.nodeValue, lower = txt.toLowerCase();
+        const frag = document.createDocumentFragment();
+        let from = 0, idx, last = 0, any = false;
+        while ((idx = lower.indexOf(needle, from)) !== -1) {
+          any = true;
+          if (idx > last) frag.appendChild(document.createTextNode(txt.slice(last, idx)));
+          const m = document.createElement('mark');
+          m.className = 'preview-find-hit';
+          m.textContent = txt.slice(idx, idx + needle.length);
+          frag.appendChild(m); marks.push(m);
+          last = idx + needle.length; from = last;
+          if (marks.length > 20000) break;
+        }
+        if (any) {
+          if (last < txt.length) frag.appendChild(document.createTextNode(txt.slice(last)));
+          textNode.parentNode.replaceChild(frag, textNode);
+        }
+      });
+      return marks;
+    }
+
+    function updateCount() {
+      const n = state.marks.length;
+      countEl.textContent = !state.query ? '' : (n === 0 ? '0/0' : (state.index + 1) + '/' + n);
+      bar.classList.toggle('no-match', !!state.query && n === 0);
+    }
+
+    function setCurrent(scroll) {
+      state.marks.forEach((m, i) => m.classList.toggle('preview-find-hit-current', i === state.index));
+      const cur = state.marks[state.index];
+      if (scroll && cur) cur.scrollIntoView({ block: 'center', inline: 'nearest' });
+    }
+
+    function run(opts) {
+      opts = opts || {};
+      const prevIndex = state.index;
+      clearMarks();
+      state.query = input.value;
+      if (!state.query) { state.index = 0; updateCount(); return; }
+      state.marks = buildMarks(state.query);
+      if (!state.marks.length) { state.index = 0; updateCount(); return; }
+      state.index = (opts.keepIndex && prevIndex < state.marks.length) ? prevIndex : 0;
+      setCurrent(true);
+      updateCount();
+    }
+
+    function go(delta) {
+      const n = state.marks.length; if (!n) return;
+      state.index = (state.index + delta + n) % n;
+      setCurrent(true); updateCount();
+    }
+
+    function open() {
+      if (document.body.classList.contains('full-view')) return;
+      state.open = true; bar.classList.add('open');
+      input.focus(); input.select();
+      track('preview_find_opened');
+      run();
+    }
+    function close() {
+      state.open = false; clearMarks(); state.query = ''; state.index = 0;
+      bar.classList.remove('open', 'no-match'); countEl.textContent = '';
+    }
+
+    input.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(run, 110); });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); go(e.shiftKey ? -1 : 1); }
+      else if (e.key === 'Escape') { e.preventDefault(); close(); }
+    });
+    if (prevBtn) prevBtn.addEventListener('click', () => { go(-1); input.focus(); });
+    if (nextBtn) nextBtn.addEventListener('click', () => { go(1); input.focus(); });
+    if (closeBtn) closeBtn.addEventListener('click', () => { close(); });
+
+    previewFindApi = {
+      open, close,
       isOpen() { return state.open; },
+      ownsFocus() { return bar.contains(document.activeElement); },
+      isMouseOver() { return over; },
+      // Re-apply after the live preview re-renders (its innerHTML was replaced).
+      refresh() { if (state.open && state.query) run({ keepIndex: true }); },
     };
   })();
 
@@ -8028,11 +8180,30 @@ or
     showToast._t = setTimeout(() => toast.classList.remove('show'), 1800);
   }
   document.addEventListener('keydown', (e) => {
-    // Ctrl/Cmd+F: when the cursor is in the editor (or its find bar), open the
-    // editor-scoped find — the browser's native find can't search inside a
-    // <textarea>. Everywhere else, native find-in-page is left untouched.
+    // Ctrl/Cmd+F: in Source view, route to a pane. Native find can't search a
+    // <textarea> (left) and there's no caret in the rendered tree (right), so we
+    // pick the side: a find bar that already has focus wins (re-focus it), then
+    // the pane under the pointer, else the editor (the primary surface). In full
+    // Table/Tree view we leave the browser's native find-in-page untouched.
     if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'f' || e.key === 'F')) {
-      if (findApi && findApi.maybeOpen(e)) return;
+      if (!document.body.classList.contains('full-view')) {
+        // Default to the editor, unless the tree is expanded full-width (editor hidden).
+        // Hover is the primary signal ("which side is the pointer on"). A focused
+        // find bar only decides when the pointer is over neither pane (re-focus
+        // it); failing that, the editor textarea's caret; else the default.
+        let pane = (editorSplit && editorSplit.classList.contains('preview-full')) ? 'preview' : 'editor';
+        if (previewFindApi && previewFindApi.isMouseOver()) pane = 'preview';
+        else if (findApi && findApi.isMouseOver()) pane = 'editor';
+        else if (previewFindApi && previewFindApi.ownsFocus()) pane = 'preview';
+        else if (findApi && findApi.ownsFocus()) pane = 'editor';
+        else if (document.activeElement === editor) pane = 'editor';
+        if (pane === 'preview' && previewFindApi) {
+          e.preventDefault(); if (findApi) findApi.close(); previewFindApi.open(); return;
+        }
+        if (findApi) {
+          e.preventDefault(); if (previewFindApi) previewFindApi.close(); findApi.open(); return;
+        }
+      }
     }
     if ((e.ctrlKey || e.metaKey) && e.key === 'o') { e.preventDefault(); fileInput.click(); }
   });
