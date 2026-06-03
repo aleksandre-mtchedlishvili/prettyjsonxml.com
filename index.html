@@ -4134,46 +4134,172 @@ or
   }
   function colLetter(n) { let s = ''; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; }
   function escXml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;'); }
-  function buildXlsx(columns, rows, sheetName) {
-    const nCols = columns.length, nRows = rows.length + 1;
+  // Render one worksheet's XML (bold + frozen header via style s="1", auto-fit cols).
+  function sheetXml(columns, rows) {
+    const nCols = Math.max(columns.length, 1), nRows = rows.length + 1;
     const width = columns.map(c => {
       let w = String(c).length;
       for (const r of rows) { const v = r[c]; const s = (v == null) ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v)); if (s.length > w) w = s.length; }
       return Math.min(Math.max(w + 2, 8), 60);
     });
-    let sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    let s = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
       + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
       + `<dimension ref="A1:${colLetter(nCols)}${nRows}"/>`
       + '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
       + '<sheetFormatPr defaultRowHeight="15"/><cols>';
-    width.forEach((w, i) => { sheet += `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`; });
-    sheet += '</cols><sheetData><row r="1">';
-    columns.forEach((c, i) => { sheet += `<c r="${colLetter(i + 1)}1" t="inlineStr" s="1"><is><t xml:space="preserve">${escXml(c)}</t></is></c>`; });
-    sheet += '</row>';
+    width.forEach((w, i) => { s += `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`; });
+    s += '</cols><sheetData><row r="1">';
+    columns.forEach((c, i) => { s += `<c r="${colLetter(i + 1)}1" t="inlineStr" s="1"><is><t xml:space="preserve">${escXml(c)}</t></is></c>`; });
+    s += '</row>';
     rows.forEach((r, ri) => {
       const rn = ri + 2;
-      sheet += `<row r="${rn}">`;
+      s += `<row r="${rn}">`;
       columns.forEach((c, i) => {
         const ref = colLetter(i + 1) + rn, v = r[c];
-        if (typeof v === 'number' && isFinite(v)) sheet += `<c r="${ref}" t="n"><v>${v}</v></c>`;
-        else if (typeof v === 'boolean') sheet += `<c r="${ref}" t="b"><v>${v ? 1 : 0}</v></c>`;
-        else if (v === null || v === undefined || v === '') sheet += `<c r="${ref}"/>`;
-        else { let s = (typeof v === 'object') ? JSON.stringify(v) : String(v); s = s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ''); sheet += `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${escXml(s)}</t></is></c>`; }
+        if (typeof v === 'number' && isFinite(v)) s += `<c r="${ref}" t="n"><v>${v}</v></c>`;
+        else if (typeof v === 'boolean') s += `<c r="${ref}" t="b"><v>${v ? 1 : 0}</v></c>`;
+        else if (v === null || v === undefined || v === '') s += `<c r="${ref}"/>`;
+        else { let str = (typeof v === 'object') ? JSON.stringify(v) : String(v); str = str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ''); s += `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${escXml(str)}</t></is></c>`; }
       });
-      sheet += '</row>';
+      s += '</row>';
     });
-    sheet += '</sheetData></worksheet>';
-    const safeName = (escXml(String(sheetName || 'Sheet1')).slice(0, 31)) || 'Sheet1';
-    const xmlFiles = [
-      ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
-      ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
-      ['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="' + safeName + '" sheetId="1" r:id="rId1"/></sheets></workbook>'],
-      ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
-      ['xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'],
-      ['xl/worksheets/sheet1.xml', sheet],
-    ];
+    return s + '</sheetData></worksheet>';
+  }
+  // Pack N worksheets into one .xlsx. sheets: [{name, columns, rows}].
+  function buildWorkbook(sheets) {
+    if (!sheets.length) sheets = [{ name: 'Sheet1', columns: ['(empty)'], rows: [] }];
     const enc = new TextEncoder();
-    return zipStore(xmlFiles.map(([name, xml]) => ({ name, bytes: enc.encode(xml) })));
+    const files = [];
+    sheets.forEach((sh, i) => files.push({ name: `xl/worksheets/sheet${i + 1}.xml`, bytes: enc.encode(sheetXml(sh.columns, sh.rows)) }));
+    const stylesRid = sheets.length + 1;
+    let ct = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>';
+    sheets.forEach((sh, i) => { ct += `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`; });
+    ct += '</Types>';
+    let wbSheets = '', wbRels = '';
+    sheets.forEach((sh, i) => {
+      wbSheets += `<sheet name="${escXml(sh.name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`;
+      wbRels += `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`;
+    });
+    const workbook = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + wbSheets + '</sheets></workbook>';
+    const workbookRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + wbRels + `<Relationship Id="rId${stylesRid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+    const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+    files.push({ name: '[Content_Types].xml', bytes: enc.encode(ct) });
+    files.push({ name: '_rels/.rels', bytes: enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>') });
+    files.push({ name: 'xl/workbook.xml', bytes: enc.encode(workbook) });
+    files.push({ name: 'xl/_rels/workbook.xml.rels', bytes: enc.encode(workbookRels) });
+    files.push({ name: 'xl/styles.xml', bytes: enc.encode(styles) });
+    return zipStore(files);
+  }
+  function sanitizeSheetName(s) {
+    const n = String(s || 'Sheet').replace(/[\\\/\?\*\[\]:]/g, ' ').replace(/\s+/g, ' ').trim();
+    return n.slice(0, 31) || 'Sheet';
+  }
+  // Largest array-of-objects within a few levels, plus the key that held it.
+  function findPrimaryArrayInfo(data) {
+    let best = null, bestKey = null;
+    (function visit(v, depth, key) {
+      if (depth > 3 || !v || typeof v !== 'object') return;
+      if (Array.isArray(v)) {
+        const objs = v.filter(x => x && typeof x === 'object' && !Array.isArray(x)).length;
+        if (objs > 0 && (!best || v.length > best.length)) { best = v; bestKey = key; }
+        return;
+      }
+      for (const k of Object.keys(v)) visit(v[k], depth + 1, k);
+    })(data, 0, null);
+    return best ? { arr: best, key: bestKey } : null;
+  }
+  // Flatten one record's scalars + nested single objects into `flat` (dotted
+  // keys). Scalar arrays are joined; arrays-of-objects are handed to onChildArray.
+  function flattenRecord(rec, prefix, flat, addCol, onChildArray) {
+    for (const k of Object.keys(rec)) {
+      const path = prefix ? prefix + '.' + k : k;
+      const v = rec[k];
+      if (v === null || v === undefined) { addCol(path); flat[path] = ''; }
+      else if (Array.isArray(v)) {
+        if (!v.length) { addCol(path); flat[path] = ''; }
+        else if (v.every(x => x === null || typeof x !== 'object')) { addCol(path); flat[path] = v.map(x => x === null ? '' : String(x)).join(', '); }
+        else onChildArray(path, v.map(x => (x && typeof x === 'object' && !Array.isArray(x)) ? x : { value: x }));
+      }
+      else if (typeof v === 'object') flattenRecord(v, path, flat, addCol, onChildArray);
+      else { addCol(path); flat[path] = v; }
+    }
+  }
+  // Convert an XML element to a plain object (attrs as @name, repeated children
+  // -> arrays, text leaves -> string) so XML flows through the same flattener.
+  function xmlElementToObj(el) {
+    const o = {};
+    for (const a of el.attributes) o['@' + a.name] = a.value;
+    const kids = Array.from(el.children);
+    if (!kids.length) {
+      const t = el.textContent.trim();
+      if (!el.attributes.length) return t;
+      if (t) o['#text'] = t;
+      return o;
+    }
+    const byTag = {};
+    for (const c of kids) (byTag[c.tagName] = byTag[c.tagName] || []).push(c);
+    for (const tag in byTag) { const arr = byTag[tag]; o[tag] = arr.length === 1 ? xmlElementToObj(arr[0]) : arr.map(xmlElementToObj); }
+    return o;
+  }
+  // Pick the records to export (+ a base name) from JSON or XML.
+  function getExportRecords() {
+    if (currentJson !== null && currentJson !== undefined) {
+      const info = findPrimaryArrayInfo(currentJson);
+      if (info) return { name: info.key || 'data', records: info.arr.map(r => (r && typeof r === 'object' && !Array.isArray(r)) ? r : { value: r }) };
+      if (currentJson && typeof currentJson === 'object' && !Array.isArray(currentJson)) return { name: 'data', records: [currentJson] };
+      if (Array.isArray(currentJson) && currentJson.length) return { name: 'data', records: currentJson.map(v => ({ value: v })) };
+      return null;
+    }
+    if (currentDoc && currentDoc.documentElement) {
+      let best = null, bestN = 0;
+      (function walk(el) {
+        const g = {};
+        for (const c of el.children) g[c.tagName] = (g[c.tagName] || 0) + 1;
+        for (const t in g) if (g[t] >= 2 && g[t] > bestN) { bestN = g[t]; best = { parent: el, tag: t }; }
+        for (const c of el.children) walk(c);
+      })(currentDoc.documentElement);
+      if (best) {
+        const els = Array.from(best.parent.children).filter(c => c.tagName === best.tag);
+        return { name: best.tag, records: els.map(el => { const o = xmlElementToObj(el); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : { value: o }; }) };
+      }
+      const o = xmlElementToObj(currentDoc.documentElement);
+      return { name: currentDoc.documentElement.tagName, records: [(o && typeof o === 'object' && !Array.isArray(o)) ? o : { value: o }] };
+    }
+    return null;
+  }
+  // Hybrid layout: one main sheet (flattened) + a linked child sheet per nested
+  // array-of-objects, at any depth (child rows carry parent#). [{name,columns,rows}].
+  function buildHybridSheets(rootRecords, rootName) {
+    const sheets = [], used = new Set();
+    const uniq = base => { const n = sanitizeSheetName(base); let nm = n, i = 2; while (used.has(nm)) { const suf = ' (' + i + ')'; nm = n.slice(0, 31 - suf.length) + suf; i++; } used.add(nm); return nm; };
+    const work = [{ items: rootRecords.map(d => ({ pid: null, data: d })), name: rootName, hasParent: false }];
+    let guard = 0;
+    while (work.length && guard++ < 200) {
+      const job = work.shift();
+      const name = uniq(job.name);
+      const columns = [], colSet = new Set();
+      const addCol = c => { if (!colSet.has(c)) { colSet.add(c); columns.push(c); } };
+      addCol('#'); if (job.hasParent) addCol('parent#');
+      const rows = [], childMap = new Map();
+      let rid = 0;
+      for (const it of job.items) {
+        rid++;
+        const flat = { '#': rid };
+        if (job.hasParent) flat['parent#'] = it.pid;
+        const rec = it.data;
+        if (rec && typeof rec === 'object' && !Array.isArray(rec)) {
+          flattenRecord(rec, '', flat, addCol, (path, arr) => {
+            if (!childMap.has(path)) childMap.set(path, []);
+            const bucket = childMap.get(path);
+            for (const c of arr) bucket.push({ pid: rid, data: c });
+          });
+        } else { addCol('value'); flat['value'] = (rec && typeof rec === 'object') ? JSON.stringify(rec) : rec; }
+        rows.push(flat);
+      }
+      sheets.push({ name, columns, rows });
+      for (const [path, items] of childMap) work.push({ items, name: job.name + ' > ' + path, hasParent: true });
+    }
+    return sheets;
   }
   function exportBaseName() {
     let n = (currentFileName || '').replace(/\.[^.]+$/, '').trim();
@@ -4181,19 +4307,23 @@ or
     return n || 'table';
   }
   function exportTableXlsx() {
-    const t = collectTableData();
-    if (!t) { showToast('No table data to export — this view isn’t tabular'); return; }
-    let bytes;
-    try { bytes = buildXlsx(t.columns, t.rows, exportBaseName()); }
-    catch (e) { showToast('Excel export failed'); return; }
+    const info = getExportRecords();
+    if (!info) { showToast('No data to export'); return; }
+    let bytes, sheetCount = 0, rowCount = 0;
+    try {
+      const sheets = buildHybridSheets(info.records, info.name);
+      sheetCount = sheets.length;
+      rowCount = sheets.reduce((a, s) => a + s.rows.length, 0);
+      bytes = buildWorkbook(sheets);
+    } catch (e) { showToast('Excel export failed'); return; }
     const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = exportBaseName() + '.xlsx';
     document.body.appendChild(a); a.click();
     setTimeout(() => { try { URL.revokeObjectURL(url); a.remove(); } catch (_) {} }, 1500);
-    track('export_xlsx', { rows: t.rows.length, cols: t.columns.length });
-    showToast(`⬇ Exported ${t.rows.length} row${t.rows.length === 1 ? '' : 's'} × ${t.columns.length} col${t.columns.length === 1 ? '' : 's'} to Excel`);
+    track('export_xlsx', { sheets: sheetCount, rows: rowCount });
+    showToast(`📥 Exported ${rowCount} row${rowCount === 1 ? '' : 's'} across ${sheetCount} sheet${sheetCount === 1 ? '' : 's'} to Excel`);
   }
   async function smartCopy() {
     const view = currentView;
