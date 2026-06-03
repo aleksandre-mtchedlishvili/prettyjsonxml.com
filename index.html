@@ -5563,6 +5563,7 @@ or
   const __virtualSections = new Set();
   const __virtualScrollContainers = new Set(); // tracks elements we've subscribed to
   let __virtualScrollScheduled = false;
+  let __globalScrollHooked = false;
   function __onVirtualScroll() {
     if (__virtualScrollScheduled) return;
     __virtualScrollScheduled = true;
@@ -5586,13 +5587,20 @@ or
     return window; // fall back to window (works when html/body scroll)
   }
   function ensureVirtualScrollListener(scrollContainer) {
+    // A capture-phase document listener catches scroll from ANY element: scroll
+    // events don't bubble, but they DO pass through the capture phase. This makes
+    // the virtual scroller robust even when the specific container is resolved
+    // late or wrong (e.g. a lazily-built big table whose section is briefly
+    // collapsed, so the early resolve returns `window` and #main's scroll is missed).
+    if (!__globalScrollHooked) {
+      __globalScrollHooked = true;
+      document.addEventListener('scroll', __onVirtualScroll, { capture: true, passive: true });
+      window.addEventListener('resize', __onVirtualScroll, { passive: true });
+    }
+    if (!scrollContainer || scrollContainer === window) return;
     if (__virtualScrollContainers.has(scrollContainer)) return;
     __virtualScrollContainers.add(scrollContainer);
     scrollContainer.addEventListener('scroll', __onVirtualScroll, { passive: true });
-    // resize always goes on window — it doesn't dispatch to scroll containers
-    if (__virtualScrollContainers.size === 1) {
-      window.addEventListener('resize', __onVirtualScroll, { passive: true });
-    }
   }
   function clearVirtualSections() {
     __virtualSections.clear();
@@ -5603,6 +5611,16 @@ or
 
   function setupVirtualBody(cfg) {
     const { section, table, tbody, items, numCols, buildRowDom, wireRowExpand } = cfg;
+    // CRITICAL: opt this section out of content-visibility. The global
+    // `.table-section { content-visibility: auto; contain-intrinsic-size: auto 600px }`
+    // perf hint collapses a tall virtualized section to a 600px placeholder, which
+    // hides the spacer-driven height from the scroll container and makes the virtual
+    // window math render ~0 rows (empty table). Virtualization already culls
+    // off-screen rows, so content-visibility here is both redundant and harmful.
+    if (section) {
+      section.style.contentVisibility = 'visible';
+      section.style.containIntrinsicSize = 'auto';
+    }
     const ROW_HEIGHT = 42;        // matches the typical .row-main height
     const DETAIL_HEIGHT_HINT = 280;
     const BUFFER = 10;            // extra rows above/below viewport
@@ -5671,10 +5689,16 @@ or
       // container's visible area. We compute that via the container's rect.
       // It's normally resolved on the first rAF in setupVirtualBody, but
       // search/header-click can trigger render() earlier — resolve lazily.
-      if (!state.scrollContainer) {
-        state.scrollContainer = findScrollContainer(section);
-        if (state.scrollContainer && state.scrollContainer !== window) {
-          ensureVirtualScrollListener(state.scrollContainer);
+      // Resolve the scroll container — and KEEP re-resolving while it's still
+      // unresolved or `window`. For a lazily-built big table the real container
+      // (#main) only becomes scrollable after layout settles; a value cached too
+      // early yields an empty window (blank table). Once it locks onto a real
+      // element we stop, so there's no per-scroll layout cost.
+      if (!state.scrollContainer || state.scrollContainer === window) {
+        const resolvedSC = findScrollContainer(section);
+        if (resolvedSC !== state.scrollContainer) {
+          state.scrollContainer = resolvedSC;
+          if (resolvedSC && resolvedSC !== window) ensureVirtualScrollListener(resolvedSC);
         }
       }
       const scrollContainer = state.scrollContainer;
@@ -5880,6 +5904,11 @@ or
       // Second rAF so layout has settled — getBoundingClientRect is accurate now.
       requestAnimationFrame(render);
     });
+    // Fallback: a lazily-built big table (or a content-visibility relayout) can
+    // leave those early rAFs measuring a not-yet-settled section, producing an
+    // empty window. Force one more render with a cleared cache after layout has
+    // definitely settled — render() re-resolves the (now scrollable) container.
+    setTimeout(() => { state.lastRange = null; render(); }, 150);
     return handle;
   }
 
