@@ -2331,6 +2331,29 @@
     flex: 0 0 auto;
   }
   .split-preview-hint { margin-left: auto; font-weight: 400; font-size: 11px; color: var(--text-muted, #94a0b5); }
+  /* "Full width" toggle in the tree-preview header. Hidden until the current
+     doc has content (no point expanding an empty preview), and on narrow
+     screens where the panes already stack vertically. */
+  .split-preview-expand {
+    display: none; flex: 0 0 auto; align-items: center; gap: 5px;
+    border: 1px solid var(--border, #d8dde8); background: var(--bg, #f6f8fb);
+    color: var(--text-dim, #5a6478); font: inherit; font-size: 11px; font-weight: 600;
+    line-height: 1.4; padding: 3px 9px; border-radius: 7px; cursor: pointer;
+    transition: background .12s, border-color .12s, color .12s; white-space: nowrap;
+  }
+  body.doc-has-content .split-preview-expand { display: inline-flex; }
+  .split-preview-expand:hover { background: var(--bg-elev, #fff); border-color: var(--accent, #6366f1); color: var(--accent, #6366f1); }
+  /* Expanded state: hide the editor + action column so the tree spans the row.
+     Gated on doc-has-content so clearing the doc reverts to the split layout
+     automatically even if the class lingers on #editorSplit. */
+  body.doc-has-content .editor-split.preview-full > .editor-shell,
+  body.doc-has-content .editor-split.preview-full > .split-actions { display: none; }
+  body.doc-has-content .editor-split.preview-full > .split-preview { flex-basis: 100%; }
+  @media (max-width: 900px) {
+    .split-preview-expand { display: none !important; }
+    .editor-split.preview-full > .editor-shell,
+    .editor-split.preview-full > .split-actions { display: flex; }
+  }
   .split-preview-body { flex: 1 1 auto; overflow: auto; padding: 8px 10px; }
   .split-preview-body .tree-view { margin: 0; }
   .split-preview-empty {
@@ -2533,6 +2556,7 @@ or
       <div class="split-preview-head">
         <span class="split-preview-title">🌳 Tree</span>
         <span class="split-preview-hint" id="splitPreviewHint"></span>
+        <button class="split-preview-expand" id="splitPreviewExpand" type="button" aria-pressed="false" title="Expand the tree to the full width (hide the editor)">⤢ Full width</button>
       </div>
       <div class="split-preview-body" id="splitPreviewBody">
         <div class="split-preview-empty">
@@ -2728,6 +2752,26 @@ or
   const splitPreview = $('#splitPreview');
   const splitPreviewBody = $('#splitPreviewBody');
   const splitPreviewHint = $('#splitPreviewHint');
+  const splitPreviewExpand = $('#splitPreviewExpand');
+  const editorSplit = $('#editorSplit');
+
+  // Tree-preview "Full width" toggle — collapses the editor + action column so
+  // the live tree uses the whole row. Sticky preference (the class lingers on
+  // #editorSplit across re-renders); resetApp clears it for a clean slate.
+  function setPreviewFull(on) {
+    if (!editorSplit || !splitPreviewExpand) return;
+    editorSplit.classList.toggle('preview-full', on);
+    splitPreviewExpand.setAttribute('aria-pressed', on ? 'true' : 'false');
+    splitPreviewExpand.textContent = on ? '⤡ Split view' : '⤢ Full width';
+    splitPreviewExpand.title = on
+      ? 'Restore the split editor + tree view'
+      : 'Expand the tree to the full width (hide the editor)';
+  }
+  if (splitPreviewExpand) {
+    splitPreviewExpand.addEventListener('click', () => {
+      setPreviewFull(!editorSplit.classList.contains('preview-full'));
+    });
+  }
   const btnClear = $('#btnClear');
   const historyPopover = $('#historyPopover');
   const historyList = $('#historyList');
@@ -2968,6 +3012,7 @@ or
     // Drop the "we have data" body flag so the View buttons go back to
     // their idle (small, no halo) state on reset.
     document.body.classList.remove('has-data');
+    if (typeof setPreviewFull === 'function') setPreviewFull(false); // back to split layout
     if (btnViewAsTable) btnViewAsTable.classList.remove('pulse-data-loaded');
     if (btnViewAsTree) btnViewAsTree.classList.remove('pulse-data-loaded');
     viewerRoot.innerHTML = '';
