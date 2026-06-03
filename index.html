@@ -2509,6 +2509,7 @@
       <input id="search" class="search-input" type="text" placeholder="Search..." disabled>
       <span id="searchCount" class="search-count hidden"></span>
     </div>
+    <button class="btn" id="btnCopyFull" type="button" title="Copy — Table view copies as TSV (paste into Excel / Sheets); Tree copies pretty-printed">📋 Copy</button>
   </div>
 </div>
 <!-- View-tabs row — Source / Table / Tree for the active version. -->
@@ -2615,7 +2616,7 @@ or
       <button class="editor-toolbar-btn" id="btnMinify" type="button" title="Compress to a single line — opens as a new version tab">⤴ Minify</button>
       <button class="editor-toolbar-btn" id="btnFix" type="button" title="Unescape and repair common JSON/XML mistakes — opens as a new version tab">🔧 Fix</button>
       <button class="editor-toolbar-btn" id="btnDecode" type="button" title="Expand embedded JSON strings into real structure and reveal \uXXXX Unicode as readable text — opens as a new version tab">🔓 Decode</button>
-      <button class="editor-toolbar-btn" id="btnCopy" type="button" title="Copy the current version to clipboard">📋 Copy</button>
+      <button class="editor-toolbar-btn" id="btnCopy" type="button" title="Copy the source text to clipboard (works for big files too)">📋 Copy</button>
     </div>
     <aside class="split-preview" id="splitPreview" aria-label="Live tree preview">
       <div class="split-preview-head">
@@ -2823,6 +2824,7 @@ or
   const btnFix = $('#btnFix');
   const btnDecode = $('#btnDecode');
   const btnCopy = $('#btnCopy');
+  const btnCopyFull = $('#btnCopyFull');
   const splitPreview = $('#splitPreview');
   const splitPreviewBody = $('#splitPreviewBody');
   const splitPreviewHint = $('#splitPreviewHint');
@@ -4020,20 +4022,119 @@ or
   if (btnViewAsTable) btnViewAsTable.addEventListener('click', () => { track('view_as_clicked', { view: 'table', source: 'editor_toolbar' }); switchView('table'); });
   if (btnViewAsTree) btnViewAsTree.addEventListener('click', () => { track('view_as_clicked', { view: 'tree', source: 'editor_toolbar' }); switchView('tree'); });
 
-  if (btnCopy) btnCopy.addEventListener('click', async () => {
-    const text = editor.value;
+  // ----- Smart Copy: hand the user the right thing for the current view -----
+  //   Source -> the loaded source text (works for big files where the editor is
+  //             intentionally empty, so a manual select-all isn't possible).
+  //   Tree   -> pretty-printed JSON / XML.
+  //   Table  -> TSV you can paste straight into Excel / Google Sheets
+  //             (falls back to pretty text when the data isn't tabular).
+  function tsvCell(v) {
+    if (v === null || v === undefined) return '';
+    const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
+    return s.replace(/[\t\r\n]+/g, ' '); // keep each value on one TSV cell
+  }
+  // Find the largest array-of-objects within a few levels (the "rows").
+  function findPrimaryArray(data) {
+    let best = null;
+    (function visit(v, depth) {
+      if (depth > 3 || !v || typeof v !== 'object') return;
+      if (Array.isArray(v)) {
+        const objs = v.filter(x => x && typeof x === 'object' && !Array.isArray(x)).length;
+        if (objs > 0 && (!best || v.length > best.length)) best = v;
+        return;
+      }
+      for (const k of Object.keys(v)) visit(v[k], depth + 1);
+    })(data, 0);
+    return best;
+  }
+  function jsonToTSV() {
+    const data = currentJson;
+    if (data === null || data === undefined) return null;
+    const rows = findPrimaryArray(data);
+    if (Array.isArray(rows) && rows.length) {
+      const objRows = rows.some(r => r && typeof r === 'object' && !Array.isArray(r));
+      if (objRows) {
+        const cols = [], seen = new Set();
+        for (const r of rows) if (r && typeof r === 'object' && !Array.isArray(r))
+          for (const k of Object.keys(r)) if (!seen.has(k)) { seen.add(k); cols.push(k); }
+        if (!cols.length) return null;
+        const lines = [cols.join('\t')];
+        for (const r of rows) {
+          const o = (r && typeof r === 'object' && !Array.isArray(r)) ? r : {};
+          lines.push(cols.map(c => tsvCell(o[c])).join('\t'));
+        }
+        return { tsv: lines.join('\n'), rows: rows.length, cols: cols.length };
+      }
+      return { tsv: 'value\n' + rows.map(tsvCell).join('\n'), rows: rows.length, cols: 1 };
+    }
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      const keys = Object.keys(data);
+      if (!keys.length) return null;
+      const lines = ['key\tvalue'];
+      for (const k of keys) lines.push(tsvCell(k) + '\t' + tsvCell(data[k]));
+      return { tsv: lines.join('\n'), rows: keys.length, cols: 2 };
+    }
+    return null;
+  }
+  function xmlToTSV() {
+    if (!currentDoc || !currentDoc.documentElement) return null;
+    // Pick the largest group of same-named sibling elements as the rows.
+    let best = null, bestN = 0;
+    (function walk(el) {
+      const g = {};
+      for (const c of el.children) g[c.tagName] = (g[c.tagName] || 0) + 1;
+      for (const tag in g) if (g[tag] >= 2 && g[tag] > bestN) { bestN = g[tag]; best = { parent: el, tag }; }
+      for (const c of el.children) walk(c);
+    })(currentDoc.documentElement);
+    if (!best) return null;
+    const rowEls = Array.from(best.parent.children).filter(c => c.tagName === best.tag);
+    const cols = [], seen = new Set();
+    const addCol = k => { if (!seen.has(k)) { seen.add(k); cols.push(k); } };
+    const data = rowEls.map(row => {
+      const o = {};
+      for (const a of row.attributes) { addCol('@' + a.name); o['@' + a.name] = a.value; }
+      for (const c of row.children) { addCol(c.tagName); o[c.tagName] = c.textContent.trim(); }
+      if (!row.children.length && !row.attributes.length) { addCol('value'); o.value = row.textContent.trim(); }
+      return o;
+    });
+    if (!cols.length) return null;
+    const lines = [cols.join('\t')];
+    for (const o of data) lines.push(cols.map(c => tsvCell(o[c])).join('\t'));
+    return { tsv: lines.join('\n'), rows: rowEls.length, cols: cols.length };
+  }
+  function prettyDataText() {
+    if (currentJson !== null && currentJson !== undefined) {
+      try { return JSON.stringify(currentJson, null, 2); } catch (_) {}
+    }
+    const src = currentSource || (editor && editor.value) || '';
+    if (src.trim().charAt(0) === '<') { const f = formatXmlSource(src); if (f) return f; }
+    return src;
+  }
+  async function smartCopy() {
+    const view = currentView;
+    let text = '', note = '';
+    if (view === 'table') {
+      const t = jsonToTSV() || xmlToTSV();
+      if (t) { text = t.tsv; note = `Copied ${t.rows} row${t.rows === 1 ? '' : 's'} × ${t.cols} col${t.cols === 1 ? '' : 's'} as TSV — paste into a spreadsheet`; }
+      else { text = prettyDataText(); note = 'Copied as text'; }
+    } else if (view === 'tree') {
+      text = prettyDataText(); note = 'Copied pretty-printed';
+    } else { // source
+      text = currentSource || (editor && editor.value) || '';
+      note = `Copied ${(text.length / 1024).toFixed(1)} KB`;
+    }
     if (!text) { showToast('Nothing to copy'); return; }
-    track('copy_clicked', { size_kb: +(text.length / 1024).toFixed(1) });
+    track('copy_clicked', { view: view, kb: +(text.length / 1024).toFixed(1) });
     try {
       await navigator.clipboard.writeText(text);
-      showToast(`📋 Copied ${(text.length / 1024).toFixed(1)} KB`);
+      showToast('📋 ' + note);
     } catch (e) {
-      // Fallback: select-all in textarea so user can press Ctrl+C
-      editor.focus();
-      editor.select();
-      showToast('Selected — press Ctrl+C to copy');
+      if (view === 'source' && editor && editor.value) { editor.focus(); editor.select(); showToast('Selected — press Ctrl+C to copy'); }
+      else showToast('Copy failed — press Ctrl+C');
     }
-  });
+  }
+  if (btnCopy) btnCopy.addEventListener('click', smartCopy);
+  if (btnCopyFull) btnCopyFull.addEventListener('click', smartCopy);
 
   // Auto-detects format, returns Promise<{ ok, text, format } | { ok: false, error }>.
   // Async because JSON ops are dispatched to a Worker — main thread stays
