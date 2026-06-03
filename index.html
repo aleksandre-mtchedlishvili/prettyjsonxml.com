@@ -3646,6 +3646,22 @@ or
     editorHighlightCode.innerHTML = html;
   }
 
+  // Programmatically replace the editor's content (used by Beautify / Minify /
+  // Fix / Decode). A scripted value change fires NO 'scroll' event, so the
+  // highlight overlay keeps its previous scroll offset: after beautifying a long
+  // minified line (caret + scroll parked at the far right) the re-indented short
+  // lines render off-screen to the left and the editor looks empty until you
+  // manually scroll back. Reset the caret to the start and zero the scroll on
+  // both the textarea and the overlay so the result is visible from the top-left.
+  function setEditorContent(text) {
+    editor.value = text;
+    try { editor.setSelectionRange(0, 0); } catch (_) {}
+    editor.scrollTop = 0; editor.scrollLeft = 0;
+    if (editorHighlight) { editorHighlight.scrollTop = 0; editorHighlight.scrollLeft = 0; }
+    updateHighlight(text);
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
   function escapeHighlight(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
@@ -3807,9 +3823,7 @@ or
           showToast('Skipped — content changed during format');
           return;
         }
-        editor.value = result.text;
-        updateHighlight(result.text);
-        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        setEditorContent(result.text);
         showToast(`✨ Beautified as ${result.format}`);
       } else {
         showToast(result.error || 'Cannot format — invalid content');
@@ -3831,9 +3845,7 @@ or
           showToast('Skipped — content changed during minify');
           return;
         }
-        editor.value = result.text;
-        updateHighlight(result.text);
-        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        setEditorContent(result.text);
         showToast(`⤴ Minified as ${result.format}`);
       } else {
         showToast(result.error || 'Cannot minify — invalid content');
@@ -3859,9 +3871,7 @@ or
       let finalText = fix.text;
       try { const fmt = await transformSource(fix.text, 'format'); if (fmt.ok) finalText = fmt.text; } catch (_) {}
       if (editor.value !== inputText) { showToast('Skipped — content changed'); return; }
-      editor.value = finalText;
-      updateHighlight(finalText);
-      editor.dispatchEvent(new Event('input', { bubbles: true }));
+      setEditorContent(finalText);
       const label = (fix.format || '').toUpperCase();
       if (fix.already) {
         showToast(`✓ Already valid ${label} — formatted`);
@@ -3915,9 +3925,7 @@ or
     if (editor.value !== inputText) { showToast('Skipped — content changed'); return; }
     // Apply in place (no auto-created tab) — Decode is a one-shot reveal, not a
     // version to compare, so it just updates the current document.
-    editor.value = text;
-    updateHighlight(text);
-    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    setEditorContent(text);
     showToast('🔓 Decoded in place — expanded ' + ctx.count + ' embedded JSON block' + (ctx.count === 1 ? '' : 's') + ' + revealed Unicode');
   });
 
