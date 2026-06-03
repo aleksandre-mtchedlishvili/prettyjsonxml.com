@@ -2509,7 +2509,6 @@
       <input id="search" class="search-input" type="text" placeholder="Search..." disabled>
       <span id="searchCount" class="search-count hidden"></span>
     </div>
-    <button class="btn" id="btnCopyFull" type="button" title="Copy — Table view copies as TSV (paste into Excel / Sheets); Tree copies pretty-printed">📋 Copy</button>
     <button class="btn" id="btnExportXlsx" type="button" title="Download the table as a formatted Excel .xlsx file (bold header, frozen top row, auto-fit columns)">📥 Excel</button>
   </div>
 </div>
@@ -2825,7 +2824,6 @@ or
   const btnFix = $('#btnFix');
   const btnDecode = $('#btnDecode');
   const btnCopy = $('#btnCopy');
-  const btnCopyFull = $('#btnCopyFull');
   const btnExportXlsx = $('#btnExportXlsx');
   const splitPreview = $('#splitPreview');
   const splitPreviewBody = $('#splitPreviewBody');
@@ -4221,7 +4219,6 @@ or
     }
   }
   if (btnCopy) btnCopy.addEventListener('click', smartCopy);
-  if (btnCopyFull) btnCopyFull.addEventListener('click', smartCopy);
   if (btnExportXlsx) btnExportXlsx.addEventListener('click', exportTableXlsx);
 
   // Auto-detects format, returns Promise<{ ok, text, format } | { ok: false, error }>.
