@@ -1168,6 +1168,51 @@
   .editor:placeholder-shown + .editor-status { /* no-op, kept for spec */ }
   /* Fallback for browsers that don't support color: transparent + caret-color */
   .editor::selection { background: rgba(124, 156, 255, 0.3); color: var(--text); }
+  /* ---- Find in editor (Ctrl+F when the cursor is in the textarea) ----
+     The browser's native find can't search inside a <textarea>. This overlay
+     mirrors the editor text 1:1 but is fully transparent except for <mark>
+     backgrounds on matches; it sits UNDER the syntax overlay (z-index 0) so
+     the colored glyphs render on top of the highlight. Its scroll is driven
+     from the textarea (one-way sync), exactly like the syntax overlay. */
+  .editor-find-layer {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    box-sizing: border-box; margin: 0; padding: 16px 20px;
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, ui-monospace, monospace;
+    font-size: 13px; line-height: 1.6;
+    color: transparent; background: transparent;
+    overflow: hidden; pointer-events: none;
+    white-space: pre; tab-size: 2; z-index: 0;
+  }
+  .editor-find-layer code { display: block; white-space: pre; font-family: inherit; color: transparent; }
+  .editor-find-layer mark.find-hit { color: transparent; background: rgba(255, 208, 0, 0.42); border-radius: 2px; }
+  .editor-find-layer mark.find-hit-current { background: rgba(255, 132, 0, 0.72); box-shadow: 0 0 0 1px rgba(196, 90, 0, 0.9); }
+  /* Floating find bar, top-right of the editor pane. Hidden until opened. */
+  .editor-find-bar {
+    position: absolute; top: 8px; right: 12px; z-index: 6;
+    display: none; align-items: center; gap: 3px;
+    background: var(--bg-elev, #fff); border: 1px solid var(--border, #d8dde8);
+    border-radius: 9px; padding: 4px 6px; box-shadow: 0 6px 20px rgba(20, 28, 48, 0.16);
+  }
+  .editor-find-bar.open { display: flex; }
+  body.full-view .editor-find-bar { display: none !important; }
+  .editor-find-icon { font-size: 13px; color: var(--text-muted, #94a0b5); padding: 0 2px; }
+  .editor-find-input {
+    border: none; outline: none; background: transparent;
+    font-family: inherit; font-size: 13px; color: var(--text, #1c2533);
+    width: 158px; padding: 2px 4px;
+  }
+  .editor-find-count {
+    font-size: 11px; color: var(--text-muted, #94a0b5);
+    min-width: 38px; text-align: center; font-variant-numeric: tabular-nums;
+  }
+  .editor-find-bar.no-match .editor-find-input,
+  .editor-find-bar.no-match .editor-find-count { color: #d23; }
+  .editor-find-btn {
+    border: none; background: transparent; cursor: pointer;
+    color: var(--text-dim, #5a6478); font-size: 13px; line-height: 1;
+    padding: 4px 7px; border-radius: 6px;
+  }
+  .editor-find-btn:hover { background: var(--bg, #f0f3f8); color: var(--accent, #6366f1); }
   .editor-toolbar {
     /* Status pill only now — floats at the editor's bottom-left so the
        textarea fills the whole pane with no leftover toolbar strip. */
@@ -2495,6 +2540,9 @@
     <div class="editor-split" id="editorSplit">
     <div class="editor-shell" id="editorShell">
       <pre class="editor-highlight" id="editorHighlight" aria-hidden="true" data-clarity-mask="true"><code></code></pre>
+      <!-- Find-in-editor highlight layer (Ctrl+F). Mirrors the text but shows
+           only <mark> backgrounds, painted under the syntax overlay. -->
+      <pre class="editor-find-layer" id="editorFindLayer" aria-hidden="true"><code></code></pre>
       <textarea
         class="editor"
         id="editor"
@@ -2538,6 +2586,15 @@ or
         <button class="loaded-escape-btn" id="loadedEscapeBtn" type="button" title="Load this content into the editor textarea — may freeze the tab briefly for large files">
           Load into editor anyway
         </button>
+      </div>
+      <!-- Editor-scoped find bar (Ctrl+F). Hidden until opened. -->
+      <div class="editor-find-bar" id="editorFindBar" role="search">
+        <span class="editor-find-icon" aria-hidden="true">⌕</span>
+        <input id="editorFindInput" class="editor-find-input" type="text" placeholder="Find in editor…" aria-label="Find in editor" spellcheck="false" autocomplete="off">
+        <span id="editorFindCount" class="editor-find-count" aria-live="polite"></span>
+        <button id="editorFindPrev" class="editor-find-btn" type="button" title="Previous match (Shift+Enter)" aria-label="Previous match">↑</button>
+        <button id="editorFindNext" class="editor-find-btn" type="button" title="Next match (Enter)" aria-label="Next match">↓</button>
+        <button id="editorFindClose" class="editor-find-btn" type="button" title="Close (Esc)" aria-label="Close find">✕</button>
       </div>
       <div class="editor-toolbar">
         <div class="editor-status" id="editorStatus" aria-live="polite"></div>
@@ -3002,6 +3059,7 @@ or
     if (editorHighlightCode) editorHighlightCode.innerHTML = '';
     if (search) { search.value = ''; search.disabled = true; }
     if (searchCount) searchCount.classList.add('hidden');
+    if (findApi) findApi.close();
     expandBtn.disabled = true;
     collapseBtn.disabled = true;
     viewTableBtn.disabled = true;
@@ -3052,6 +3110,7 @@ or
     if (editorHighlightCode) editorHighlightCode.innerHTML = '';
     if (search) { search.value = ''; search.disabled = true; }
     if (searchCount) searchCount.classList.add('hidden');
+    if (findApi) findApi.close();
     if (expandBtn) expandBtn.disabled = true;
     if (collapseBtn) collapseBtn.disabled = true;
     if (viewTableBtn) viewTableBtn.disabled = true;
@@ -3458,6 +3517,7 @@ or
     // flow finalizes through afterParse instead of switchView (e.g. an upload).
     // Default (no class) = Source, which is the safe resting state.
     document.body.classList.toggle('full-view', v !== 'source');
+    if (findApi && v !== 'source') findApi.close(); // editor find is a Source-view tool
     viewTableBtn.classList.toggle('active', v === 'table');
     viewTreeBtn.classList.toggle('active', v === 'tree');
     viewSourceBtn.classList.toggle('active', v === 'source');
@@ -3564,6 +3624,9 @@ or
   });
 
   // ---------- Editor (the primary input surface) ----------
+  // Assigned by setupEditorFind() below; null until then so handlers wired
+  // before it (input/scroll) can guard with a simple truthy check (no TDZ).
+  let findApi = null;
   // Auto-render after the user pastes or types, debounced
   let editorTimer;
   if (editor) {
@@ -3576,16 +3639,18 @@ or
       editorStatus.textContent = text.trim() ? '…' : '';
       // Update syntax highlight overlay
       updateHighlight(text);
+      if (findApi) findApi.onEdit(); // keep find matches in sync with edits
       clearTimeout(editorTimer);
       editorTimer = setTimeout(() => tryRenderEditor(text), 350);
       if (typeof scheduleSave === 'function') scheduleSave();
     });
-    // Sync overlay scroll with textarea scroll (so they don't drift)
+    // Sync both overlays' scroll with the textarea (so they don't drift)
     editor.addEventListener('scroll', () => {
       if (editorHighlight) {
         editorHighlight.scrollTop = editor.scrollTop;
         editorHighlight.scrollLeft = editor.scrollLeft;
       }
+      if (findApi) findApi.syncScroll();
     });
     // Allow Ctrl/Cmd+Enter to force render immediately
     editor.addEventListener('keydown', (e) => {
@@ -7787,6 +7852,166 @@ or
     }
   });
 
+  // ---------- Find in editor (Ctrl+F, textarea-scoped) ----------
+  // Native find can't search inside a <textarea>, so when the cursor is in the
+  // editor we run our own: matches are drawn in the dedicated highlight layer
+  // (transparent text, only <mark> backgrounds show, under the syntax colors),
+  // and Enter / Shift+Enter cycle through them. Scope is the editor only —
+  // elsewhere the browser's native find-in-page is left untouched.
+  (function setupEditorFind() {
+    const bar = $('#editorFindBar');
+    const input = $('#editorFindInput');
+    const countEl = $('#editorFindCount');
+    const prevBtn = $('#editorFindPrev');
+    const nextBtn = $('#editorFindNext');
+    const closeBtn = $('#editorFindClose');
+    const layer = $('#editorFindLayer');
+    const layerCode = layer ? layer.querySelector('code') : null;
+    if (!editor || !bar || !input || !layer || !layerCode) return;
+
+    const MARK_CAP = 3000;       // cap rendered <mark>s (navigation still covers all)
+    const BIG_TEXT = 2_000_000;  // above this, skip the visual layer (still navigates)
+    const state = { open: false, query: '', matches: [], index: 0 };
+    let debounce;
+
+    function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+    function syncScroll() {
+      layer.scrollTop = editor.scrollTop;
+      layer.scrollLeft = editor.scrollLeft;
+    }
+
+    function compute(q) {
+      const out = [];
+      if (!q) return out;
+      const hay = editor.value.toLowerCase();
+      const needle = q.toLowerCase();
+      let from = 0, idx;
+      while ((idx = hay.indexOf(needle, from)) !== -1) {
+        out.push(idx);
+        from = idx + needle.length; // non-overlapping
+        if (out.length > 200000) break;
+      }
+      return out;
+    }
+
+    function renderLayer() {
+      if (!state.open || !state.query || state.matches.length === 0) { layerCode.innerHTML = ''; return; }
+      if (editor.value.length > BIG_TEXT) { layerCode.innerHTML = ''; return; } // navigate-only for huge text
+      const text = editor.value;
+      const qlen = state.query.length;
+      const cap = Math.min(state.matches.length, MARK_CAP);
+      let html = '', cursor = 0;
+      for (let i = 0; i < cap; i++) {
+        const start = state.matches[i], end = start + qlen;
+        html += esc(text.slice(cursor, start));
+        html += '<mark class="find-hit' + (i === state.index ? ' find-hit-current' : '') + '">' + esc(text.slice(start, end)) + '</mark>';
+        cursor = end;
+      }
+      html += esc(text.slice(cursor));
+      layerCode.innerHTML = html;
+      syncScroll();
+    }
+
+    function updateCount() {
+      const n = state.matches.length;
+      countEl.textContent = !state.query ? '' : (n === 0 ? '0/0' : (state.index + 1) + '/' + n);
+      bar.classList.toggle('no-match', !!state.query && n === 0);
+    }
+
+    function scrollToCurrent() {
+      if (!state.matches.length) return;
+      const cur = layerCode.querySelector('.find-hit-current');
+      if (cur) {
+        const y = cur.offsetTop, h = cur.offsetHeight, x = cur.offsetLeft, w = cur.offsetWidth;
+        if (y < editor.scrollTop + 40 || y + h > editor.scrollTop + editor.clientHeight - 40) {
+          editor.scrollTop = Math.max(0, y - editor.clientHeight / 2 + h / 2);
+        }
+        if (x < editor.scrollLeft + 24 || x + w > editor.scrollLeft + editor.clientWidth - 24) {
+          editor.scrollLeft = Math.max(0, x - editor.clientWidth / 2 + w / 2);
+        }
+      } else {
+        // Match beyond the render cap / huge text — approximate from line number.
+        const start = state.matches[state.index];
+        const lh = parseFloat(getComputedStyle(editor).lineHeight) || 20.8;
+        const line = (editor.value.slice(0, start).match(/\n/g) || []).length;
+        editor.scrollTop = Math.max(0, (16 + line * lh) - editor.clientHeight / 2);
+      }
+      syncScroll();
+    }
+
+    function run(opts) {
+      opts = opts || {};
+      state.query = input.value;
+      state.matches = compute(state.query);
+      if (!state.matches.length) state.index = 0;
+      else if (opts.keepIndex && state.index < state.matches.length) { /* keep current */ }
+      else {
+        const caret = editor.selectionStart || 0;
+        const i = state.matches.findIndex(s => s >= caret);
+        state.index = i === -1 ? 0 : i;
+      }
+      renderLayer();
+      updateCount();
+      if (state.matches.length) scrollToCurrent();
+    }
+
+    function go(delta) {
+      const n = state.matches.length;
+      if (!n) return;
+      state.index = (state.index + delta + n) % n;
+      renderLayer();
+      updateCount();
+      scrollToCurrent();
+    }
+
+    function open() {
+      if (document.body.classList.contains('full-view')) return;
+      state.open = true;
+      bar.classList.add('open');
+      // Seed from the textarea's current selection, if it's a short single line.
+      const sel = (editor.value || '').slice(editor.selectionStart || 0, editor.selectionEnd || 0);
+      if (sel && sel.length <= 120 && sel.indexOf('\n') === -1) input.value = sel;
+      input.focus();
+      input.select();
+      track('editor_find_opened');
+      run();
+    }
+
+    function close() {
+      state.open = false; state.query = ''; state.matches = []; state.index = 0;
+      bar.classList.remove('open', 'no-match');
+      layerCode.innerHTML = '';
+      countEl.textContent = '';
+    }
+
+    input.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(run, 90); });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); go(e.shiftKey ? -1 : 1); }
+      else if (e.key === 'Escape') { e.preventDefault(); close(); editor.focus(); }
+    });
+    if (prevBtn) prevBtn.addEventListener('click', () => { go(-1); input.focus(); });
+    if (nextBtn) nextBtn.addEventListener('click', () => { go(1); input.focus(); });
+    if (closeBtn) closeBtn.addEventListener('click', () => { close(); editor.focus(); });
+
+    findApi = {
+      // Returns true (and prevents default) when it claims the Ctrl+F.
+      maybeOpen(e) {
+        if (document.body.classList.contains('full-view')) return false;
+        const inEditor = document.activeElement === editor;
+        const inBar = bar.contains(document.activeElement);
+        if (!inEditor && !inBar) return false;
+        if (e) e.preventDefault();
+        open();
+        return true;
+      },
+      onEdit() { if (state.open) run({ keepIndex: true }); },
+      syncScroll() { if (state.open) syncScroll(); },
+      close() { close(); },
+      isOpen() { return state.open; },
+    };
+  })();
+
   // ---------- Utils ----------
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -7803,9 +8028,12 @@ or
     showToast._t = setTimeout(() => toast.classList.remove('show'), 1800);
   }
   document.addEventListener('keydown', (e) => {
-    // Don't hijack Ctrl/Cmd+F — let the browser's native find-in-page work,
-    // which is what most users expect. The search box already has its own
-    // visible affordance + placeholder, no shortcut needed.
+    // Ctrl/Cmd+F: when the cursor is in the editor (or its find bar), open the
+    // editor-scoped find — the browser's native find can't search inside a
+    // <textarea>. Everywhere else, native find-in-page is left untouched.
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'f' || e.key === 'F')) {
+      if (findApi && findApi.maybeOpen(e)) return;
+    }
     if ((e.ctrlKey || e.metaKey) && e.key === 'o') { e.preventDefault(); fileInput.click(); }
   });
 })();
