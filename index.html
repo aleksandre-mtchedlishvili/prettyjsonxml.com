@@ -2510,6 +2510,7 @@
       <span id="searchCount" class="search-count hidden"></span>
     </div>
     <button class="btn" id="btnCopyFull" type="button" title="Copy — Table view copies as TSV (paste into Excel / Sheets); Tree copies pretty-printed">📋 Copy</button>
+    <button class="btn" id="btnExportXlsx" type="button" title="Download the table as a formatted Excel .xlsx file (bold header, frozen top row, auto-fit columns)">📥 Excel</button>
   </div>
 </div>
 <!-- View-tabs row — Source / Table / Tree for the active version. -->
@@ -2825,6 +2826,7 @@ or
   const btnDecode = $('#btnDecode');
   const btnCopy = $('#btnCopy');
   const btnCopyFull = $('#btnCopyFull');
+  const btnExportXlsx = $('#btnExportXlsx');
   const splitPreview = $('#splitPreview');
   const splitPreviewBody = $('#splitPreviewBody');
   const splitPreviewHint = $('#splitPreviewHint');
@@ -4047,60 +4049,56 @@ or
     })(data, 0);
     return best;
   }
-  function jsonToTSV() {
-    const data = currentJson;
-    if (data === null || data === undefined) return null;
-    const rows = findPrimaryArray(data);
-    if (Array.isArray(rows) && rows.length) {
-      const objRows = rows.some(r => r && typeof r === 'object' && !Array.isArray(r));
-      if (objRows) {
-        const cols = [], seen = new Set();
-        for (const r of rows) if (r && typeof r === 'object' && !Array.isArray(r))
-          for (const k of Object.keys(r)) if (!seen.has(k)) { seen.add(k); cols.push(k); }
-        if (!cols.length) return null;
-        const lines = [cols.join('\t')];
-        for (const r of rows) {
-          const o = (r && typeof r === 'object' && !Array.isArray(r)) ? r : {};
-          lines.push(cols.map(c => tsvCell(o[c])).join('\t'));
+  // Shared table extraction (used by both TSV copy and .xlsx export). Returns
+  // { columns:[...], rows:[{col:value}] } with values kept RAW so XLSX can type
+  // them; null when the data isn't tabular.
+  function collectTableData() {
+    if (currentJson !== null && currentJson !== undefined) {
+      const arr = findPrimaryArray(currentJson);
+      if (Array.isArray(arr) && arr.length) {
+        const objRows = arr.some(r => r && typeof r === 'object' && !Array.isArray(r));
+        if (objRows) {
+          const cols = [], seen = new Set();
+          for (const r of arr) if (r && typeof r === 'object' && !Array.isArray(r))
+            for (const k of Object.keys(r)) if (!seen.has(k)) { seen.add(k); cols.push(k); }
+          if (cols.length) return { columns: cols, rows: arr.map(r => (r && typeof r === 'object' && !Array.isArray(r)) ? r : {}) };
         }
-        return { tsv: lines.join('\n'), rows: rows.length, cols: cols.length };
+        return { columns: ['value'], rows: arr.map(v => ({ value: v })) };
       }
-      return { tsv: 'value\n' + rows.map(tsvCell).join('\n'), rows: rows.length, cols: 1 };
+      if (currentJson && typeof currentJson === 'object' && !Array.isArray(currentJson)) {
+        const keys = Object.keys(currentJson);
+        if (keys.length) return { columns: ['key', 'value'], rows: keys.map(k => ({ key: k, value: currentJson[k] })) };
+      }
+      return null;
     }
-    if (data && typeof data === 'object' && !Array.isArray(data)) {
-      const keys = Object.keys(data);
-      if (!keys.length) return null;
-      const lines = ['key\tvalue'];
-      for (const k of keys) lines.push(tsvCell(k) + '\t' + tsvCell(data[k]));
-      return { tsv: lines.join('\n'), rows: keys.length, cols: 2 };
+    if (currentDoc && currentDoc.documentElement) {
+      let best = null, bestN = 0;
+      (function walk(el) {
+        const g = {};
+        for (const c of el.children) g[c.tagName] = (g[c.tagName] || 0) + 1;
+        for (const tag in g) if (g[tag] >= 2 && g[tag] > bestN) { bestN = g[tag]; best = { parent: el, tag }; }
+        for (const c of el.children) walk(c);
+      })(currentDoc.documentElement);
+      if (!best) return null;
+      const rowEls = Array.from(best.parent.children).filter(c => c.tagName === best.tag);
+      const cols = [], seen = new Set();
+      const addCol = k => { if (!seen.has(k)) { seen.add(k); cols.push(k); } };
+      const rows = rowEls.map(row => {
+        const o = {};
+        for (const a of row.attributes) { addCol('@' + a.name); o['@' + a.name] = a.value; }
+        for (const c of row.children) { addCol(c.tagName); o[c.tagName] = c.textContent.trim(); }
+        if (!row.children.length && !row.attributes.length) { addCol('value'); o.value = row.textContent.trim(); }
+        return o;
+      });
+      if (!cols.length) return null;
+      return { columns: cols, rows };
     }
     return null;
   }
-  function xmlToTSV() {
-    if (!currentDoc || !currentDoc.documentElement) return null;
-    // Pick the largest group of same-named sibling elements as the rows.
-    let best = null, bestN = 0;
-    (function walk(el) {
-      const g = {};
-      for (const c of el.children) g[c.tagName] = (g[c.tagName] || 0) + 1;
-      for (const tag in g) if (g[tag] >= 2 && g[tag] > bestN) { bestN = g[tag]; best = { parent: el, tag }; }
-      for (const c of el.children) walk(c);
-    })(currentDoc.documentElement);
-    if (!best) return null;
-    const rowEls = Array.from(best.parent.children).filter(c => c.tagName === best.tag);
-    const cols = [], seen = new Set();
-    const addCol = k => { if (!seen.has(k)) { seen.add(k); cols.push(k); } };
-    const data = rowEls.map(row => {
-      const o = {};
-      for (const a of row.attributes) { addCol('@' + a.name); o['@' + a.name] = a.value; }
-      for (const c of row.children) { addCol(c.tagName); o[c.tagName] = c.textContent.trim(); }
-      if (!row.children.length && !row.attributes.length) { addCol('value'); o.value = row.textContent.trim(); }
-      return o;
-    });
-    if (!cols.length) return null;
-    const lines = [cols.join('\t')];
-    for (const o of data) lines.push(cols.map(c => tsvCell(o[c])).join('\t'));
-    return { tsv: lines.join('\n'), rows: rowEls.length, cols: cols.length };
+  function tableToTSV(t) {
+    const lines = [t.columns.join('\t')];
+    for (const r of t.rows) lines.push(t.columns.map(c => tsvCell(r[c])).join('\t'));
+    return lines.join('\n');
   }
   function prettyDataText() {
     if (currentJson !== null && currentJson !== undefined) {
@@ -4110,12 +4108,101 @@ or
     if (src.trim().charAt(0) === '<') { const f = formatXmlSource(src); if (f) return f; }
     return src;
   }
+
+  // ----- Minimal, zero-dependency .xlsx writer (Table view -> Excel) -----
+  // Produces a real OOXML workbook (bold + frozen header row, auto-fit columns,
+  // numbers typed as numbers) packed as a STORE-only ZIP. No libraries.
+  const __crc32Table = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; } return t; })();
+  function crc32(bytes) { let c = 0xFFFFFFFF; for (let i = 0; i < bytes.length; i++) c = __crc32Table[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  function zipStore(files) {
+    const u16 = n => [n & 0xFF, (n >>> 8) & 0xFF];
+    const u32 = n => [n & 0xFF, (n >>> 8) & 0xFF, (n >>> 16) & 0xFF, (n >>> 24) & 0xFF];
+    const enc = new TextEncoder();
+    const parts = [], central = []; let offset = 0;
+    for (const f of files) {
+      const name = enc.encode(f.name), data = f.bytes, crc = crc32(data);
+      const lh = [0x50,0x4b,0x03,0x04, ...u16(20), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0)];
+      parts.push(new Uint8Array(lh), name, data);
+      const cd = [0x50,0x4b,0x01,0x02, ...u16(20), ...u16(20), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(offset)];
+      central.push(new Uint8Array(cd), name);
+      offset += lh.length + name.length + data.length;
+    }
+    let cSize = 0; for (const c of central) cSize += c.length;
+    const eocd = [0x50,0x4b,0x05,0x06, ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length), ...u32(cSize), ...u32(offset), ...u16(0)];
+    const all = [...parts, ...central, new Uint8Array(eocd)];
+    let total = 0; for (const a of all) total += a.length;
+    const out = new Uint8Array(total); let p = 0; for (const a of all) { out.set(a, p); p += a.length; }
+    return out;
+  }
+  function colLetter(n) { let s = ''; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; }
+  function escXml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;'); }
+  function buildXlsx(columns, rows, sheetName) {
+    const nCols = columns.length, nRows = rows.length + 1;
+    const width = columns.map(c => {
+      let w = String(c).length;
+      for (const r of rows) { const v = r[c]; const s = (v == null) ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v)); if (s.length > w) w = s.length; }
+      return Math.min(Math.max(w + 2, 8), 60);
+    });
+    let sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+      + `<dimension ref="A1:${colLetter(nCols)}${nRows}"/>`
+      + '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+      + '<sheetFormatPr defaultRowHeight="15"/><cols>';
+    width.forEach((w, i) => { sheet += `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`; });
+    sheet += '</cols><sheetData><row r="1">';
+    columns.forEach((c, i) => { sheet += `<c r="${colLetter(i + 1)}1" t="inlineStr" s="1"><is><t xml:space="preserve">${escXml(c)}</t></is></c>`; });
+    sheet += '</row>';
+    rows.forEach((r, ri) => {
+      const rn = ri + 2;
+      sheet += `<row r="${rn}">`;
+      columns.forEach((c, i) => {
+        const ref = colLetter(i + 1) + rn, v = r[c];
+        if (typeof v === 'number' && isFinite(v)) sheet += `<c r="${ref}" t="n"><v>${v}</v></c>`;
+        else if (typeof v === 'boolean') sheet += `<c r="${ref}" t="b"><v>${v ? 1 : 0}</v></c>`;
+        else if (v === null || v === undefined || v === '') sheet += `<c r="${ref}"/>`;
+        else { let s = (typeof v === 'object') ? JSON.stringify(v) : String(v); s = s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ''); sheet += `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${escXml(s)}</t></is></c>`; }
+      });
+      sheet += '</row>';
+    });
+    sheet += '</sheetData></worksheet>';
+    const safeName = (escXml(String(sheetName || 'Sheet1')).slice(0, 31)) || 'Sheet1';
+    const xmlFiles = [
+      ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+      ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+      ['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="' + safeName + '" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+      ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+      ['xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'],
+      ['xl/worksheets/sheet1.xml', sheet],
+    ];
+    const enc = new TextEncoder();
+    return zipStore(xmlFiles.map(([name, xml]) => ({ name, bytes: enc.encode(xml) })));
+  }
+  function exportBaseName() {
+    let n = (currentFileName || '').replace(/\.[^.]+$/, '').trim();
+    n = n.replace(/[^\w\-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40);
+    return n || 'table';
+  }
+  function exportTableXlsx() {
+    const t = collectTableData();
+    if (!t) { showToast('No table data to export — this view isn’t tabular'); return; }
+    let bytes;
+    try { bytes = buildXlsx(t.columns, t.rows, exportBaseName()); }
+    catch (e) { showToast('Excel export failed'); return; }
+    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = exportBaseName() + '.xlsx';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { try { URL.revokeObjectURL(url); a.remove(); } catch (_) {} }, 1500);
+    track('export_xlsx', { rows: t.rows.length, cols: t.columns.length });
+    showToast(`⬇ Exported ${t.rows.length} row${t.rows.length === 1 ? '' : 's'} × ${t.columns.length} col${t.columns.length === 1 ? '' : 's'} to Excel`);
+  }
   async function smartCopy() {
     const view = currentView;
     let text = '', note = '';
     if (view === 'table') {
-      const t = jsonToTSV() || xmlToTSV();
-      if (t) { text = t.tsv; note = `Copied ${t.rows} row${t.rows === 1 ? '' : 's'} × ${t.cols} col${t.cols === 1 ? '' : 's'} as TSV — paste into a spreadsheet`; }
+      const t = collectTableData();
+      if (t) { text = tableToTSV(t); note = `Copied ${t.rows.length} row${t.rows.length === 1 ? '' : 's'} × ${t.columns.length} col${t.columns.length === 1 ? '' : 's'} as TSV — paste into a spreadsheet`; }
       else { text = prettyDataText(); note = 'Copied as text'; }
     } else if (view === 'tree') {
       text = prettyDataText(); note = 'Copied pretty-printed';
@@ -4135,6 +4222,7 @@ or
   }
   if (btnCopy) btnCopy.addEventListener('click', smartCopy);
   if (btnCopyFull) btnCopyFull.addEventListener('click', smartCopy);
+  if (btnExportXlsx) btnExportXlsx.addEventListener('click', exportTableXlsx);
 
   // Auto-detects format, returns Promise<{ ok, text, format } | { ok: false, error }>.
   // Async because JSON ops are dispatched to a Worker — main thread stays
