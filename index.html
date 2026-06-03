@@ -2102,6 +2102,9 @@
   }
   .embed-node > .node-content { cursor: pointer; }
   .embed-node > .node-content:hover .embed-badge { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .tree-more-btn { cursor: pointer; color: var(--accent); font-size: 12.5px; font-weight: 600; }
+  .tree-more-btn:hover { text-decoration: underline; }
+  .view-building { padding: 48px 24px; text-align: center; color: var(--text-dim); font-size: 15px; }
   .toggle {
     display: inline-block;
     width: 14px;
@@ -3396,8 +3399,11 @@ or
   if (btnBackSource) btnBackSource.addEventListener('click', () => { track('view_switched', { view: 'source', source: 'back_button' }); switchView('source'); });
 
   function switchView(v) {
+    // Data is present if we have a parsed XML doc OR parsed JSON (whose synthetic
+    // doc may not be built yet — that's fine, render()/ensureCurrentDoc handles it).
+    const hasData = !!currentDoc || (currentJson !== null && currentJson !== undefined);
     // Block switching to Table / Tree before any data is loaded
-    if ((v === 'table' || v === 'tree') && !currentDoc) {
+    if ((v === 'table' || v === 'tree') && !hasData) {
       editor?.focus();
       return;
     }
@@ -3458,11 +3464,23 @@ or
         }
       }
       setTimeout(() => editor?.focus(), 10);
-    } else if (currentDoc) {
+    } else if (hasData) {
       // Table/Tree — reveal search + path-bar ("X elements · depth Y", set by
       // render() / updateStats()).
       if (pathBar) pathBar.classList.remove('hidden');
-      render();
+      // A big JSON's first Table open must build the synthetic DOM (jsonToXmlDoc),
+      // which can take a few seconds. Show a "Building…" placeholder and defer a
+      // tick so it paints — otherwise the click looks like a frozen tab.
+      const bigJsonFirstTable = v === 'table' && !viewCache.table && !currentDoc
+        && currentJson !== null && currentJson !== undefined
+        && currentSource && currentSource.length > 1024 * 1024;
+      if (bigJsonFirstTable) {
+        viewerRoot.classList.remove('hidden');
+        viewerRoot.innerHTML = '<div class="view-building">⏳ Building table from a large file… one moment</div>';
+        setTimeout(() => { viewerRoot.innerHTML = ''; render(); }, 24);
+      } else {
+        render();
+      }
     }
   }
 
@@ -4390,7 +4408,11 @@ or
     // pasted/typed new content. Drop the result if it no longer matches.
     if (text !== currentSource) return;
     currentJson = data; // keep original so Tree view can render JSON natively
-    currentDoc = jsonToXmlDoc(data);
+    // Build the synthetic XML DOM LAZILY (ensureCurrentDoc), not here. For big
+    // JSON, jsonToXmlDoc creates one DOM node per key/value (~400k for a 12 MB
+    // history export) which froze the tab when done on load. Source/Tree render
+    // straight from currentJson; only Table needs the synthetic doc.
+    currentDoc = null;
     afterParse();
   }
 
@@ -4484,7 +4506,9 @@ or
     if (pendingParseMeta && pendingParseMeta.sourceText === currentSource) {
       const meta = pendingParseMeta;
       pendingParseMeta = null;
-      const totalEls = currentDoc ? currentDoc.documentElement.getElementsByTagName('*').length + 1 : 0;
+      const totalEls = (currentJson !== null && currentJson !== undefined)
+        ? jsonNodeCount(currentJson, Infinity)
+        : (currentDoc ? currentDoc.documentElement.getElementsByTagName('*').length + 1 : 0);
       if (editorShell && editorStatus) {
         editorShell.classList.remove('invalid');
         editorShell.classList.add('valid');
@@ -4502,6 +4526,33 @@ or
         });
       }
     }
+  }
+
+  // Lazily build (and cache) the synthetic XML doc that Table view needs.
+  // No-op for XML (currentDoc already set at parse) and when there's no JSON.
+  // This is where the big-JSON cost is paid — on demand, never on load.
+  function ensureCurrentDoc() {
+    if (!currentDoc && currentJson !== null && currentJson !== undefined) {
+      currentDoc = jsonToXmlDoc(currentJson);
+    }
+    return currentDoc;
+  }
+  // Fast structural node count for a JSON value WITHOUT building any DOM —
+  // iterative (no recursion limits) and capped so it can't get expensive.
+  // Used to pick the tree's lazy-expand depth and the "N elements" status.
+  function jsonNodeCount(value, cap) {
+    let n = 0;
+    const stack = [value];
+    while (stack.length) {
+      const x = stack.pop();
+      n++;
+      if (n >= cap) return n;
+      if (x && typeof x === 'object') {
+        if (Array.isArray(x)) { for (let i = 0; i < x.length; i++) stack.push(x[i]); }
+        else { for (const k in x) { n++; stack.push(x[k]); } }
+      }
+    }
+    return n;
   }
 
   // Convert any JSON value into a synthetic XML document so the existing
@@ -4615,7 +4666,7 @@ or
     } else {
       // First-time render for this view; build then cache
       stats = { elements: 0, nodes: 0, depth: 0, images: 0 };
-      if (currentView === 'table') renderTable(currentDoc);
+      if (currentView === 'table') { ensureCurrentDoc(); renderTable(currentDoc); }
       else renderTree(currentDoc);
       // The render functions append exactly one wrapper to viewerRoot — cache it
       viewCache[currentView] = viewerRoot.lastElementChild;
@@ -6848,7 +6899,13 @@ or
   let TREE_LAZY_DEPTH = Infinity;
 
   function renderTree(doc, target) {
-    const totalElements = doc.getElementsByTagName('*').length + 1;
+    const isJson = currentJson !== null && currentJson !== undefined;
+    // Pick the lazy-expand depth WITHOUT building the synthetic DOM for JSON
+    // (that build is the costly part we defer). A quick capped node count is
+    // enough to know if the doc is "large".
+    const totalElements = isJson
+      ? jsonNodeCount(currentJson, 6000)
+      : (doc ? doc.getElementsByTagName('*').length + 1 : 0);
     // Lazy beyond depth 2 for large docs: root + its immediate children visible,
     // deeper levels deferred until expand.
     TREE_LAZY_DEPTH = totalElements > 5000 ? 2 : Infinity;
@@ -6859,9 +6916,9 @@ or
     // JSON sources: render as real JSON syntax ({ } [ ] "key": value)
     // so devs get the foldable formatted view they expect from a JSON viewer.
     // XML sources stick to the XML element rendering.
-    if (currentJson !== null && currentJson !== undefined) {
+    if (isJson) {
       renderTreeJsonValue(currentJson, tree, 1, undefined, false);
-    } else {
+    } else if (doc && doc.documentElement) {
       renderTreeNode(doc.documentElement, tree, 1);
     }
     wrap.appendChild(tree);
@@ -6872,7 +6929,8 @@ or
   function renderSplitTree() {
     if (!splitPreviewBody) return;
     splitPreviewBody.innerHTML = '';
-    if (!currentDoc) { showSplitEmpty(); return; }
+    const hasData = !!currentDoc || (currentJson !== null && currentJson !== undefined);
+    if (!hasData) { showSplitEmpty(); return; }
     try {
       renderTree(currentDoc, splitPreviewBody);
       if (splitPreviewHint) splitPreviewHint.textContent = 'live preview';
@@ -7221,14 +7279,38 @@ or
 
     const childContainer = document.createElement('div');
     childContainer.className = 'node-children';
-    items.forEach((entry, idx) => {
-      const isLast = idx === items.length - 1;
-      if (isArray) {
-        renderTreeJsonValue(entry, childContainer, depth + 1, undefined, !isLast);
-      } else {
-        renderTreeJsonValue(entry.val, childContainer, depth + 1, entry.key, !isLast);
+    // Width cap: a very wide collection (e.g. a 17k-element array) would render
+    // hundreds of thousands of DOM nodes and freeze the tab. Render the first
+    // CHUNK eagerly, then a "show more" row that reveals the next CHUNK on click.
+    const CHUNK = 200;
+    let rendered = 0;
+    const renderChunk = () => {
+      const end = Math.min(rendered + CHUNK, items.length);
+      for (let idx = rendered; idx < end; idx++) {
+        const entry = items[idx];
+        const isLast = idx === items.length - 1;
+        if (isArray) renderTreeJsonValue(entry, childContainer, depth + 1, undefined, !isLast);
+        else renderTreeJsonValue(entry.val, childContainer, depth + 1, entry.key, !isLast);
       }
-    });
+      rendered = end;
+    };
+    renderChunk();
+    if (rendered < items.length) {
+      const more = document.createElement('div');
+      more.className = 'node leaf tree-more';
+      const hidden = () => items.length - rendered;
+      const setLabel = (btn) => { btn.textContent = `▾ show ${Math.min(CHUNK, hidden())} more · ${hidden().toLocaleString()} ${isArray ? 'items' : 'keys'} hidden`; };
+      more.innerHTML = '<span class="node-content"><span class="toggle"></span><span class="tree-more-btn"></span></span>';
+      const btn = more.querySelector('.tree-more-btn');
+      setLabel(btn);
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        renderChunk();
+        childContainer.appendChild(more); // keep the "show more" row at the bottom
+        if (rendered >= items.length) more.remove(); else setLabel(btn);
+      });
+      childContainer.appendChild(more);
+    }
     wrapper.appendChild(childContainer);
 
     // Closing bracket on its own line (visually aligned via existing tree indentation)
