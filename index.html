@@ -7710,20 +7710,24 @@ or
         childContainer.className = 'node-children';
         wrapper.appendChild(childContainer);
         let built = false;
+        const doBuild = () => {
+          if (built) return; built = true;
+          try {
+            if (embed.kind === 'json') renderTreeJsonValue(embed.value, childContainer, depth + 1, undefined, false);
+            else if (embed.doc && embed.doc.documentElement) renderTreeElement(embed.doc.documentElement, childContainer, depth + 1);
+          } catch (_) {
+            const er = document.createElement('div'); er.className = 'node leaf';
+            er.innerHTML = '<span class="node-content"><span class="toggle"></span><span class="text-muted">⚠ couldn’t parse embedded content</span></span>';
+            childContainer.appendChild(er);
+          }
+        };
+        // Deep-search reveal hooks: build the embedded structure on demand.
+        wrapper.dataset.embed = embed.kind;
+        wrapper.__buildEmbed = doBuild;
         head.addEventListener('click', () => {
           if (window.getSelection().toString().length > 0) return;
           wrapper.classList.toggle('collapsed');
-          if (!built) {
-            built = true;
-            try {
-              if (embed.kind === 'json') renderTreeJsonValue(embed.value, childContainer, depth + 1, undefined, false);
-              else if (embed.doc && embed.doc.documentElement) renderTreeElement(embed.doc.documentElement, childContainer, depth + 1);
-            } catch (_) {
-              const er = document.createElement('div'); er.className = 'node leaf';
-              er.innerHTML = '<span class="node-content"><span class="toggle"></span><span class="text-muted">⚠ couldn’t parse embedded content</span></span>';
-              childContainer.appendChild(er);
-            }
-          }
+          doBuild();
         });
         parent.appendChild(wrapper);
         return;
@@ -7778,6 +7782,7 @@ or
     // CHUNK eagerly, then a "show more" row that reveals the next CHUNK on click.
     const CHUNK = 200;
     let rendered = 0;
+    let moreRow = null;
     const renderChunk = () => {
       const end = Math.min(rendered + CHUNK, items.length);
       for (let idx = rendered; idx < end; idx++) {
@@ -7785,26 +7790,34 @@ or
         const isLast = idx === items.length - 1;
         if (isArray) renderTreeJsonValue(entry, childContainer, depth + 1, undefined, !isLast);
         else renderTreeJsonValue(entry.val, childContainer, depth + 1, entry.key, !isLast);
+        // Tag each child with its ordinal so deep-search can locate it by path.
+        if (childContainer.lastElementChild) childContainer.lastElementChild.dataset.ord = idx;
       }
       rendered = end;
     };
+    const refreshMore = () => {
+      if (rendered >= items.length) { if (moreRow) { moreRow.remove(); moreRow = null; } return; }
+      if (!moreRow) {
+        moreRow = document.createElement('div');
+        moreRow.className = 'node leaf tree-more';
+        moreRow.innerHTML = '<span class="node-content"><span class="toggle"></span><span class="tree-more-btn"></span></span>';
+        moreRow.querySelector('.tree-more-btn').addEventListener('click', (e) => { e.stopPropagation(); renderMore(); });
+      }
+      const hidden = items.length - rendered;
+      moreRow.querySelector('.tree-more-btn').textContent = `▾ show ${Math.min(CHUNK, hidden)} more · ${hidden.toLocaleString()} ${isArray ? 'items' : 'keys'} hidden`;
+      childContainer.appendChild(moreRow); // keep the "show more" row at the bottom
+    };
+    const renderMore = () => { renderChunk(); refreshMore(); };
     renderChunk();
-    if (rendered < items.length) {
-      const more = document.createElement('div');
-      more.className = 'node leaf tree-more';
-      const hidden = () => items.length - rendered;
-      const setLabel = (btn) => { btn.textContent = `▾ show ${Math.min(CHUNK, hidden())} more · ${hidden().toLocaleString()} ${isArray ? 'items' : 'keys'} hidden`; };
-      more.innerHTML = '<span class="node-content"><span class="toggle"></span><span class="tree-more-btn"></span></span>';
-      const btn = more.querySelector('.tree-more-btn');
-      setLabel(btn);
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        renderChunk();
-        childContainer.appendChild(more); // keep the "show more" row at the bottom
-        if (rendered >= items.length) more.remove(); else setLabel(btn);
-      });
-      childContainer.appendChild(more);
-    }
+    refreshMore();
+    // Deep-search reveal hook: render chunks until item index `n` exists in the
+    // DOM (bounded so a pathological list can't freeze the tab).
+    wrapper.__renderUpTo = (n) => {
+      const REVEAL_CAP = 5000;
+      const target = Math.min(n + 1, items.length, REVEAL_CAP);
+      let guard = 0;
+      while (rendered < target && guard++ < 400) renderMore();
+    };
     wrapper.appendChild(childContainer);
 
     // Closing bracket on its own line (visually aligned via existing tree indentation)
@@ -8362,11 +8375,76 @@ or
     };
   })();
 
+  // ---------- Deep tree search (data-model find + reveal) ----------
+  // For JSON, walk the parsed data (currentJson) to find EVERY match — even ones
+  // hidden in collapsed nodes, beyond the 200-row render cap, or inside embedded
+  // JSON strings. Each match is a path of steps from the root: {ord:i} (i-th
+  // child of a collection) or {embed:true} (descend into a string's embedded JSON).
+  function jsonDeepFind(root, needleLower, cap) {
+    const out = []; cap = cap || 6000;
+    const visit = (val, path, keyLabel) => {
+      if (out.length >= cap) return;
+      if (keyLabel != null && String(keyLabel).toLowerCase().indexOf(needleLower) !== -1) {
+        out.push({ path, hit: 'key' });
+        if (out.length >= cap) return;
+      }
+      if (val === null || typeof val !== 'object') {
+        const s = (val === null) ? 'null' : String(val);
+        if (s.toLowerCase().indexOf(needleLower) !== -1) out.push({ path, hit: 'value' });
+        if (typeof val === 'string') {
+          const t = val.trim();
+          if (t && (t[0] === '{' || t[0] === '[') && typeof detectEmbeddedStructure === 'function') {
+            const embed = detectEmbeddedStructure(val);
+            if (embed && embed.kind === 'json' && embed.value && typeof embed.value === 'object') {
+              visit(embed.value, path.concat({ embed: true }), undefined);
+            }
+          }
+        }
+        return;
+      }
+      if (Array.isArray(val)) {
+        for (let i = 0; i < val.length && out.length < cap; i++) visit(val[i], path.concat({ ord: i }), undefined);
+      } else {
+        const keys = Object.keys(val);
+        for (let i = 0; i < keys.length && out.length < cap; i++) visit(val[keys[i]], path.concat({ ord: i }), keys[i]);
+      }
+    };
+    visit(root, [], undefined);
+    return out;
+  }
+  // Walk a match path in the rendered tree, expanding collapsed nodes, building
+  // embeds, and rendering chunks (bounded) so the target node enters the DOM.
+  // Returns the matched node element (or the deepest reached if a huge list
+  // exceeds the reveal cap).
+  function revealJsonMatch(path) {
+    const root = splitPreviewBody && splitPreviewBody.querySelector('.tree > .node');
+    if (!root) return null;
+    const expand = el => { if (el && el.classList.contains('collapsed')) el.classList.remove('collapsed'); };
+    let node = root; expand(node);
+    for (const step of path) {
+      if (!node) return null;
+      if (step.embed) {
+        if (node.__buildEmbed) node.__buildEmbed();
+        expand(node);
+        const cc = node.querySelector(':scope > .node-children');
+        node = cc ? cc.querySelector(':scope > .node') : null;
+        expand(node);
+        continue;
+      }
+      if (node.__renderUpTo) node.__renderUpTo(step.ord);
+      const cc = node.querySelector(':scope > .node-children');
+      if (!cc) return node; // reached a leaf unexpectedly — stop here
+      const child = cc.querySelector(':scope > .node[data-ord="' + step.ord + '"]');
+      if (!child) return node; // beyond the reveal cap — stop at the parent
+      node = child; expand(node);
+    }
+    return node;
+  }
+
   // ---------- Find in the live tree preview (Ctrl+F when the pointer is over it) ----------
-  // The tree preview isn't focusable (no caret), so Ctrl+F routes here by HOVER.
-  // Matches are found by walking the rendered text nodes and wrapping them in
-  // <mark>; only currently-rendered nodes are searched (collapsed / lazily-loaded
-  // branches aren't) — the same limitation as the browser's native find.
+  // Routed here by HOVER (the tree isn't focusable). JSON uses the deep search
+  // above (finds matches anywhere, reveals + scrolls to each); XML falls back to
+  // a DOM-walk over rendered nodes.
   (function setupPreviewFind() {
     const pane = $('#splitPreview');
     const body = $('#splitPreviewBody');
@@ -8378,10 +8456,11 @@ or
     const closeBtn = $('#previewFindClose');
     if (!pane || !body || !bar || !input) return;
 
-    const state = { open: false, query: '', marks: [], index: 0 };
+    const state = { open: false, query: '', marks: [], index: 0, deep: false, deepMatches: [] };
     let over = false, debounce;
     pane.addEventListener('mouseenter', () => { over = true; });
     pane.addEventListener('mouseleave', () => { over = false; });
+    const isJsonTree = () => currentJson !== null && currentJson !== undefined;
 
     function clearMarks() {
       body.querySelectorAll('mark.preview-find-hit').forEach(h => {
@@ -8427,7 +8506,7 @@ or
     }
 
     function updateCount() {
-      const n = state.marks.length;
+      const n = state.deep ? state.deepMatches.length : state.marks.length;
       countEl.textContent = !state.query ? '' : (n === 0 ? '0/0' : (state.index + 1) + '/' + n);
       bar.classList.toggle('no-match', !!state.query && n === 0);
     }
@@ -8443,7 +8522,19 @@ or
       const prevIndex = state.index;
       clearMarks();
       state.query = input.value;
-      if (!state.query) { state.index = 0; updateCount(); return; }
+      if (!state.query) { state.index = 0; state.deep = false; state.deepMatches = []; updateCount(); return; }
+      // JSON tree: DEEP search over the full data model (finds matches in
+      // collapsed nodes, beyond the 200-row render cap, and inside embedded
+      // JSON) — then reveal + scroll to each match. XML stays on DOM-walk.
+      if (isJsonTree() && typeof jsonDeepFind === 'function') {
+        state.deep = true;
+        state.deepMatches = jsonDeepFind(currentJson, state.query.toLowerCase(), 6000);
+        if (!state.deepMatches.length) { state.index = 0; updateCount(); return; }
+        state.index = (opts.keepIndex && prevIndex < state.deepMatches.length) ? prevIndex : 0;
+        gotoDeep();
+        return;
+      }
+      state.deep = false;
       state.marks = buildMarks(state.query);
       if (!state.marks.length) { state.index = 0; updateCount(); return; }
       state.index = (opts.keepIndex && prevIndex < state.marks.length) ? prevIndex : 0;
@@ -8451,7 +8542,30 @@ or
       updateCount();
     }
 
+    // Deep mode: reveal the current match's path in the tree (build embeds,
+    // render chunks), then highlight every rendered match (yellow) + the
+    // current one (orange) and scroll to it.
+    function gotoDeep() {
+      const m = state.deepMatches[state.index];
+      const node = (m && typeof revealJsonMatch === 'function') ? revealJsonMatch(m.path) : null;
+      clearMarks();
+      state.marks = buildMarks(state.query.toLowerCase());
+      if (node) {
+        const contentEl = node.querySelector(':scope > .node-content') || node;
+        const mk = contentEl.querySelector('mark.preview-find-hit') || node.querySelector('mark.preview-find-hit');
+        if (mk) mk.classList.add('preview-find-hit-current');
+        node.scrollIntoView({ block: 'center', inline: 'nearest' });
+      }
+      updateCount();
+    }
+
     function go(delta) {
+      if (state.deep) {
+        const n = state.deepMatches.length; if (!n) return;
+        state.index = (state.index + delta + n) % n;
+        gotoDeep();
+        return;
+      }
       const n = state.marks.length; if (!n) return;
       state.index = (state.index + delta + n) % n;
       setCurrent(true); updateCount();
@@ -8466,6 +8580,7 @@ or
     }
     function close() {
       state.open = false; clearMarks(); state.query = ''; state.index = 0;
+      state.deep = false; state.deepMatches = [];
       bar.classList.remove('open', 'no-match'); countEl.textContent = '';
     }
 
