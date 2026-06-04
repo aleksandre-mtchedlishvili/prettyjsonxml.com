@@ -3417,6 +3417,13 @@ or
       setTimeout(() => parseContent(v.text, v.name || currentFileName || (v.label || '')), 0);
       return;
     }
+    // Normal version: restore its text AND clear any big-file overlay /
+    // placeholder / out-of-sync flag left behind by a previously-active big tab
+    // (otherwise the big tab's "X MB loaded" overlay lingers over this tab).
+    if (typeof hideLoadedOverlay === 'function') hideLoadedOverlay();
+    editor.placeholder = DEFAULT_EDITOR_PLACEHOLDER;
+    editorOutOfSync = false;
+    currentFileName = v.name || '';
     editor.value = v.text;
     if (typeof updateHighlight === 'function') updateHighlight(v.text);
     editor.dispatchEvent(new Event('input', { bubbles: true }));
