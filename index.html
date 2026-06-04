@@ -2924,6 +2924,7 @@ or
                                 // (avoids re-setting a multi-MB textarea every time
                                 // the user switches to Source view)
   let currentView = 'source';
+  let __viewFromPop = false; // true while switchView() is driven by a popstate (so it doesn't re-push history)
   let stats = { elements: 0, nodes: 0, depth: 0, images: 0 };
 
   // Snapshot the editor's original placeholder so we can restore it whenever
@@ -3531,7 +3532,22 @@ or
   // the split strip jumps to the full table; "← Back" in the table toolbar
   // returns to the editor.
   if (btnGoTable) btnGoTable.addEventListener('click', () => { track('view_switched', { view: 'table', source: 'split_button' }); switchView('table'); });
-  if (btnBackSource) btnBackSource.addEventListener('click', () => { track('view_switched', { view: 'source', source: 'back_button' }); switchView('source'); });
+  if (btnBackSource) btnBackSource.addEventListener('click', () => {
+    track('view_switched', { view: 'source', source: 'back_button' });
+    // Real history nav so the in-app "← Back" and the browser Back button agree
+    // (consumes the pushed Table/Tree entry instead of stacking a new one).
+    if (history.state && history.state.pjxView) history.back();
+    else switchView('source');
+  });
+  // Back/Forward navigate between Source and Table/Tree. On load, clear any
+  // stale view marker preserved across a reload (we always start in Source).
+  try { if (history.state && history.state.pjxView) history.replaceState({}, ''); } catch (_) {}
+  window.addEventListener('popstate', (e) => {
+    const v = (e.state && e.state.pjxView) || 'source';
+    __viewFromPop = true;
+    try { if (typeof switchView === 'function') switchView(v); }
+    finally { __viewFromPop = false; }
+  });
 
   function switchView(v) {
     // Data is present if we have a parsed XML doc OR parsed JSON (whose synthetic
@@ -3542,7 +3558,24 @@ or
       editor?.focus();
       return;
     }
+    const __prevView = currentView;
     currentView = v;
+    // Browser-history integration: entering a full view (Table/Tree) pushes a
+    // history entry so the browser Back button returns to Source instead of
+    // leaving the site; switching Table<->Tree replaces (one level); returning
+    // to Source clears our marker. Skipped when the switch itself came from a
+    // popstate (Back/Forward), so we don't re-push.
+    if (!__viewFromPop && v !== __prevView) {
+      try {
+        const curIsFull = !!(history.state && history.state.pjxView);
+        if (v !== 'source') {
+          if (curIsFull) history.replaceState({ pjxView: v }, '');
+          else history.pushState({ pjxView: v }, '');
+        } else if (curIsFull) {
+          history.replaceState({}, '');
+        }
+      } catch (_) {}
+    }
     // Full-view (Table/Tree) chrome — the "← Back" button and Search — is
     // shown via this body class, NOT inline styles, so it's correct even when a
     // flow finalizes through afterParse instead of switchView (e.g. an upload).
