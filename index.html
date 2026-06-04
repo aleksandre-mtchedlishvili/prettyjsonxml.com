@@ -7513,6 +7513,13 @@ or
     let pendingChildren = null;   // children to lazy-render on first expand
     let pendingDepth = depth + 1;
 
+    // Render children, tagging each with its ordinal (index in the filtered
+    // childNodes) so deep-search can locate any node by path.
+    const renderKids = (nodes, d) => nodes.forEach((n, i) => {
+      renderTreeNode(n, childContainer, d);
+      if (childContainer.lastElementChild) childContainer.lastElementChild.dataset.ord = i;
+    });
+
     if (hasChildren && !onlyTextChild) {
       childContainer = document.createElement('div');
       childContainer.className = 'node-children';
@@ -7520,8 +7527,10 @@ or
         // Lazy: defer rendering until the user expands this node.
         wrapper.classList.add('collapsed');
         pendingChildren = childNodes;
+        // Deep-search reveal hook: build the deferred children on demand.
+        wrapper.__buildChildren = () => { if (pendingChildren) { renderKids(pendingChildren, pendingDepth); pendingChildren = null; } };
       } else {
-        childNodes.forEach(n => renderTreeNode(n, childContainer, depth + 1));
+        renderKids(childNodes, depth + 1);
       }
       wrapper.appendChild(childContainer);
     }
@@ -7531,10 +7540,7 @@ or
       if (window.getSelection().toString().length > 0) return;
       if (!hasChildren) return;
       // On first expand of a lazy node, build its children now.
-      if (pendingChildren && wrapper.classList.contains('collapsed')) {
-        pendingChildren.forEach(n => renderTreeNode(n, childContainer, pendingDepth));
-        pendingChildren = null;
-      }
+      if (wrapper.__buildChildren && wrapper.classList.contains('collapsed')) wrapper.__buildChildren();
       wrapper.classList.toggle('collapsed');
     });
 
@@ -8441,10 +8447,55 @@ or
     return node;
   }
 
+  // XML deep search — same idea as JSON, over the parsed currentDoc. A match can
+  // be in an element's tag name, an attribute (name or value), or text content.
+  // Path steps are child ordinals (index in the filtered childNodes, matching
+  // renderTreeElement) from the document root element.
+  function xmlDeepFind(rootEl, needleLower, cap) {
+    const out = []; cap = cap || 6000;
+    const kids = el => Array.from(el.childNodes).filter(n =>
+      n.nodeType === 1 || n.nodeType === 8 || n.nodeType === 4 || (n.nodeType === 3 && n.nodeValue.trim()));
+    const visit = (el, path) => {
+      if (out.length >= cap) return;
+      if (el.tagName && el.tagName.toLowerCase().indexOf(needleLower) !== -1) out.push({ path, hit: 'tag' });
+      for (const a of el.attributes) {
+        if (out.length >= cap) return;
+        if (a.name.toLowerCase().indexOf(needleLower) !== -1 || String(a.value).toLowerCase().indexOf(needleLower) !== -1) { out.push({ path, hit: 'attr' }); break; }
+      }
+      const cn = kids(el);
+      if (cn.length === 1 && cn[0].nodeType === 3) { // inline text element
+        if (cn[0].nodeValue.toLowerCase().indexOf(needleLower) !== -1) out.push({ path, hit: 'text' });
+        return;
+      }
+      for (let i = 0; i < cn.length && out.length < cap; i++) {
+        const c = cn[i];
+        if (c.nodeType === 1) visit(c, path.concat({ ord: i }));
+        else if ((c.nodeValue || '').toLowerCase().indexOf(needleLower) !== -1) out.push({ path: path.concat({ ord: i }), hit: 'text' });
+      }
+    };
+    visit(rootEl, []);
+    return out;
+  }
+  function revealXmlMatch(path) {
+    const root = splitPreviewBody && splitPreviewBody.querySelector('.tree > .node');
+    if (!root) return null;
+    const expand = el => { if (!el) return; if (el.__buildChildren) el.__buildChildren(); if (el.classList.contains('collapsed')) el.classList.remove('collapsed'); };
+    let node = root; expand(node);
+    for (const step of path) {
+      if (!node) return null;
+      const cc = node.querySelector(':scope > .node-children');
+      if (!cc) return node;
+      const child = cc.querySelector(':scope > .node[data-ord="' + step.ord + '"]');
+      if (!child) return node;
+      node = child; expand(node);
+    }
+    return node;
+  }
+
   // ---------- Find in the live tree preview (Ctrl+F when the pointer is over it) ----------
-  // Routed here by HOVER (the tree isn't focusable). JSON uses the deep search
-  // above (finds matches anywhere, reveals + scrolls to each); XML falls back to
-  // a DOM-walk over rendered nodes.
+  // Routed here by HOVER (the tree isn't focusable). Both JSON and XML use the
+  // deep search above — it finds matches anywhere (collapsed/lazy nodes, beyond
+  // the render cap, inside embedded JSON) and reveals + scrolls to each.
   (function setupPreviewFind() {
     const pane = $('#splitPreview');
     const body = $('#splitPreviewBody');
@@ -8526,15 +8577,22 @@ or
       // JSON tree: DEEP search over the full data model (finds matches in
       // collapsed nodes, beyond the 200-row render cap, and inside embedded
       // JSON) — then reveal + scroll to each match. XML stays on DOM-walk.
+      const ql = state.query.toLowerCase();
       if (isJsonTree() && typeof jsonDeepFind === 'function') {
-        state.deep = true;
-        state.deepMatches = jsonDeepFind(currentJson, state.query.toLowerCase(), 6000);
+        state.deep = 'json';
+        state.deepMatches = jsonDeepFind(currentJson, ql, 6000);
+      } else if (currentDoc && currentDoc.documentElement && typeof xmlDeepFind === 'function') {
+        state.deep = 'xml';
+        state.deepMatches = xmlDeepFind(currentDoc.documentElement, ql, 6000);
+      } else {
+        state.deep = false;
+      }
+      if (state.deep) {
         if (!state.deepMatches.length) { state.index = 0; updateCount(); return; }
         state.index = (opts.keepIndex && prevIndex < state.deepMatches.length) ? prevIndex : 0;
         gotoDeep();
         return;
       }
-      state.deep = false;
       state.marks = buildMarks(state.query);
       if (!state.marks.length) { state.index = 0; updateCount(); return; }
       state.index = (opts.keepIndex && prevIndex < state.marks.length) ? prevIndex : 0;
@@ -8547,7 +8605,7 @@ or
     // current one (orange) and scroll to it.
     function gotoDeep() {
       const m = state.deepMatches[state.index];
-      const node = (m && typeof revealJsonMatch === 'function') ? revealJsonMatch(m.path) : null;
+      const node = m ? (state.deep === 'xml' ? revealXmlMatch(m.path) : revealJsonMatch(m.path)) : null;
       clearMarks();
       state.marks = buildMarks(state.query.toLowerCase());
       if (node) {
