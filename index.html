@@ -8349,6 +8349,7 @@ or
       // the preview win even while the editor textarea holds focus.
       ownsFocus() { return bar.contains(document.activeElement); },
       isMouseOver() { return overEditor; },
+      step(delta) { if (state.open) go(delta); }, // F3 / Shift+F3 next/prev
       onEdit() { if (state.open) run({ keepIndex: true }); },
       syncScroll() { if (state.open) syncScroll(); },
     };
@@ -8475,6 +8476,7 @@ or
       isOpen() { return state.open; },
       ownsFocus() { return bar.contains(document.activeElement); },
       isMouseOver() { return over; },
+      step(delta) { if (state.open) go(delta); }, // F3 / Shift+F3 next/prev
       // Re-apply after the live preview re-renders (its innerHTML was replaced).
       refresh() { if (state.open && state.query) run({ keepIndex: true }); },
     };
@@ -8496,6 +8498,13 @@ or
     showToast._t = setTimeout(() => toast.classList.remove('show'), 1800);
   }
   document.addEventListener('keydown', (e) => {
+    // F3 / Shift+F3: while an in-app find is open, step to the next / previous
+    // match (and suppress the browser's find-next so they stay in sync). If no
+    // in-app find is active, fall through and let the browser handle F3 normally.
+    if (e.key === 'F3') {
+      if (findApi && findApi.isOpen()) { e.preventDefault(); findApi.step(e.shiftKey ? -1 : 1); return; }
+      if (previewFindApi && previewFindApi.isOpen()) { e.preventDefault(); previewFindApi.step(e.shiftKey ? -1 : 1); return; }
+    }
     // Ctrl/Cmd+F: in Source view, route to a pane. Native find can't search a
     // <textarea> (left) and there's no caret in the rendered tree (right), so we
     // pick the side: a find bar that already has focus wins (re-focus it), then
