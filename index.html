@@ -858,14 +858,14 @@
      reads as "forget everything", not as another tab. */
   .ver-clear {
     display: inline-flex; align-items: center; gap: 5px;
-    margin-left: 8px; padding: 0 12px; height: 30px; font-size: 12px; font-weight: 600; line-height: 1;
-    background: rgba(220, 38, 38, 0.08); color: var(--danger, #dc2626);
-    border: 1px solid rgba(220, 38, 38, 0.55); border-radius: 8px; cursor: pointer; white-space: nowrap;
+    margin-left: 8px; padding: 0 12px; height: 30px; font-size: 12px; font-weight: 500; line-height: 1;
+    background: var(--bg-elev-2); color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: 8px; cursor: pointer; white-space: nowrap;
     transition: background .12s, border-color .12s, color .12s, box-shadow .12s;
   }
   .ver-clear:hover {
-    background: var(--danger, #dc2626); color: #fff; border-color: var(--danger, #dc2626);
-    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.28);
+    color: #fff; background: var(--danger, #dc2626); border-color: var(--danger, #dc2626);
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
   }
   /* "Session-only" marker — a small amber dot on tabs that won't be remembered
      across reloads (too large, or over the ~3 MB storage budget). The tab's
@@ -3378,7 +3378,7 @@ or
       clearAll.type = 'button';
       clearAll.className = 'ver-clear';
       clearAll.title = 'Close all tabs and clear the saved session';
-      clearAll.textContent = '🗑 Clear all';
+      clearAll.textContent = '🗑 Clear tabs';
       clearAll.addEventListener('click', () => {
         const n = versions.length;
         if (window.confirm(`Clear all ${n} tab${n > 1 ? 's' : ''} and forget the saved session?`)) {
