@@ -7572,7 +7572,9 @@ or
     );
     const hasChildren = childNodes.length > 0;
     const onlyTextChild = childNodes.length === 1 && childNodes[0].nodeType === Node.TEXT_NODE;
-    if (!hasChildren) wrapper.classList.add('leaf');
+    // A text-only element (e.g. <code>KTG</code>) renders its text inline, so there's
+    // nothing to expand — treat it as a leaf (no disclosure toggle), like a JSON scalar.
+    if (!hasChildren || onlyTextChild) wrapper.classList.add('leaf');
 
     const head = document.createElement('span');
     head.className = 'node-content';
@@ -7633,7 +7635,7 @@ or
     head.addEventListener('click', (e) => {
       if (e.target.tagName === 'IMG') return;
       if (window.getSelection().toString().length > 0) return;
-      if (!hasChildren) return;
+      if (!hasChildren || onlyTextChild) return;
       // On first expand of a lazy node, build its children now.
       if (wrapper.__buildChildren && wrapper.classList.contains('collapsed')) wrapper.__buildChildren();
       wrapper.classList.toggle('collapsed');
