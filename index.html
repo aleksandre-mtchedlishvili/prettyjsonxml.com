@@ -2145,17 +2145,20 @@
   .node-content:hover { background: var(--bg-elev-2); }
   /* Copy-on-hover: a small button appears at the right of the hovered row and
      copies that node's whole subtree (JSON) or element (XML) to the clipboard. */
-  .tree-copy-btn {
+  .tree-actions {
     position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
     display: none; align-items: center; gap: 4px;
+  }
+  .node-content:hover > .tree-actions { display: inline-flex; }
+  .tree-act-btn {
+    display: inline-flex; align-items: center; gap: 4px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     font-size: 10.5px; line-height: 1; white-space: nowrap;
     color: var(--text-dim); background: var(--bg-elev);
     border: 1px solid var(--border); border-radius: 5px;
     padding: 2px 6px; cursor: pointer; user-select: none;
   }
-  .node-content:hover > .tree-copy-btn { display: inline-flex; }
-  .tree-copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .tree-act-btn:hover { color: var(--accent); border-color: var(--accent); }
   .tree-copy-btn.copied { color: #fff; background: var(--attr-val); border-color: var(--attr-val); }
   .node-children {
     margin-left: 12px;
@@ -7447,6 +7450,27 @@ or
   let TREE_LAZY_DEPTH = Infinity;
 
   const TREE_COPY_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  const TREE_NEWTAB_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+  // Open a tree node's subtree as its own new version tab (drill-in): serialize
+  // the branch (pretty JSON / element XML), push a version, switch to it.
+  function openTreeBranchInNewTab(nc) {
+    if (!nc) return;
+    let text = null, format = '';
+    if (nc.__copyXml) { try { text = new XMLSerializer().serializeToString(nc.__copyXml); format = 'xml'; } catch (_) {} }
+    else if ('__copyVal' in nc) { try { text = JSON.stringify(nc.__copyVal, null, 2); format = 'json'; } catch (_) { text = String(nc.__copyVal); } }
+    if (text == null) return;
+    let label = '';
+    const keyEl = nc.querySelector('.hl-key');
+    const tagEl = nc.querySelector('.tag');
+    if (keyEl) label = keyEl.textContent.replace(/^"|"$/g, '');
+    else if (tagEl) label = tagEl.textContent;
+    label = (label || 'branch').trim().slice(0, 28) || 'branch';
+    try { if (typeof saveActiveVer === 'function') saveActiveVer(); } catch (_) {}
+    versions.push({ id: ++verSeq, label: verUniqueLabel(label), text: text, format: format, name: '' });
+    activeVer = versions.length - 1;
+    renderVerTabs();
+    loadActiveVer();
+  }
   function treeCopyText(text) {
     try { if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text); } catch (_) {}
     return new Promise((res) => {
@@ -7456,33 +7480,49 @@ or
       document.body.removeChild(ta); res();
     });
   }
-  // One shared copy button per tree, moved to the hovered row via delegation
-  // (keeps the DOM lean on huge trees — no per-node buttons or listeners).
+  // One shared action group per tree (open-in-new-tab + copy), moved to the
+  // hovered row via delegation — keeps the DOM lean on huge trees.
   function setupTreeCopy(treeEl) {
-    const btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'tree-copy-btn'; btn.title = 'Copy this value';
-    btn.innerHTML = TREE_COPY_ICON;
+    const actions = document.createElement('span');
+    actions.className = 'tree-actions';
+    const newtabBtn = document.createElement('button');
+    newtabBtn.type = 'button'; newtabBtn.className = 'tree-act-btn tree-newtab-btn';
+    newtabBtn.title = 'Open this branch in a new tab';
+    newtabBtn.innerHTML = TREE_NEWTAB_ICON;
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button'; copyBtn.className = 'tree-act-btn tree-copy-btn';
+    copyBtn.title = 'Copy this value';
+    copyBtn.innerHTML = TREE_COPY_ICON;
+    actions.appendChild(newtabBtn);
+    actions.appendChild(copyBtn);
     let flashT = null;
-    btn.addEventListener('mousedown', (e) => e.preventDefault());
-    btn.addEventListener('click', (e) => {
+    [newtabBtn, copyBtn].forEach((b) => b.addEventListener('mousedown', (e) => e.preventDefault()));
+    copyBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const nc = btn.parentElement; if (!nc) return;
+      const nc = actions.parentElement; if (!nc) return;
       let text = null;
       if (nc.__copyXml) { try { text = new XMLSerializer().serializeToString(nc.__copyXml); } catch (_) {} }
       else if (nc.__copyType === 'text') { text = String(nc.__copyVal); }
       else if ('__copyVal' in nc) { try { text = JSON.stringify(nc.__copyVal, null, 2); } catch (_) { text = String(nc.__copyVal); } }
       if (text == null) return;
       treeCopyText(text).then(() => {
-        btn.classList.add('copied'); btn.innerHTML = 'Copied ✓';
+        copyBtn.classList.add('copied'); copyBtn.innerHTML = 'Copied ✓';
         clearTimeout(flashT);
-        flashT = setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = TREE_COPY_ICON; }, 1100);
+        flashT = setTimeout(() => { copyBtn.classList.remove('copied'); copyBtn.innerHTML = TREE_COPY_ICON; }, 1100);
       });
+    });
+    newtabBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openTreeBranchInNewTab(actions.parentElement);
     });
     treeEl.addEventListener('mouseover', (e) => {
       const nc = e.target.closest && e.target.closest('.node-content');
       if (!nc) return;
-      if (!('__copyVal' in nc) && !nc.__copyXml) { if (btn.parentElement) btn.remove(); return; }
-      if (btn.parentElement !== nc) nc.appendChild(btn);
+      if (!('__copyVal' in nc) && !nc.__copyXml) { if (actions.parentElement) actions.remove(); return; }
+      if (actions.parentElement !== nc) nc.appendChild(actions);
+      // Open-in-new-tab only for containers (objects/arrays/XML elements), not scalars.
+      const node = nc.closest('.node');
+      newtabBtn.style.display = (node && !node.classList.contains('leaf')) ? 'inline-flex' : 'none';
     });
   }
 
