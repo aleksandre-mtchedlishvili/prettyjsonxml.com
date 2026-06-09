@@ -2185,8 +2185,10 @@
     text-align: center;
     margin-right: 4px;
   }
-  .node.collapsed > .node-content .toggle::before { content: "▶"; font-size: 10px; }
-  .node:not(.collapsed) > .node-content .toggle::before { content: "▼"; font-size: 10px; }
+  /* One glyph, rotated — collapsed vs expanded are always the same size (separate
+     ▶/▼ characters render at different sizes in some system fonts, e.g. Windows). */
+  .node > .node-content .toggle::before { content: "▶"; font-size: 8px; display: inline-block; transition: transform .12s ease; }
+  .node:not(.collapsed) > .node-content .toggle::before { transform: rotate(90deg); }
   .leaf .toggle { visibility: hidden; }
   /* JSON tree: the closing bracket row should sit at the parent's indent level,
      not the children's. We render it inside the parent .node so it's already
