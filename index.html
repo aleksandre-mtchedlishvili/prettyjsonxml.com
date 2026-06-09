@@ -2130,21 +2130,37 @@
   .tree {
     font-family: 'JetBrains Mono', 'Fira Code', Consolas, ui-monospace, monospace;
     font-size: 13.5px;
-    line-height: 1.65;
+    line-height: 1.5;
   }
   .node { position: relative; }
   .node-content {
     cursor: pointer;
-    padding: 1px 4px;
+    padding: 1px 6px;
     border-radius: 4px;
-    display: inline-block;
+    display: block;
+    box-sizing: border-box;
+    position: relative;
     user-select: text;
   }
   .node-content:hover { background: var(--bg-elev-2); }
+  /* Copy-on-hover: a small button appears at the right of the hovered row and
+     copies that node's whole subtree (JSON) or element (XML) to the clipboard. */
+  .tree-copy-btn {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    display: none; align-items: center; gap: 4px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 10.5px; line-height: 1; white-space: nowrap;
+    color: var(--text-dim); background: var(--bg-elev);
+    border: 1px solid var(--border); border-radius: 5px;
+    padding: 2px 6px; cursor: pointer; user-select: none;
+  }
+  .node-content:hover > .tree-copy-btn { display: inline-flex; }
+  .tree-copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .tree-copy-btn.copied { color: #fff; background: var(--attr-val); border-color: var(--attr-val); }
   .node-children {
-    margin-left: 18px;
-    border-left: 1px dashed var(--border);
-    padding-left: 10px;
+    margin-left: 12px;
+    border-left: 1px solid var(--border-soft);
+    padding-left: 8px;
   }
   .node.collapsed > .node-children { display: none; }
   /* "{ } JSON" / "</> XML" pill shown on a string value that is itself parseable
@@ -2162,20 +2178,21 @@
   .view-building { padding: 48px 24px; text-align: center; color: var(--text-dim); font-size: 15px; }
   .toggle {
     display: inline-block;
-    width: 14px;
+    width: 16px;
     color: var(--text-dim);
     cursor: pointer;
     user-select: none;
     text-align: center;
-    margin-right: 2px;
+    margin-right: 4px;
   }
-  .node.collapsed > .node-content .toggle::before { content: "▶"; font-size: 9px; }
-  .node:not(.collapsed) > .node-content .toggle::before { content: "▼"; font-size: 9px; }
+  .node.collapsed > .node-content .toggle::before { content: "▶"; font-size: 10px; }
+  .node:not(.collapsed) > .node-content .toggle::before { content: "▼"; font-size: 10px; }
   .leaf .toggle { visibility: hidden; }
   /* JSON tree: the closing bracket row should sit at the parent's indent level,
      not the children's. We render it inside the parent .node so it's already
      correctly indented; just suppress its leaf toggle width neatly. */
-  .json-close { margin-left: -18px; }
+  .json-close { margin-left: -12px; }
+  .json-close .node-content { opacity: 0.5; }
   .tree .hl-key   { color: var(--accent); font-weight: 500; }
   .tree .hl-str   { color: var(--attr-val); }
   .tree .hl-num   { color: var(--attr); }
@@ -2185,19 +2202,19 @@
   .tag-prefix { color: var(--text-muted); }
   .attr { color: var(--attr); }
   .attr-val { color: var(--attr-val); }
-  .punct { color: var(--text-dim); }
+  .punct { color: var(--text-muted); opacity: 0.55; }
   .text-content { color: var(--text-content); word-break: break-word; }
   .text-content.long { display: inline-block; max-width: 720px; vertical-align: top; white-space: pre-wrap; }
   .comment { color: var(--text-dim); font-style: italic; }
   .badge {
     display: inline-block;
     font-size: 10px;
-    background: var(--bg-elev-2);
+    background: transparent;
     color: var(--text-dim);
-    padding: 1px 6px;
-    border-radius: 10px;
+    padding: 0 2px;
+    border-radius: 0;
     margin-left: 6px;
-    border: 1px solid var(--border-soft);
+    border: none;
   }
   .image-preview {
     display: block;
@@ -7427,6 +7444,46 @@ or
   // because the savings don't justify the indirection.
   let TREE_LAZY_DEPTH = Infinity;
 
+  const TREE_COPY_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  function treeCopyText(text) {
+    try { if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text); } catch (_) {}
+    return new Promise((res) => {
+      const ta = document.createElement('textarea'); ta.value = text;
+      ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta);
+      ta.select(); try { document.execCommand('copy'); } catch (_) {}
+      document.body.removeChild(ta); res();
+    });
+  }
+  // One shared copy button per tree, moved to the hovered row via delegation
+  // (keeps the DOM lean on huge trees — no per-node buttons or listeners).
+  function setupTreeCopy(treeEl) {
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'tree-copy-btn'; btn.title = 'Copy this value';
+    btn.innerHTML = TREE_COPY_ICON;
+    let flashT = null;
+    btn.addEventListener('mousedown', (e) => e.preventDefault());
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const nc = btn.parentElement; if (!nc) return;
+      let text = null;
+      if (nc.__copyXml) { try { text = new XMLSerializer().serializeToString(nc.__copyXml); } catch (_) {} }
+      else if (nc.__copyType === 'text') { text = String(nc.__copyVal); }
+      else if ('__copyVal' in nc) { try { text = JSON.stringify(nc.__copyVal, null, 2); } catch (_) { text = String(nc.__copyVal); } }
+      if (text == null) return;
+      treeCopyText(text).then(() => {
+        btn.classList.add('copied'); btn.innerHTML = 'Copied ✓';
+        clearTimeout(flashT);
+        flashT = setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = TREE_COPY_ICON; }, 1100);
+      });
+    });
+    treeEl.addEventListener('mouseover', (e) => {
+      const nc = e.target.closest && e.target.closest('.node-content');
+      if (!nc) return;
+      if (!('__copyVal' in nc) && !nc.__copyXml) { if (btn.parentElement) btn.remove(); return; }
+      if (btn.parentElement !== nc) nc.appendChild(btn);
+    });
+  }
+
   function renderTree(doc, target) {
     const isJson = currentJson !== null && currentJson !== undefined;
     // Pick the lazy-expand depth WITHOUT building the synthetic DOM for JSON
@@ -7442,6 +7499,7 @@ or
     wrap.className = 'tree-view';
     const tree = document.createElement('div');
     tree.className = 'tree';
+    setupTreeCopy(tree);
     // JSON sources: render as real JSON syntax ({ } [ ] "key": value)
     // so devs get the foldable formatted view they expect from a JSON viewer.
     // XML sources stick to the XML element rendering.
@@ -7518,6 +7576,7 @@ or
 
     const head = document.createElement('span');
     head.className = 'node-content';
+    head.__copyXml = el;
     const toggle = document.createElement('span');
     toggle.className = 'toggle';
     head.appendChild(toggle);
@@ -7741,6 +7800,7 @@ or
         wrapper.className = 'node collapsed embed-node';
         const head = document.createElement('span');
         head.className = 'node-content';
+        head.__copyVal = value; head.__copyType = 'text';
         const preview = String(value).replace(/\s+/g, ' ').trim();
         const short = preview.length > 60 ? preview.slice(0, 60) + '…' : preview;
         const badge = embed.kind === 'xml' ? '&lt;/&gt; XML' : '{ } JSON';
@@ -7778,6 +7838,7 @@ or
       div.className = 'node leaf';
       const c = document.createElement('span');
       c.className = 'node-content';
+      c.__copyVal = value;
       c.innerHTML = `<span class="toggle"></span>${keyHtml}${primitiveToHtml(value, keyLabel)}${trailingComma ? '<span class="punct">,</span>' : ''}`;
       div.appendChild(c);
       parent.appendChild(div);
@@ -7797,6 +7858,7 @@ or
 
     const head = document.createElement('span');
     head.className = 'node-content';
+    head.__copyVal = value;
     const open  = isObject ? '{' : '[';
     const close = isObject ? '}' : ']';
     const countLabel = empty ? '' : `<span class="badge">${items.length} ${items.length === 1 ? (isObject ? 'key' : 'item') : (isObject ? 'keys' : 'items')}</span>`;
