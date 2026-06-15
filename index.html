@@ -2160,6 +2160,51 @@
   }
   .tree-act-btn:hover { color: var(--accent); border-color: var(--accent); }
   .tree-copy-btn.copied { color: #fff; background: var(--attr-val); border-color: var(--attr-val); }
+
+  /* ---- Table column filters ---- */
+  .data-table th .th-label { vertical-align: middle; }
+  .col-filter-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-left: 6px; padding: 2px 4px; vertical-align: middle;
+    border: none; background: transparent; cursor: pointer; border-radius: 5px;
+    color: var(--text-muted); opacity: .5; transition: opacity .1s, color .1s, background .1s;
+  }
+  .data-table th:hover .col-filter-btn { opacity: .9; }
+  .col-filter-btn:hover { opacity: 1; color: var(--accent); background: var(--bg-elev-2); }
+  .data-table th.is-filtered .col-filter-btn { opacity: 1; color: var(--accent); }
+  .col-filter-pop {
+    position: absolute; z-index: 50; min-width: 190px; max-width: 290px;
+    background: var(--bg-elev); border: 1px solid var(--border); border-radius: 9px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.18); padding: 11px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px; font-weight: 400; text-transform: none; letter-spacing: normal;
+    color: var(--text); text-align: left;
+  }
+  .cfp-head { font-weight: 600; font-size: 12px; margin-bottom: 8px; color: var(--text); }
+  .cfp-input {
+    width: 100%; box-sizing: border-box; padding: 5px 8px; font-size: 13px; margin-bottom: 2px;
+    border: 1px solid var(--border); border-radius: 6px; background: var(--bg-elev-2); color: var(--text);
+  }
+  .cfp-enum { max-height: 220px; overflow-y: auto; margin-top: 6px; display: flex; flex-direction: column; gap: 1px; }
+  .cfp-check { display: flex; align-items: center; gap: 7px; padding: 3px 4px; border-radius: 5px; cursor: pointer; font-size: 12.5px; }
+  .cfp-check:hover { background: var(--bg-elev-2); }
+  .cfp-acts { display: flex; gap: 12px; margin-top: 7px; }
+  .cfp-link { border: none; background: none; color: var(--accent); cursor: pointer; font-size: 12px; padding: 0; }
+  .cfp-range { display: flex; align-items: center; gap: 7px; }
+  .cfp-range .cfp-input { width: 84px; margin-bottom: 0; }
+  .cfp-bool { display: flex; gap: 5px; }
+  .cfp-seg { flex: 1; padding: 5px 8px; border: 1px solid var(--border); background: var(--bg-elev-2); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--text-dim); }
+  .cfp-seg.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .cfp-clear { margin-top: 10px; width: 100%; padding: 5px; border: 1px solid var(--border); background: transparent; border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--text-dim); }
+  .cfp-clear:hover { color: #fff; background: var(--danger, #dc2626); border-color: var(--danger, #dc2626); }
+  .row-main.filtered-out, .row-detail.filtered-out { display: none !important; }
+  #filterChip {
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; font-size: 12px;
+    border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elev-2);
+    color: var(--text-dim); cursor: pointer; white-space: nowrap;
+  }
+  #filterChip:hover { color: #fff; background: var(--danger, #dc2626); border-color: var(--danger, #dc2626); }
+  #filterChip .filter-chip-n { font-weight: 700; }
   .node-children {
     margin-left: 12px;
     border-left: 1px solid var(--border-soft);
@@ -2534,6 +2579,7 @@
       <input id="search" class="search-input" type="text" placeholder="Search..." disabled>
       <span id="searchCount" class="search-count hidden"></span>
     </div>
+    <button id="filterChip" type="button" hidden title="Clear all column filters">✕ Filters <span class="filter-chip-n">0</span></button>
     <button class="btn" id="btnExportXlsx" type="button" title="Download the table as a formatted Excel .xlsx file (bold header, frozen top row, auto-fit columns)">📥 Excel</button>
   </div>
 </div>
@@ -6391,30 +6437,27 @@ or
       }
     }
 
+    // Compose three independent view sources — global Search, column filters,
+    // and sort — so none clobbers the others. setFilter() is the Search slot
+    // (runSearch), setColumnFilter() is the column-filter slot; they AND.
+    function applyView() {
+      const sp = state.searchPredicate, cp = state.columnPredicate;
+      let v = (sp || cp) ? items.filter(m => (!sp || sp(m)) && (!cp || cp(m))) : items;
+      if (state.sortComparator) v = [...v].sort(state.sortComparator);
+      state.visibleItems = v;
+      state.expandedIdx = -1;
+      state.lastRange = null;
+      render();
+    }
     const handle = {
       type: 'virtual-section',
       section, render,
       get items() { return items; },
       get visibleItems() { return state.visibleItems; },
       get expandedIdx() { return state.expandedIdx; },
-      setFilter(predicate) {
-        state.visibleItems = predicate ? items.filter(predicate) : items;
-        state.expandedIdx = -1;
-        state.lastRange = null;
-        render();
-      },
-      setSort(comparator) {
-        if (comparator) {
-          // Sort the visible (post-filter) slice — re-sorting on each request
-          // is fine because items count is bounded by visibleItems.length.
-          state.visibleItems = [...state.visibleItems].sort(comparator);
-        } else {
-          state.visibleItems = items;
-        }
-        state.expandedIdx = -1;
-        state.lastRange = null;
-        render();
-      },
+      setFilter(predicate) { state.searchPredicate = predicate || null; applyView(); },
+      setColumnFilter(predicate) { state.columnPredicate = predicate || null; applyView(); },
+      setSort(comparator) { state.sortComparator = comparator || null; applyView(); },
     };
     section.__virtual = handle;
     __virtualSections.add(handle);
@@ -6433,6 +6476,194 @@ or
     setTimeout(() => { state.lastRange = null; render(); }, 150);
     return handle;
   }
+
+  // ============================================================
+  // TABLE COLUMN FILTERS — a funnel button per header opens a popover whose
+  // control matches the column type (text / enum / number / boolean / date).
+  // Filters run on the row data model (itemMeta.scalars), so the virtual
+  // scroller filters the data array (not the DOM) and they AND with global
+  // Search via the scroller's separate column-filter slot.
+  // ============================================================
+  const COLF_FUNNEL_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 4h18l-7 9v6l-4 2v-8z"/></svg>';
+  const colfSections = new Set();   // live section filter-contexts (Clear-all + chip)
+  let colfPop = null;               // shared popover element
+  let colfPopFor = null;            // { ctx, col } currently being edited
+
+  function colfDetectType(itemMeta, col) {
+    let n = 0, allBool = true, allNum = true, allDate = true;
+    const distinct = new Set();
+    for (let i = 0; i < itemMeta.length && n < 200; i++) {
+      const v = itemMeta[i].scalars[col];
+      if (v === undefined || v === '') continue;
+      n++;
+      if (!/^(true|false)$/i.test(v)) allBool = false;
+      if (!/^-?\d+(\.\d+)?$/.test(v)) allNum = false;
+      if (!(/^\d{4}-\d\d-\d\d/.test(v) && !isNaN(Date.parse(v)))) allDate = false;
+      if (distinct.size <= 40) distinct.add(v);
+    }
+    if (n === 0) return 'text';
+    if (allBool) return 'boolean';
+    if (allDate) return 'date';
+    if (allNum) return 'number';
+    if (distinct.size > 0 && distinct.size <= 24 && distinct.size < n * 0.7) return 'enum';
+    return 'text';
+  }
+
+  function colfDistinct(ctx, col) {
+    if (ctx.distinct.has(col)) return ctx.distinct.get(col);
+    const s = new Set();
+    for (const m of ctx.itemMeta) { const v = m.scalars[col]; if (v !== undefined && v !== '') s.add(v); }
+    const arr = [...s].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    ctx.distinct.set(col, arr);
+    return arr;
+  }
+
+  function colfPredicate(active) {
+    if (!active.length) return null;
+    return (meta) => active.every(f => {
+      const v = meta.scalars[f.col];
+      const has = v !== undefined && v !== '';
+      const s = f.spec;
+      if (f.type === 'boolean') { if (s.val === 'any') return true; if (!has) return false; const t = /^true$/i.test(v); return s.val === 'yes' ? t : !t; }
+      if (!has) return false;   // an active non-boolean filter excludes blank cells
+      if (f.type === 'enum') return s.set.has(v);
+      if (f.type === 'number') { const num = parseFloat(v); if (isNaN(num)) return false; if (s.min != null && num < s.min) return false; if (s.max != null && num > s.max) return false; return true; }
+      if (f.type === 'date') { const t = Date.parse(v); if (isNaN(t)) return false; if (s.from != null && t < s.from) return false; if (s.to != null && t > s.to) return false; return true; }
+      return s.q ? v.toLowerCase().includes(s.q) : true; // text
+    });
+  }
+
+  function colfApply(ctx) {
+    const active = [...ctx.active.entries()].map(([col, f]) => ({ col, type: f.type, spec: f.spec }));
+    const pred = colfPredicate(active);
+    if (ctx.section.__virtual) {
+      ctx.section.__virtual.setColumnFilter(pred);
+    } else {
+      ctx.section.querySelectorAll('tbody tr.row-main').forEach(tr => {
+        const m = ctx.itemMeta[+tr.dataset.rowIdx];
+        const ok = !pred || (m && pred(m));
+        tr.classList.toggle('filtered-out', !ok);
+        const det = tr.nextElementSibling;
+        if (det && det.classList.contains('row-detail')) det.classList.toggle('filtered-out', !ok);
+      });
+    }
+    ctx.ths.forEach((th, col) => th.classList.toggle('is-filtered', ctx.active.has(col)));
+    colfUpdateChip();
+  }
+
+  function colfUpdateChip() {
+    const chip = document.getElementById('filterChip');
+    if (!chip) return;
+    let n = 0;
+    colfSections.forEach(ctx => { if (ctx.section && ctx.section.isConnected) n += ctx.active.size; });
+    if (n > 0) { chip.hidden = false; const c = chip.querySelector('.filter-chip-n'); if (c) c.textContent = n; }
+    else chip.hidden = true;
+  }
+
+  function colfClearAll() {
+    colfSections.forEach(ctx => { if (ctx.active.size) { ctx.active.clear(); colfApply(ctx); } });
+    colfClosePopover();
+  }
+
+  function colfClosePopover() { if (colfPop) colfPop.hidden = true; colfPopFor = null; }
+
+  function colfEnsurePopover() {
+    if (colfPop) return colfPop;
+    colfPop = document.createElement('div');
+    colfPop.className = 'col-filter-pop';
+    colfPop.hidden = true;
+    document.body.appendChild(colfPop);
+    document.addEventListener('mousedown', (e) => {
+      if (!colfPop || colfPop.hidden) return;
+      if (colfPop.contains(e.target)) return;
+      if (e.target.closest && e.target.closest('.col-filter-btn')) return;
+      colfClosePopover();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && colfPop && !colfPop.hidden) colfClosePopover(); });
+    window.addEventListener('scroll', () => colfClosePopover(), true);
+    return colfPop;
+  }
+
+  function colfOpenPopover(ctx, col, th) {
+    const pop = colfEnsurePopover();
+    if (colfPopFor && colfPopFor.ctx === ctx && colfPopFor.col === col && !pop.hidden) { colfClosePopover(); return; }
+    colfPopFor = { ctx, col };
+    const type = ctx.types.get(col);
+    const cur = ctx.active.get(col);
+    pop.innerHTML = '';
+    const head = document.createElement('div'); head.className = 'cfp-head';
+    head.textContent = humanize(col.replace(/^[@#]/, ''));
+    pop.appendChild(head);
+    const commit = (spec, isActive) => { if (isActive) ctx.active.set(col, { type, spec }); else ctx.active.delete(col); colfApply(ctx); };
+
+    if (type === 'enum') {
+      const values = colfDistinct(ctx, col);
+      const sel = cur ? cur.spec.set : new Set(values);
+      if (values.length > 8) {
+        const sb = document.createElement('input'); sb.type = 'text'; sb.className = 'cfp-input'; sb.placeholder = 'Filter values…';
+        sb.addEventListener('input', () => { const q = sb.value.toLowerCase(); body.querySelectorAll('.cfp-check').forEach(l => { l.style.display = l.dataset.v.toLowerCase().includes(q) ? '' : 'none'; }); });
+        pop.appendChild(sb);
+      }
+      const body = document.createElement('div'); body.className = 'cfp-enum';
+      const apply = () => { const chosen = new Set([...body.querySelectorAll('input:checked')].map(i => i.value)); commit({ set: chosen }, chosen.size < values.length); };
+      values.forEach(v => {
+        const lbl = document.createElement('label'); lbl.className = 'cfp-check'; lbl.dataset.v = v;
+        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = v; cb.checked = sel.has(v);
+        cb.addEventListener('change', apply);
+        lbl.appendChild(cb); lbl.appendChild(document.createTextNode(' ' + v));
+        body.appendChild(lbl);
+      });
+      pop.appendChild(body);
+      const acts = document.createElement('div'); acts.className = 'cfp-acts';
+      const all = document.createElement('button'); all.type = 'button'; all.className = 'cfp-link'; all.textContent = 'All';
+      all.addEventListener('click', () => { body.querySelectorAll('input').forEach(i => i.checked = true); apply(); });
+      const none = document.createElement('button'); none.type = 'button'; none.className = 'cfp-link'; none.textContent = 'None';
+      none.addEventListener('click', () => { body.querySelectorAll('input').forEach(i => i.checked = false); apply(); });
+      acts.appendChild(all); acts.appendChild(none); pop.appendChild(acts);
+    } else if (type === 'number') {
+      const wrap = document.createElement('div'); wrap.className = 'cfp-range';
+      const min = document.createElement('input'); min.type = 'number'; min.className = 'cfp-input'; min.placeholder = 'min'; if (cur && cur.spec.min != null) min.value = cur.spec.min;
+      const max = document.createElement('input'); max.type = 'number'; max.className = 'cfp-input'; max.placeholder = 'max'; if (cur && cur.spec.max != null) max.value = cur.spec.max;
+      let t; const apply = () => { const mn = min.value === '' ? null : parseFloat(min.value); const mx = max.value === '' ? null : parseFloat(max.value); commit({ min: mn, max: mx }, mn != null || mx != null); };
+      [min, max].forEach(el => el.addEventListener('input', () => { clearTimeout(t); t = setTimeout(apply, 200); }));
+      wrap.appendChild(min); wrap.appendChild(document.createTextNode('–')); wrap.appendChild(max); pop.appendChild(wrap);
+    } else if (type === 'boolean') {
+      const wrap = document.createElement('div'); wrap.className = 'cfp-bool';
+      [['any', 'Any'], ['yes', 'Yes'], ['no', 'No']].forEach(([val, lab]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'cfp-seg' + ((cur ? cur.spec.val : 'any') === val ? ' on' : ''); b.textContent = lab;
+        b.addEventListener('click', () => { wrap.querySelectorAll('.cfp-seg').forEach(x => x.classList.remove('on')); b.classList.add('on'); commit({ val }, val !== 'any'); });
+        wrap.appendChild(b);
+      });
+      pop.appendChild(wrap);
+    } else if (type === 'date') {
+      const wrap = document.createElement('div'); wrap.className = 'cfp-range';
+      const from = document.createElement('input'); from.type = 'date'; from.className = 'cfp-input'; if (cur && cur.spec.fromStr) from.value = cur.spec.fromStr;
+      const to = document.createElement('input'); to.type = 'date'; to.className = 'cfp-input'; if (cur && cur.spec.toStr) to.value = cur.spec.toStr;
+      const apply = () => { const f = from.value ? Date.parse(from.value) : null; const tt = to.value ? Date.parse(to.value) + 86399999 : null; commit({ from: f, to: tt, fromStr: from.value, toStr: to.value }, !!from.value || !!to.value); };
+      [from, to].forEach(el => el.addEventListener('change', apply));
+      wrap.appendChild(from); wrap.appendChild(document.createTextNode('–')); wrap.appendChild(to); pop.appendChild(wrap);
+    } else {
+      const inp = document.createElement('input'); inp.type = 'text'; inp.className = 'cfp-input'; inp.placeholder = 'Contains…'; if (cur) inp.value = cur.spec.raw || '';
+      let t; inp.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { const raw = inp.value.trim(); commit({ q: raw.toLowerCase(), raw }, raw !== ''); }, 200); });
+      pop.appendChild(inp);
+      setTimeout(() => inp.focus(), 0);
+    }
+
+    const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'cfp-clear'; clr.textContent = 'Clear this filter';
+    clr.addEventListener('click', () => { ctx.active.delete(col); colfApply(ctx); colfClosePopover(); });
+    pop.appendChild(clr);
+
+    pop.hidden = false;
+    const r = th.getBoundingClientRect();
+    pop.style.top = (r.bottom + window.scrollY + 4) + 'px';
+    const left = r.left + window.scrollX;
+    pop.style.left = Math.max(8, Math.min(left, window.scrollX + document.documentElement.clientWidth - pop.offsetWidth - 8)) + 'px';
+  }
+
+  (function wireFilterChip() {
+    const fc = document.getElementById('filterChip');
+    if (fc) fc.addEventListener('click', colfClearAll);
+  })();
 
   function renderTableSection(tag, items, parentPath, parentEl, opts) {
     opts = opts || {};
@@ -6711,16 +6942,33 @@ or
     const headRow = document.createElement('tr');
     headRow.innerHTML = `<th class="expand-col"></th>`;
     if (someHaveImage) headRow.innerHTML += `<th class="img-col"></th>`;
+    // Per-column filter context (funnel → popover; filters on itemMeta.scalars).
+    colfSections.forEach(c => { if (!c.section || !c.section.isConnected) colfSections.delete(c); });
+    const filterCtx = { section, itemMeta, columns, types: new Map(), distinct: new Map(), active: new Map(), ths: new Map() };
     columns.forEach((col, i) => {
       const th = document.createElement('th');
-      th.textContent = humanize(col.replace(/^[@#]/, ''));
       th.dataset.col = col;
       th.dataset.idx = i;
+      const thLabel = document.createElement('span');
+      thLabel.className = 'th-label';
+      thLabel.textContent = humanize(col.replace(/^[@#]/, ''));
+      th.appendChild(thLabel);
       th.addEventListener('click', () => sortTableBy(table, col));
+      const fbtn = document.createElement('button');
+      fbtn.type = 'button';
+      fbtn.className = 'col-filter-btn';
+      fbtn.title = 'Filter this column';
+      fbtn.innerHTML = COLF_FUNNEL_ICON;
+      fbtn.addEventListener('click', (e) => { e.stopPropagation(); colfOpenPopover(filterCtx, col, th); });
+      th.appendChild(fbtn);
+      filterCtx.types.set(col, colfDetectType(itemMeta, col));
+      filterCtx.ths.set(col, th);
       headRow.appendChild(th);
     });
     thead.appendChild(headRow);
     table.appendChild(thead);
+    section.__filterCtx = filterCtx;
+    colfSections.add(filterCtx);
 
     // Body
     const tbody = document.createElement('tbody');
