@@ -2188,6 +2188,7 @@
   .cfp-enum { max-height: 220px; overflow-y: auto; margin-top: 6px; display: flex; flex-direction: column; gap: 1px; }
   .cfp-check { display: flex; align-items: center; gap: 7px; padding: 3px 4px; border-radius: 5px; cursor: pointer; font-size: 12.5px; }
   .cfp-check:hover { background: var(--bg-elev-2); }
+  .cfp-check.cfp-blank-row { color: var(--text-muted); }
   .cfp-acts { display: flex; gap: 12px; margin-top: 7px; }
   .cfp-link { border: none; background: none; color: var(--accent); cursor: pointer; font-size: 12px; padding: 0; }
   .cfp-range { display: flex; align-items: center; gap: 7px; }
@@ -6518,16 +6519,32 @@ or
   let colfPop = null;               // shared popover element
   let colfPopFor = null;            // { ctx, col } currently being edited
 
-  function colfDetectTypeFromScalars(scalarObjs, col) {
+  // Is a string value date-like? Accepts ISO, RFC-2822 (RSS pubDate), and
+  // slash/dot/dash dates, while rejecting pure numbers (years/counts), times,
+  // and arbitrary text. Requires either a 4-digit run or a digit-sep-digit run
+  // before paying for Date.parse, so non-dates bail cheaply.
+  function colfLooksDate(v) {
+    if (/^[+-]?\d+(\.\d+)?$/.test(v)) return false;           // pure number, not a date
+    if (!/\d{4}/.test(v) && !/\d[/.\-]\d/.test(v)) return false;
+    return !isNaN(Date.parse(v));
+  }
+  // Classify a column's value type from a list of scalar maps. `cap` bounds how
+  // many non-blank values are sampled: parent columns pass Infinity (a full
+  // scan — cost is linear and the type drives correctness of every match), while
+  // nested-collection detection passes a small sample across many sub-fields.
+  // The `allX && …` short-circuits skip work (esp. Date.parse) once a column is
+  // known not to be that type, so the full scan stays cheap.
+  function colfDetectTypeFromScalars(scalarObjs, col, cap) {
+    cap = cap || 200;
     let n = 0, allBool = true, allNum = true, allDate = true;
     const distinct = new Set();
-    for (let i = 0; i < scalarObjs.length && n < 200; i++) {
+    for (let i = 0; i < scalarObjs.length && n < cap; i++) {
       const v = scalarObjs[i] ? scalarObjs[i][col] : undefined;
       if (v === undefined || v === '') continue;
       n++;
-      if (!/^(true|false)$/i.test(v)) allBool = false;
-      if (!/^-?\d+(\.\d+)?$/.test(v)) allNum = false;
-      if (!(/^\d{4}-\d\d-\d\d/.test(v) && !isNaN(Date.parse(v)))) allDate = false;
+      if (allBool && !/^(true|false)$/i.test(v)) allBool = false;
+      if (allNum && !/^-?\d+(\.\d+)?$/.test(v)) allNum = false;
+      if (allDate && !colfLooksDate(v)) allDate = false;
       if (distinct.size <= 40) distinct.add(v);
     }
     if (n === 0) return 'text';
@@ -6538,7 +6555,7 @@ or
     return 'text';
   }
   function colfDetectType(itemMeta, col) {
-    return colfDetectTypeFromScalars(itemMeta.map(m => m.scalars), col);
+    return colfDetectTypeFromScalars(itemMeta.map(m => m.scalars), col, Infinity);
   }
   // Detect filterable nested collections (one-to-many children) + their sub-fields.
   // Sampled: scan up to 200 rows for collection tags, sampling children to infer
@@ -6576,14 +6593,33 @@ or
     return arr;
   }
 
+  // Does this enum field have any blank/missing cells? If so the popover offers
+  // a "(blank)" option so empty cells are visible + filterable (otherwise an
+  // active enum filter silently drops them). `field` is a parent column name or
+  // a nested {coll, sub} descriptor.
+  function colfEnumHasBlank(ctx, field) {
+    if (typeof field === 'object') {
+      for (const meta of ctx.itemMeta) {
+        const arr = nestedChildScalars(meta, field.coll);
+        for (const cs of arr) { const v = cs[field.sub]; if (v === undefined || v === '') return true; }
+      }
+      return false;
+    }
+    for (const m of ctx.itemMeta) { const v = m.scalars[field]; if (v === undefined || v === '') return true; }
+    return false;
+  }
+
   // Match one raw string value against a typed filter spec (shared by parent
   // columns and nested child sub-fields).
   function colfMatchValue(type, spec, v) {
     const has = v !== undefined && v !== '';
     const s = spec;
     if (type === 'boolean') { if (s.val === 'any') return true; if (!has) return false; const t = /^true$/i.test(v); return s.val === 'yes' ? t : !t; }
+    // Enum handles blanks explicitly: a blank cell matches only if the user
+    // kept the "(blank)" option selected (s.blank). Checked BEFORE the general
+    // non-boolean blank guard below.
+    if (type === 'enum') { if (!has) return !!s.blank; return s.set.has(v); }
     if (!has) return false;   // an active non-boolean filter excludes blank cells
-    if (type === 'enum') return s.set.has(v);
     if (type === 'number') { const num = parseFloat(v); if (isNaN(num)) return false; if (s.min != null && num < s.min) return false; if (s.max != null && num > s.max) return false; return true; }
     if (type === 'date') { const t = Date.parse(v); if (isNaN(t)) return false; if (s.from != null && t < s.from) return false; if (s.to != null && t > s.to) return false; return true; }
     return s.q ? v.toLowerCase().includes(s.q) : true; // text
@@ -6761,21 +6797,39 @@ or
 
     if (type === 'enum') {
       const values = isNested ? colfNestedDistinct(ctx, field.coll, field.sub) : colfDistinct(ctx, field);
+      const hasBlank = colfEnumHasBlank(ctx, field);
       const sel = cur ? cur.spec.set : new Set(values);
+      const blankInit = cur ? !!cur.spec.blank : true;   // default: blanks shown
       if (values.length > 8) {
         const sb = document.createElement('input'); sb.type = 'text'; sb.className = 'cfp-input'; sb.placeholder = 'Filter values…';
         sb.addEventListener('input', () => { const q = sb.value.toLowerCase(); body.querySelectorAll('.cfp-check').forEach(l => { l.style.display = l.dataset.v.toLowerCase().includes(q) ? '' : 'none'; }); });
         pop.appendChild(sb);
       }
       const body = document.createElement('div'); body.className = 'cfp-enum';
-      const apply = () => { const chosen = new Set([...body.querySelectorAll('input:checked')].map(i => i.value)); commit({ set: chosen }, chosen.size < values.length); };
+      // Active when the selection is narrower than "everything": some value
+      // unchecked, OR (blanks exist and) the "(blank)" option is unchecked.
+      const apply = () => {
+        const chosen = new Set([...body.querySelectorAll('input.cfp-val:checked')].map(i => i.value));
+        const blankBox = body.querySelector('input.cfp-blank');
+        const blankOn = blankBox ? blankBox.checked : false;
+        const allOn = chosen.size === values.length && (!hasBlank || blankOn);
+        commit({ set: chosen, blank: blankOn }, !allOn);
+      };
       values.forEach(v => {
         const lbl = document.createElement('label'); lbl.className = 'cfp-check'; lbl.dataset.v = v;
-        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = v; cb.checked = sel.has(v);
+        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'cfp-val'; cb.value = v; cb.checked = sel.has(v);
         cb.addEventListener('change', apply);
         lbl.appendChild(cb); lbl.appendChild(document.createTextNode(' ' + v));
         body.appendChild(lbl);
       });
+      if (hasBlank) {
+        const lbl = document.createElement('label'); lbl.className = 'cfp-check cfp-blank-row'; lbl.dataset.v = '(blank)';
+        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'cfp-blank'; cb.checked = blankInit;
+        cb.addEventListener('change', apply);
+        const em = document.createElement('em'); em.textContent = ' (blank)';
+        lbl.appendChild(cb); lbl.appendChild(em);
+        body.appendChild(lbl);
+      }
       pop.appendChild(body);
       const acts = document.createElement('div'); acts.className = 'cfp-acts';
       const all = document.createElement('button'); all.type = 'button'; all.className = 'cfp-link'; all.textContent = 'All';
