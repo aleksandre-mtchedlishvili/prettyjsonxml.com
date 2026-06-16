@@ -2205,6 +2205,32 @@
   }
   #filterChip:hover { color: #fff; background: var(--danger, #dc2626); border-color: var(--danger, #dc2626); }
   #filterChip .filter-chip-n { font-weight: 700; }
+  /* Nested (relational) filter — section-header button + its field-picker menu */
+  .nested-filter-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-left: 10px; padding: 3px 10px; vertical-align: middle;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: normal;
+    color: var(--text-dim); background: transparent;
+    border: 1px dashed var(--border); border-radius: 999px; cursor: pointer;
+    transition: color .1s, background .1s, border-color .1s;
+  }
+  .nested-filter-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .nested-filter-btn.on {
+    color: #fff; background: var(--accent); border-color: var(--accent); border-style: solid;
+  }
+  .nested-filter-btn .nf-n { font-weight: 700; }
+  .nf-item {
+    display: block; width: 100%; text-align: left; box-sizing: border-box;
+    padding: 5px 8px; border: none; background: transparent; border-radius: 5px;
+    cursor: pointer; font-size: 12.5px; color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+  .nf-item:hover { background: var(--bg-elev-2); }
+  .nf-arrow { color: var(--text-muted); }
+  .nf-on { color: var(--accent); font-size: 9px; vertical-align: middle; }
+  .cfp-quant { margin-bottom: 6px; }
+  .cfp-hint { font-size: 11px; color: var(--text-muted); margin-bottom: 5px; }
   .node-children {
     margin-left: 12px;
     border-left: 1px solid var(--border-soft);
@@ -3166,6 +3192,7 @@ or
     if (btnViewAsTable) btnViewAsTable.classList.remove('pulse-data-loaded');
     if (btnViewAsTree) btnViewAsTree.classList.remove('pulse-data-loaded');
     viewerRoot.innerHTML = '';
+    if (typeof colfResetAll === 'function') colfResetAll();
     // Roll back to clean landing — also drop all version tabs.
     versions = []; activeVer = -1; verSeq = 0; verAutoNum = 0;
     if (typeof renderVerTabs === 'function') renderVerTabs();
@@ -3212,6 +3239,7 @@ or
     if (btnViewAsTree) btnViewAsTree.disabled = true;
     if (btnGoTable) btnGoTable.disabled = true;
     if (viewerRoot) viewerRoot.innerHTML = '';
+    if (typeof colfResetAll === 'function') colfResetAll();
     if (pathBar) pathBar.classList.add('hidden');
     if (editorShell) editorShell.classList.remove('valid', 'invalid');
     if (editorStatus) { editorStatus.className = 'editor-status'; editorStatus.textContent = ''; }
@@ -4999,6 +5027,7 @@ or
     // their (now-detached) section refs can be GC'd and the global scroll
     // listener stops trying to render them.
     if (typeof clearVirtualSections === 'function') clearVirtualSections();
+    if (typeof colfResetAll === 'function') colfResetAll();
     viewerRoot.innerHTML = '';
     // Was either view disabled before? If so, this is the first valid parse —
     // briefly pulse the buttons to draw attention to them.
@@ -6489,11 +6518,11 @@ or
   let colfPop = null;               // shared popover element
   let colfPopFor = null;            // { ctx, col } currently being edited
 
-  function colfDetectType(itemMeta, col) {
+  function colfDetectTypeFromScalars(scalarObjs, col) {
     let n = 0, allBool = true, allNum = true, allDate = true;
     const distinct = new Set();
-    for (let i = 0; i < itemMeta.length && n < 200; i++) {
-      const v = itemMeta[i].scalars[col];
+    for (let i = 0; i < scalarObjs.length && n < 200; i++) {
+      const v = scalarObjs[i] ? scalarObjs[i][col] : undefined;
       if (v === undefined || v === '') continue;
       n++;
       if (!/^(true|false)$/i.test(v)) allBool = false;
@@ -6508,6 +6537,35 @@ or
     if (distinct.size > 0 && distinct.size <= 24 && distinct.size < n * 0.7) return 'enum';
     return 'text';
   }
+  function colfDetectType(itemMeta, col) {
+    return colfDetectTypeFromScalars(itemMeta.map(m => m.scalars), col);
+  }
+  // Detect filterable nested collections (one-to-many children) + their sub-fields.
+  // Sampled: scan up to 200 rows for collection tags, sampling children to infer
+  // sub-fields + types. Singleton-lifting has already removed universal singletons
+  // from nestedGroups, so only true collections remain here.
+  function colfDetectNested(itemMeta) {
+    const sample = new Map();   // coll -> sampled child scalar objects
+    for (let i = 0; i < itemMeta.length && i < 200; i++) {
+      const ng = itemMeta[i].nestedGroups;
+      if (!ng) continue;
+      ng.forEach((els, tag) => {
+        if (!sample.has(tag)) sample.set(tag, []);
+        const bucket = sample.get(tag);
+        if (els) for (const el of els) { if (bucket.length >= 80) break; bucket.push(extractMetaFromElement(el).scalars); }
+      });
+    }
+    const out = new Map();   // coll -> { subTypes: Map<sub,type>, sampleScalars }
+    sample.forEach((scalarObjs, tag) => {
+      if (!scalarObjs.length) return;
+      const subFields = new Set();
+      scalarObjs.forEach(s => Object.keys(s).forEach(k => subFields.add(k)));
+      const subTypes = new Map();
+      subFields.forEach(sub => subTypes.set(sub, colfDetectTypeFromScalars(scalarObjs, sub)));
+      if (subTypes.size) out.set(tag, { subTypes, sampleScalars: scalarObjs });
+    });
+    return out;
+  }
 
   function colfDistinct(ctx, col) {
     if (ctx.distinct.has(col)) return ctx.distinct.get(col);
@@ -6518,24 +6576,49 @@ or
     return arr;
   }
 
-  function colfPredicate(active) {
+  // Match one raw string value against a typed filter spec (shared by parent
+  // columns and nested child sub-fields).
+  function colfMatchValue(type, spec, v) {
+    const has = v !== undefined && v !== '';
+    const s = spec;
+    if (type === 'boolean') { if (s.val === 'any') return true; if (!has) return false; const t = /^true$/i.test(v); return s.val === 'yes' ? t : !t; }
+    if (!has) return false;   // an active non-boolean filter excludes blank cells
+    if (type === 'enum') return s.set.has(v);
+    if (type === 'number') { const num = parseFloat(v); if (isNaN(num)) return false; if (s.min != null && num < s.min) return false; if (s.max != null && num > s.max) return false; return true; }
+    if (type === 'date') { const t = Date.parse(v); if (isNaN(t)) return false; if (s.from != null && t < s.from) return false; if (s.to != null && t > s.to) return false; return true; }
+    return s.q ? v.toLowerCase().includes(s.q) : true; // text
+  }
+  // Lazily extract + cache a row's children's scalar maps for one nested
+  // collection (so a predicate over thousands of rows parses each child once).
+  function nestedChildScalars(meta, coll) {
+    if (!meta.__childScalars) meta.__childScalars = new Map();
+    let arr = meta.__childScalars.get(coll);
+    if (!arr) {
+      const els = (meta.nestedGroups && meta.nestedGroups.get(coll)) || [];
+      arr = els.map(el => extractMetaFromElement(el).scalars);
+      meta.__childScalars.set(coll, arr);
+    }
+    return arr;
+  }
+  // Build the combined row predicate from active filter descriptors. Parent
+  // filters test meta.scalars[col]; nested filters quantify (any/all/none) over
+  // the row's child collection.
+  function colfBuildPredicate(active) {
     if (!active.length) return null;
     return (meta) => active.every(f => {
-      const v = meta.scalars[f.col];
-      const has = v !== undefined && v !== '';
-      const s = f.spec;
-      if (f.type === 'boolean') { if (s.val === 'any') return true; if (!has) return false; const t = /^true$/i.test(v); return s.val === 'yes' ? t : !t; }
-      if (!has) return false;   // an active non-boolean filter excludes blank cells
-      if (f.type === 'enum') return s.set.has(v);
-      if (f.type === 'number') { const num = parseFloat(v); if (isNaN(num)) return false; if (s.min != null && num < s.min) return false; if (s.max != null && num > s.max) return false; return true; }
-      if (f.type === 'date') { const t = Date.parse(v); if (isNaN(t)) return false; if (s.from != null && t < s.from) return false; if (s.to != null && t > s.to) return false; return true; }
-      return s.q ? v.toLowerCase().includes(s.q) : true; // text
+      if (f.nested) {
+        const arr = nestedChildScalars(meta, f.coll);
+        const test = cs => colfMatchValue(f.subType, f.spec, cs[f.sub]);
+        if (f.quant === 'all') return arr.length > 0 && arr.every(test);
+        if (f.quant === 'none') return !arr.some(test);
+        return arr.some(test); // any (default)
+      }
+      return colfMatchValue(f.type, f.spec, meta.scalars[f.col]);
     });
   }
 
   function colfApply(ctx) {
-    const active = [...ctx.active.entries()].map(([col, f]) => ({ col, type: f.type, spec: f.spec }));
-    const pred = colfPredicate(active);
+    const pred = colfBuildPredicate([...ctx.active.values()]);
     if (ctx.section.__virtual) {
       ctx.section.__virtual.setColumnFilter(pred);
     } else {
@@ -6548,6 +6631,11 @@ or
       });
     }
     ctx.ths.forEach((th, col) => th.classList.toggle('is-filtered', ctx.active.has(col)));
+    if (ctx.nestedBtn) {
+      const nN = [...ctx.active.values()].filter(f => f.nested).length;
+      ctx.nestedBtn.classList.toggle('on', nN > 0);
+      const c = ctx.nestedBtn.querySelector('.nf-n'); if (c) c.textContent = nN ? ' (' + nN + ')' : '';
+    }
     colfUpdateChip();
   }
 
@@ -6556,13 +6644,25 @@ or
     if (!chip) return;
     let n = 0;
     colfSections.forEach(ctx => { if (ctx.section && ctx.section.isConnected) n += ctx.active.size; });
-    if (n > 0) { chip.hidden = false; const c = chip.querySelector('.filter-chip-n'); if (c) c.textContent = n; }
-    else chip.hidden = true;
+    const c = chip.querySelector('.filter-chip-n');
+    if (n > 0) { chip.hidden = false; if (c) c.textContent = n; }
+    else { chip.hidden = true; if (c) c.textContent = '0'; }
   }
 
   function colfClearAll() {
-    colfSections.forEach(ctx => { if (ctx.active.size) { ctx.active.clear(); colfApply(ctx); } });
+    // Only touch still-connected sections; clicking a stale chip after a new
+    // document is loaded must not run a predicate against a detached section.
+    colfSections.forEach(ctx => { if (ctx.section && ctx.section.isConnected && ctx.active.size) { ctx.active.clear(); colfApply(ctx); } });
     colfClosePopover();
+  }
+
+  // Drop all filter contexts and reset the toolbar chip. Called when a new
+  // document is parsed or the app is reset, so the chip count can't leak from
+  // the previous document's sections (which are about to be detached).
+  function colfResetAll() {
+    colfSections.clear();
+    colfClosePopover();
+    colfUpdateChip();
   }
 
   function colfClosePopover() { if (colfPop) colfPop.hidden = true; colfPopFor = null; }
@@ -6584,20 +6684,83 @@ or
     return colfPop;
   }
 
-  function colfOpenPopover(ctx, col, th) {
+  function colfNestedDistinct(ctx, coll, sub) {
+    // Distinct values for a nested sub-field, scanned across ALL rows' children
+    // (not just the type-detection sample) so the enum checkbox list is complete.
+    // Otherwise a value living only in the unsampled tail would be missing from
+    // the list, and selecting a subset would silently exclude rows that match it.
+    // Lazy + cached per coll␞sub, mirroring colfDistinct for parent columns.
+    if (!ctx.nestedDistinct) ctx.nestedDistinct = new Map();
+    const key = coll + '␞' + sub;
+    if (ctx.nestedDistinct.has(key)) return ctx.nestedDistinct.get(key);
+    const s = new Set();
+    for (const meta of ctx.itemMeta) {
+      const arr = nestedChildScalars(meta, coll);
+      for (const cs of arr) { const v = cs[sub]; if (v !== undefined && v !== '') s.add(v); }
+    }
+    const arr = [...s].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    ctx.nestedDistinct.set(key, arr);
+    return arr;
+  }
+  // Field-picker: lists this section's nested collections × sub-fields; picking
+  // one opens the filter popover (with an Any/All/None quantifier).
+  function colfOpenNestedMenu(ctx, anchor) {
     const pop = colfEnsurePopover();
-    if (colfPopFor && colfPopFor.ctx === ctx && colfPopFor.col === col && !pop.hidden) { colfClosePopover(); return; }
-    colfPopFor = { ctx, col };
-    const type = ctx.types.get(col);
-    const cur = ctx.active.get(col);
+    if (colfPopFor && colfPopFor.key === '__nested' && !pop.hidden) { colfClosePopover(); return; }
+    colfPopFor = { ctx, key: '__nested' };
+    pop.innerHTML = '';
+    const head = document.createElement('div'); head.className = 'cfp-head'; head.textContent = 'Filter by a nested field';
+    pop.appendChild(head);
+    const list = document.createElement('div'); list.className = 'cfp-enum';
+    ctx.nested.forEach((d, coll) => {
+      d.subTypes.forEach((subType, sub) => {
+        const it = document.createElement('button'); it.type = 'button'; it.className = 'nf-item';
+        const on = ctx.active.has(coll + '␞' + sub);
+        it.innerHTML = escapeHtml(humanize(coll)) + ' <span class="nf-arrow">›</span> ' + escapeHtml(humanize(sub.replace(/^[@#]/, ''))) + (on ? ' <span class="nf-on">●</span>' : '');
+        it.addEventListener('click', () => colfOpenPopover(ctx, { nested: true, coll, sub, subType }, anchor));
+        list.appendChild(it);
+      });
+    });
+    pop.appendChild(list);
+    pop.hidden = false;
+    const r = anchor.getBoundingClientRect();
+    pop.style.top = (r.bottom + window.scrollY + 4) + 'px';
+    pop.style.left = Math.max(8, Math.min(r.left + window.scrollX, window.scrollX + document.documentElement.clientWidth - pop.offsetWidth - 8)) + 'px';
+  }
+  function colfOpenPopover(ctx, field, anchor) {
+    const pop = colfEnsurePopover();
+    const isNested = typeof field === 'object';
+    const key = isNested ? (field.coll + '␞' + field.sub) : field;
+    if (colfPopFor && colfPopFor.ctx === ctx && colfPopFor.key === key && !pop.hidden) { colfClosePopover(); return; }
+    colfPopFor = { ctx, key };
+    const type = isNested ? field.subType : ctx.types.get(field);
+    const cur = ctx.active.get(key);
     pop.innerHTML = '';
     const head = document.createElement('div'); head.className = 'cfp-head';
-    head.textContent = humanize(col.replace(/^[@#]/, ''));
+    head.textContent = isNested ? (humanize(field.coll) + ' › ' + humanize(field.sub.replace(/^[@#]/, ''))) : humanize(field.replace(/^[@#]/, ''));
     pop.appendChild(head);
-    const commit = (spec, isActive) => { if (isActive) ctx.active.set(col, { type, spec }); else ctx.active.delete(col); colfApply(ctx); };
+    let quant = (cur && cur.quant) || 'any';
+    let lastSpec = cur ? cur.spec : null, lastActive = !!cur;
+    const commit = (spec, isActive) => {
+      lastSpec = spec; lastActive = isActive;
+      if (isActive) ctx.active.set(key, isNested ? { nested: true, coll: field.coll, sub: field.sub, subType: type, quant, spec } : { col: field, type, spec });
+      else ctx.active.delete(key);
+      colfApply(ctx);
+    };
+    if (isNested) {
+      const qrow = document.createElement('div'); qrow.className = 'cfp-bool cfp-quant';
+      [['any', 'Any'], ['all', 'All'], ['none', 'None']].forEach(([val, lab]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'cfp-seg' + (quant === val ? ' on' : ''); b.textContent = lab;
+        b.addEventListener('click', () => { qrow.querySelectorAll('.cfp-seg').forEach(x => x.classList.remove('on')); b.classList.add('on'); quant = val; if (lastActive) commit(lastSpec, true); });
+        qrow.appendChild(b);
+      });
+      pop.appendChild(qrow);
+      const hint = document.createElement('div'); hint.className = 'cfp-hint'; hint.textContent = humanize(field.coll) + ' where ' + humanize(field.sub.replace(/^[@#]/, '')) + ':';
+      pop.appendChild(hint);
+    }
 
     if (type === 'enum') {
-      const values = colfDistinct(ctx, col);
+      const values = isNested ? colfNestedDistinct(ctx, field.coll, field.sub) : colfDistinct(ctx, field);
       const sel = cur ? cur.spec.set : new Set(values);
       if (values.length > 8) {
         const sb = document.createElement('input'); sb.type = 'text'; sb.className = 'cfp-input'; sb.placeholder = 'Filter values…';
@@ -6650,11 +6813,11 @@ or
     }
 
     const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'cfp-clear'; clr.textContent = 'Clear this filter';
-    clr.addEventListener('click', () => { ctx.active.delete(col); colfApply(ctx); colfClosePopover(); });
+    clr.addEventListener('click', () => { ctx.active.delete(key); colfApply(ctx); colfClosePopover(); });
     pop.appendChild(clr);
 
     pop.hidden = false;
-    const r = th.getBoundingClientRect();
+    const r = anchor.getBoundingClientRect();
     pop.style.top = (r.bottom + window.scrollY + 4) + 'px';
     const left = r.left + window.scrollX;
     pop.style.left = Math.max(8, Math.min(left, window.scrollX + document.documentElement.clientWidth - pop.offsetWidth - 8)) + 'px';
@@ -6969,6 +7132,20 @@ or
     table.appendChild(thead);
     section.__filterCtx = filterCtx;
     colfSections.add(filterCtx);
+    // Nested (relational) filters: detect one-to-many child collections and, if
+    // any exist, add a "⊕ Filter nested" button to the section header.
+    filterCtx.nested = colfDetectNested(itemMeta);
+    if (filterCtx.nested.size) {
+      const nb = document.createElement('button');
+      nb.type = 'button';
+      nb.className = 'nested-filter-btn';
+      nb.innerHTML = '⊕ Filter nested<span class="nf-n"></span>';
+      nb.title = 'Filter rows by a value inside their nested items (e.g. has any active service)';
+      nb.addEventListener('click', (e) => { e.stopPropagation(); colfOpenNestedMenu(filterCtx, nb); });
+      const collapseBtn = header.querySelector('.section-collapse');
+      if (collapseBtn) header.insertBefore(nb, collapseBtn); else header.appendChild(nb);
+      filterCtx.nestedBtn = nb;
+    }
 
     // Body
     const tbody = document.createElement('tbody');
