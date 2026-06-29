@@ -1,0 +1,20 @@
+{
+  // Cloudflare Worker (static assets only) for prettyjsonxml.com.
+  // Deployed automatically by Cloudflare Workers Builds on every push to main
+  // (connect the repo in the Cloudflare dashboard → this Worker → Builds).
+  //
+  // The site is served straight from ./public — no Worker script (`main`), so
+  // assets are served directly from the edge. The _headers file inside ./public
+  // is applied automatically (cache + security headers).
+  //
+  // Custom domains (prettyjsonxml.com, www.prettyjsonxml.com) are attached to
+  // this Worker in the dashboard and persist across deploys, so they are not
+  // declared here.
+  "name": "restless-frog-3ca1",
+  "compatibility_date": "2026-05-25",
+  "assets": {
+    "directory": "./public",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
+  }
+}

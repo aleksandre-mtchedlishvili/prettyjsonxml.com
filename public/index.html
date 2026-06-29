@@ -2185,7 +2185,7 @@
     width: 100%; box-sizing: border-box; padding: 5px 8px; font-size: 13px; margin-bottom: 2px;
     border: 1px solid var(--border); border-radius: 6px; background: var(--bg-elev-2); color: var(--text);
   }
-  .cfp-enum { max-height: 220px; overflow-y: auto; margin-top: 6px; display: flex; flex-direction: column; gap: 1px; }
+  .cfp-enum { max-height: 220px; overflow-y: auto; overscroll-behavior: contain; margin-top: 6px; display: flex; flex-direction: column; gap: 1px; }
   .cfp-check { display: flex; align-items: center; gap: 7px; padding: 3px 4px; border-radius: 5px; cursor: pointer; font-size: 12.5px; }
   .cfp-check:hover { background: var(--bg-elev-2); }
   .cfp-check.cfp-blank-row { color: var(--text-muted); }
@@ -2196,8 +2196,12 @@
   .cfp-bool { display: flex; gap: 5px; }
   .cfp-seg { flex: 1; padding: 5px 8px; border: 1px solid var(--border); background: var(--bg-elev-2); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--text-dim); }
   .cfp-seg.on { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .cfp-clear { margin-top: 10px; width: 100%; padding: 5px; border: 1px solid var(--border); background: transparent; border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--text-dim); }
-  .cfp-clear:hover { color: #fff; background: var(--danger, #dc2626); border-color: var(--danger, #dc2626); }
+  .cfp-applyhint { margin-top: 10px; font-size: 10.5px; color: var(--text-muted); }
+  .cfp-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 6px; }
+  .cfp-clear-link { border: none; background: none; color: var(--text-muted); font-size: 12px; cursor: pointer; padding: 2px 0; text-decoration: underline; }
+  .cfp-clear-link:hover { color: var(--danger, #dc2626); }
+  .cfp-done { padding: 5px 16px; border: none; border-radius: 6px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .cfp-done:hover { filter: brightness(1.06); }
   .row-main.filtered-out, .row-detail.filtered-out { display: none !important; }
   #filterChip {
     display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; font-size: 12px;
@@ -2206,8 +2210,8 @@
   }
   #filterChip:hover { color: #fff; background: var(--danger, #dc2626); border-color: var(--danger, #dc2626); }
   #filterChip .filter-chip-n { font-weight: 700; }
-  /* Nested (relational) filter — section-header button + its field-picker menu */
-  .nested-filter-btn {
+  /* Section-header filter buttons: "Filter…" (any field) + "⊕ Filter nested" */
+  .nested-filter-btn, .column-filter-btn {
     display: inline-flex; align-items: center; gap: 4px;
     margin-left: 10px; padding: 3px 10px; vertical-align: middle;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
@@ -2216,11 +2220,16 @@
     border: 1px dashed var(--border); border-radius: 999px; cursor: pointer;
     transition: color .1s, background .1s, border-color .1s;
   }
-  .nested-filter-btn:hover { color: var(--accent); border-color: var(--accent); }
-  .nested-filter-btn.on {
+  .nested-filter-btn:hover, .column-filter-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .nested-filter-btn.on, .column-filter-btn.on {
     color: #fff; background: var(--accent); border-color: var(--accent); border-style: solid;
   }
-  .nested-filter-btn .nf-n { font-weight: 700; }
+  .nested-filter-btn .nf-n, .column-filter-btn .cf-n { font-weight: 700; }
+  .column-filter-btn svg { width: 12px; height: 12px; }
+  .nf-tag {
+    font-size: 10px; color: var(--text-muted); border: 1px solid var(--border);
+    border-radius: 4px; padding: 0 4px; margin-left: 4px; vertical-align: middle;
+  }
   .nf-item {
     display: block; width: 100%; text-align: left; box-sizing: border-box;
     padding: 5px 8px; border: none; background: transparent; border-radius: 5px;
@@ -6672,6 +6681,11 @@ or
       ctx.nestedBtn.classList.toggle('on', nN > 0);
       const c = ctx.nestedBtn.querySelector('.nf-n'); if (c) c.textContent = nN ? ' (' + nN + ')' : '';
     }
+    if (ctx.columnBtn) {
+      const cN = [...ctx.active.values()].filter(f => !f.nested).length;
+      ctx.columnBtn.classList.toggle('on', cN > 0);
+      const c = ctx.columnBtn.querySelector('.cf-n'); if (c) c.textContent = cN ? ' (' + cN + ')' : '';
+    }
     colfUpdateChip();
   }
 
@@ -6712,12 +6726,56 @@ or
     document.addEventListener('mousedown', (e) => {
       if (!colfPop || colfPop.hidden) return;
       if (colfPop.contains(e.target)) return;
-      if (e.target.closest && e.target.closest('.col-filter-btn')) return;
+      if (e.target.closest && e.target.closest('.col-filter-btn, .column-filter-btn, .nested-filter-btn')) return;
       colfClosePopover();
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && colfPop && !colfPop.hidden) colfClosePopover(); });
-    window.addEventListener('scroll', () => colfClosePopover(), true);
+    window.addEventListener('scroll', (e) => {
+      // Scrolling INSIDE the popover's own list must not close it — only close
+      // on page/container scroll that would detach the popover from its anchor.
+      if (colfPop && !colfPop.hidden && e.target && e.target.nodeType === 1 && colfPop.contains(e.target)) return;
+      colfClosePopover();
+    }, true);
     return colfPop;
+  }
+
+  // Field picker for the section-header "Filter…" button: lists every column
+  // (visible + overflow), so fields the column cap hid are still filterable.
+  // Picking one opens the standard typed filter popover for that column.
+  function colfOpenColumnMenu(ctx, anchor) {
+    const pop = colfEnsurePopover();
+    if (colfPopFor && colfPopFor.ctx === ctx && colfPopFor.key === '__columns' && !pop.hidden) { colfClosePopover(); return; }
+    colfPopFor = { ctx, key: '__columns' };
+    pop.innerHTML = '';
+    const head = document.createElement('div'); head.className = 'cfp-head'; head.textContent = 'Filter by a field';
+    pop.appendChild(head);
+    const cols = (ctx.allColumns && ctx.allColumns.length) ? ctx.allColumns : ctx.columns;
+    let list;
+    if (cols.length > 10) {
+      const sb = document.createElement('input'); sb.type = 'text'; sb.className = 'cfp-input'; sb.placeholder = 'Find a field…';
+      sb.addEventListener('input', () => { const q = sb.value.toLowerCase(); list.querySelectorAll('.nf-item').forEach(it => { it.style.display = it.dataset.label.indexOf(q) !== -1 ? '' : 'none'; }); });
+      pop.appendChild(sb);
+    }
+    list = document.createElement('div'); list.className = 'cfp-enum';
+    cols.forEach(col => {
+      const it = document.createElement('button'); it.type = 'button'; it.className = 'nf-item';
+      const label = humanize(col.replace(/^[@#]/, ''));
+      // Searchable by both the humanized label and the raw field name, so users
+      // who know the original key (e.g. "notificationType", "@type") can find it.
+      it.dataset.label = (label + ' ' + col).toLowerCase();
+      const active = ctx.active.has(col);
+      const hidden = !ctx.columns.includes(col);
+      it.innerHTML = escapeHtml(label)
+        + (active ? ' <span class="nf-on">●</span>' : '')
+        + (hidden ? ' <span class="nf-tag">hidden</span>' : '');
+      it.addEventListener('click', () => colfOpenPopover(ctx, col, anchor));
+      list.appendChild(it);
+    });
+    pop.appendChild(list);
+    pop.hidden = false;
+    const r = anchor.getBoundingClientRect();
+    pop.style.top = (r.bottom + window.scrollY + 4) + 'px';
+    pop.style.left = Math.max(8, Math.min(r.left + window.scrollX, window.scrollX + document.documentElement.clientWidth - pop.offsetWidth - 8)) + 'px';
   }
 
   function colfNestedDistinct(ctx, coll, sub) {
@@ -6769,7 +6827,14 @@ or
     const key = isNested ? (field.coll + '␞' + field.sub) : field;
     if (colfPopFor && colfPopFor.ctx === ctx && colfPopFor.key === key && !pop.hidden) { colfClosePopover(); return; }
     colfPopFor = { ctx, key };
-    const type = isNested ? field.subType : ctx.types.get(field);
+    let type;
+    if (isNested) type = field.subType;
+    else {
+      // Visible columns are pre-typed; overflow columns (reached via the
+      // "Filter…" picker) get typed on demand and cached.
+      type = ctx.types.get(field);
+      if (!type) { type = colfDetectType(ctx.itemMeta, field); ctx.types.set(field, type); }
+    }
     const cur = ctx.active.get(key);
     pop.innerHTML = '';
     const head = document.createElement('div'); head.className = 'cfp-head';
@@ -6866,9 +6931,18 @@ or
       setTimeout(() => inp.focus(), 0);
     }
 
-    const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'cfp-clear'; clr.textContent = 'Clear this filter';
+    // Footer: filters apply LIVE as you choose, so the primary action is simply
+    // "Done" (close). "Clear" is demoted to a subtle link so it no longer reads
+    // like the main call-to-action.
+    const hint = document.createElement('div'); hint.className = 'cfp-applyhint'; hint.textContent = 'Selections apply instantly';
+    pop.appendChild(hint);
+    const foot = document.createElement('div'); foot.className = 'cfp-foot';
+    const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'cfp-clear-link'; clr.textContent = 'Clear';
     clr.addEventListener('click', () => { ctx.active.delete(key); colfApply(ctx); colfClosePopover(); });
-    pop.appendChild(clr);
+    const done = document.createElement('button'); done.type = 'button'; done.className = 'cfp-done'; done.textContent = 'Done';
+    done.addEventListener('click', () => colfClosePopover());
+    foot.appendChild(clr); foot.appendChild(done);
+    pop.appendChild(foot);
 
     pop.hidden = false;
     const r = anchor.getBoundingClientRect();
@@ -7107,7 +7181,9 @@ or
       /^commission$/i, /Commission$/i, /^fee$/i, /Fee$/i, /^tax$/i, /Tax$/i,
       /^code$/i, /^id$/i, /^key$/i, /Id$/, /Code$/,
       /^value$/i,
-      /^status$/i, /Status$/,
+      // Categorical fields users routinely filter by — promote them ahead of
+      // dates so they survive the column cap (e.g. notificationType, kind).
+      /^status$/i, /Status$/, /^state$/i, /^type$/i, /Type$/, /^kind$/i, /^category$/i, /Category$/,
       /Date$/i, /Time$/i, /^createdAt$/i, /^updatedAt$/i, /^timestamp$/i,
     ];
     // For each regex, push ALL matching fields (not just the first). Otherwise a
@@ -7161,7 +7237,7 @@ or
     if (someHaveImage) headRow.innerHTML += `<th class="img-col"></th>`;
     // Per-column filter context (funnel → popover; filters on itemMeta.scalars).
     colfSections.forEach(c => { if (!c.section || !c.section.isConnected) colfSections.delete(c); });
-    const filterCtx = { section, itemMeta, columns, types: new Map(), distinct: new Map(), active: new Map(), ths: new Map() };
+    const filterCtx = { section, itemMeta, columns, allColumns: prioritized.slice(), types: new Map(), distinct: new Map(), active: new Map(), ths: new Map() };
     columns.forEach((col, i) => {
       const th = document.createElement('th');
       th.dataset.col = col;
@@ -7186,6 +7262,20 @@ or
     table.appendChild(thead);
     section.__filterCtx = filterCtx;
     colfSections.add(filterCtx);
+    // "Filter…" — a field picker over ALL columns (visible + overflow), so
+    // fields past the column cap (e.g. an unshown notificationType) are still
+    // filterable. Picking a field opens the same typed filter popover.
+    if (filterCtx.allColumns && filterCtx.allColumns.length) {
+      const cb = document.createElement('button');
+      cb.type = 'button';
+      cb.className = 'column-filter-btn';
+      cb.innerHTML = COLF_FUNNEL_ICON + ' Filter…<span class="cf-n"></span>';
+      cb.title = 'Filter rows by any field — including columns not shown in the grid';
+      cb.addEventListener('click', (e) => { e.stopPropagation(); colfOpenColumnMenu(filterCtx, cb); });
+      const collapseBtn0 = header.querySelector('.section-collapse');
+      if (collapseBtn0) header.insertBefore(cb, collapseBtn0); else header.appendChild(cb);
+      filterCtx.columnBtn = cb;
+    }
     // Nested (relational) filters: detect one-to-many child collections and, if
     // any exist, add a "⊕ Filter nested" button to the section header.
     filterCtx.nested = colfDetectNested(itemMeta);
@@ -8688,9 +8778,24 @@ or
         // Skip rows inside virtual sections — those are filtered at the data
         // layer below; the live DOM rows already reflect the filtered set
         // after setFilter runs.
-        if (row.closest('.table-section')?.__virtual) return;
+        const sec = row.closest('.table-section');
+        if (sec?.__virtual) return;
         const detail = row.nextElementSibling;
-        const combinedText = (row.textContent + ' ' + (detail ? detail.textContent : '')).toLowerCase();
+        // Include the row's FULL scalar set (and source-element text), not just
+        // the rendered columns. Overflow fields (beyond the column cap) live
+        // only in the lazily-built expand panel, so row/detail textContent alone
+        // would miss them — e.g. a notificationType that isn't a shown column.
+        let extra = '';
+        const fc = sec && sec.__filterCtx;
+        const idx = row.dataset.rowIdx;
+        if (fc && fc.itemMeta && idx != null) {
+          const meta = fc.itemMeta[+idx];
+          if (meta) {
+            if (meta.scalars) for (const k in meta.scalars) extra += ' ' + k + ' ' + meta.scalars[k];
+            if (meta.item && meta.item.textContent) extra += ' ' + meta.item.textContent;
+          }
+        }
+        const combinedText = (row.textContent + ' ' + (detail ? detail.textContent : '') + ' ' + extra).toLowerCase();
         if (combinedText.includes(q)) {
           highlightInElement(row, q);
           if (detail) highlightInElement(detail, q);

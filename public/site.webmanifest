@@ -1,0 +1,32 @@
+{
+  "name": "Pretty JSON & XML",
+  "short_name": "Pretty JSON & XML",
+  "description": "Free online JSON & XML viewer. Paste or upload to see your data as a sortable table or foldable tree. Format, minify, search — all in your browser.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7c9cff",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["productivity", "developer", "utilities"]
+}
